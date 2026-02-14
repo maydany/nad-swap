@@ -29,7 +29,20 @@ ensure_tool() {
 
 # Extract deployed address from forge create output
 extract_addr() {
-  grep -oE '0x[0-9a-fA-F]{40}' | head -1
+  local out="$1"
+  local addr
+  addr=$(echo "${out}" | awk '/Deployed to:/{print $3}' | tail -1)
+  if [[ -z "${addr}" ]]; then
+    # Fallback: use the last 20-byte hex in output (avoid picking Deployer line first).
+    addr=$(echo "${out}" | grep -oE '0x[0-9a-fA-F]{40}' | tail -1 || true)
+  fi
+  echo "${addr}"
+}
+
+require_addr() {
+  local label="$1"
+  local addr="$2"
+  [[ "${addr}" =~ ^0x[0-9a-fA-F]{40}$ ]] || fail "Could not parse ${label} deployment address"
 }
 
 # forge create wrapper
@@ -37,6 +50,7 @@ deploy() {
   local contract="$1"
   shift
   forge create "${contract}" \
+    --broadcast \
     --rpc-url "${RPC_URL}" \
     --private-key "${DEPLOYER_PK}" \
     --root "${PROTOCOL_DIR}" \
@@ -89,38 +103,39 @@ log "Building contracts..."
 # ── Deploy MockWETH ──────────────────────────────────────
 log "Deploying MockWETH..."
 WETH_OUT=$(deploy "test/helpers/MockWETH.sol:MockWETH")
-WETH=$(echo "${WETH_OUT}" | extract_addr)
+WETH=$(extract_addr "${WETH_OUT}")
+require_addr "MockWETH" "${WETH}"
 log "  WETH = ${WETH}"
 
 # ── Deploy Mock Tokens ───────────────────────────────────
 log "Deploying USDT (quote token)..."
 USDT_OUT=$(deploy "test/helpers/MockERC20.sol:MockERC20" --constructor-args "Tether USD" "USDT" 18)
-USDT=$(echo "${USDT_OUT}" | extract_addr)
+USDT=$(extract_addr "${USDT_OUT}")
+require_addr "USDT" "${USDT}"
 log "  USDT = ${USDT}"
 
 log "Deploying NAD (base token)..."
 NAD_OUT=$(deploy "test/helpers/MockERC20.sol:MockERC20" --constructor-args "Nad Token" "NAD" 18)
-NAD=$(echo "${NAD_OUT}" | extract_addr)
+NAD=$(extract_addr "${NAD_OUT}")
+require_addr "NAD" "${NAD}"
 log "  NAD  = ${NAD}"
 
 # ── Deploy Factory ───────────────────────────────────────
 log "Deploying UniswapV2Factory..."
 FACTORY_OUT=$(deploy "src/core/NadSwapV2Factory.sol:UniswapV2Factory" \
-  --constructor-args "${DEPLOYER_ADDR}" "${DEPLOYER_ADDR}")
-FACTORY=$(echo "${FACTORY_OUT}" | extract_addr)
+  --constructor-args "${DEPLOYER_ADDR}")
+FACTORY=$(extract_addr "${FACTORY_OUT}")
+require_addr "Factory" "${FACTORY}"
 log "  FACTORY = ${FACTORY}"
 
 # ── Configure Factory ────────────────────────────────────
 log "Setting USDT as quote token..."
 send "${FACTORY}" "setQuoteToken(address,bool)" "${USDT}" true
 
-log "Setting NAD as supported base token..."
-send "${FACTORY}" "setBaseTokenSupported(address,bool)" "${NAD}" true
-
 # ── Create Pair ──────────────────────────────────────────
 log "Creating USDT/NAD pair (0% tax)..."
-PAIR_TX=$(send "${FACTORY}" "createPair(address,address,uint16,uint16,address)" \
-  "${USDT}" "${NAD}" 0 0 "${DEPLOYER_ADDR}")
+send "${FACTORY}" "createPair(address,address,uint16,uint16,address)" \
+  "${USDT}" "${NAD}" 0 0 "${DEPLOYER_ADDR}"
 PAIR=$(cast call "${FACTORY}" "getPair(address,address)(address)" "${USDT}" "${NAD}" --rpc-url "${RPC_URL}")
 log "  PAIR = ${PAIR}"
 
@@ -128,7 +143,8 @@ log "  PAIR = ${PAIR}"
 log "Deploying UniswapV2Router02..."
 ROUTER_OUT=$(deploy "src/periphery/NadSwapV2Router02.sol:UniswapV2Router02" \
   --constructor-args "${FACTORY}" "${WETH}")
-ROUTER=$(echo "${ROUTER_OUT}" | extract_addr)
+ROUTER=$(extract_addr "${ROUTER_OUT}")
+require_addr "Router" "${ROUTER}"
 log "  ROUTER = ${ROUTER}"
 
 # ── Add Initial Liquidity ────────────────────────────────
