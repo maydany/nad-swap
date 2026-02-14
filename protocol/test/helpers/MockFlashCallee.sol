@@ -1,7 +1,7 @@
 pragma solidity =0.5.16;
 
-import "../../src/core/interfaces/IUniswapV2Callee.sol";
-import "../../src/core/interfaces/IUniswapV2Pair.sol";
+import "../../src/core/interfaces/INadSwapV2Callee.sol";
+import "../../src/core/interfaces/INadSwapV2Pair.sol";
 
 contract MockFlashCallee is IUniswapV2Callee {
     address public pair;

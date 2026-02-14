@@ -1,10 +1,10 @@
 pragma solidity =0.5.16;
 
-import "../../../src/core/UniswapV2Factory.sol";
-import "../../../src/core/UniswapV2Pair.sol";
+import "../../../src/core/NadSwapV2Factory.sol";
+import "../../../src/core/NadSwapV2Pair.sol";
 import "../../../src/core/interfaces/IERC20.sol";
-import "../../../src/periphery/UniswapV2Router02.sol";
-import "../../../src/periphery/libraries/UniswapV2Library.sol";
+import "../../../src/periphery/NadSwapV2Router02.sol";
+import "../../../src/periphery/libraries/NadSwapV2Library.sol";
 import "../../helpers/TestBase.sol";
 import "../../helpers/MockERC20.sol";
 import "../../helpers/MockWETH.sol";

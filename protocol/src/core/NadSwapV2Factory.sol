@@ -1,8 +1,9 @@
+// NadSwap V2 forked from Uniswap V2; modified for NadSwap requirements.
 pragma solidity =0.5.16;
 
-import "./interfaces/IUniswapV2Factory.sol";
-import "./interfaces/IUniswapV2Pair.sol";
-import "./UniswapV2Pair.sol";
+import "./interfaces/INadSwapV2Factory.sol";
+import "./interfaces/INadSwapV2Pair.sol";
+import "./NadSwapV2Pair.sol";
 
 contract UniswapV2Factory is IUniswapV2Factory {
     address public feeTo;

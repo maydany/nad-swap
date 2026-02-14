@@ -105,7 +105,7 @@ def main():
         [
             "forge",
             "inspect",
-            "src/core/UniswapV2Pair.sol:UniswapV2Pair",
+            "src/core/NadSwapV2Pair.sol:UniswapV2Pair",
             "storageLayout",
             "--json",
         ]

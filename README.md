@@ -447,10 +447,10 @@ function _requireSupportedPairTokens(address pair, address tokenIn, address toke
 
 | 개념 | 표준 계약명 | 구현 경로 |
 |------|------------|----------|
-| Factory | `UniswapV2Factory` | `protocol/src/core/UniswapV2Factory.sol` |
-| Pair | `UniswapV2Pair` | `protocol/src/core/UniswapV2Pair.sol` |
-| Library | `UniswapV2Library` | `protocol/src/periphery/libraries/UniswapV2Library.sol` |
-| Router | `UniswapV2Router02` | `protocol/src/periphery/UniswapV2Router02.sol` |
+| Factory | `UniswapV2Factory` | `protocol/src/core/NadSwapV2Factory.sol` |
+| Pair | `UniswapV2Pair` | `protocol/src/core/NadSwapV2Pair.sol` |
+| Library | `UniswapV2Library` | `protocol/src/periphery/libraries/NadSwapV2Library.sol` |
+| Router | `UniswapV2Router02` | `protocol/src/periphery/NadSwapV2Router02.sol` |
 
 ### 저장소 구조
 

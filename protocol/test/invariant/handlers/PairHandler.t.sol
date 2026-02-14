@@ -1,10 +1,10 @@
 pragma solidity =0.5.16;
 
 import "../../helpers/TestBase.sol";
-import "../../../src/core/UniswapV2Factory.sol";
-import "../../../src/core/UniswapV2Pair.sol";
+import "../../../src/core/NadSwapV2Factory.sol";
+import "../../../src/core/NadSwapV2Pair.sol";
 import "../../../src/core/interfaces/IERC20.sol";
-import "../../../src/periphery/UniswapV2Router02.sol";
+import "../../../src/periphery/NadSwapV2Router02.sol";
 
 contract PairHandler is TestBase {
     uint256 internal constant BPS = 10_000;

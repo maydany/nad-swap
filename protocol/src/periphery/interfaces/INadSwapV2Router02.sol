@@ -1,6 +1,7 @@
+// NadSwap V2 forked from Uniswap V2; modified for NadSwap requirements.
 pragma solidity =0.5.16;
 
-import "./IUniswapV2Router01.sol";
+import "./INadSwapV2Router01.sol";
 
 contract IUniswapV2Router02 is IUniswapV2Router01 {
     function removeLiquidityETHSupportingFeeOnTransferTokens(

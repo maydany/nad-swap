@@ -1,11 +1,12 @@
+// NadSwap V2 forked from Uniswap V2; modified for NadSwap requirements.
 pragma solidity =0.5.16;
 
-import "../core/interfaces/IUniswapV2Factory.sol";
-import "../core/interfaces/IUniswapV2Pair.sol";
-import "./interfaces/IUniswapV2Router02.sol";
+import "../core/interfaces/INadSwapV2Factory.sol";
+import "../core/interfaces/INadSwapV2Pair.sol";
+import "./interfaces/INadSwapV2Router02.sol";
 import "./interfaces/IWETH.sol";
 import "./libraries/TransferHelper.sol";
-import "./libraries/UniswapV2Library.sol";
+import "./libraries/NadSwapV2Library.sol";
 
 contract UniswapV2Router02 is IUniswapV2Router02 {
     address public factory;

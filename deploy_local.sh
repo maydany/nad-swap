@@ -105,7 +105,7 @@ log "  NAD  = ${NAD}"
 
 # ── Deploy Factory ───────────────────────────────────────
 log "Deploying UniswapV2Factory..."
-FACTORY_OUT=$(deploy "src/core/UniswapV2Factory.sol:UniswapV2Factory" \
+FACTORY_OUT=$(deploy "src/core/NadSwapV2Factory.sol:UniswapV2Factory" \
   --constructor-args "${DEPLOYER_ADDR}" "${DEPLOYER_ADDR}")
 FACTORY=$(echo "${FACTORY_OUT}" | extract_addr)
 log "  FACTORY = ${FACTORY}"
@@ -126,7 +126,7 @@ log "  PAIR = ${PAIR}"
 
 # ── Deploy Router ────────────────────────────────────────
 log "Deploying UniswapV2Router02..."
-ROUTER_OUT=$(deploy "src/periphery/UniswapV2Router02.sol:UniswapV2Router02" \
+ROUTER_OUT=$(deploy "src/periphery/NadSwapV2Router02.sol:UniswapV2Router02" \
   --constructor-args "${FACTORY}" "${WETH}")
 ROUTER=$(echo "${ROUTER_OUT}" | extract_addr)
 log "  ROUTER = ${ROUTER}"

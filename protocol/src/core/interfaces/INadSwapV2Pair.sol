@@ -1,6 +1,7 @@
+// NadSwap V2 forked from Uniswap V2; modified for NadSwap requirements.
 pragma solidity =0.5.16;
 
-import "./IUniswapV2ERC20.sol";
+import "./INadSwapV2ERC20.sol";
 
 contract IUniswapV2Pair is IUniswapV2ERC20 {
     event Mint(address indexed sender, uint256 amount0, uint256 amount1);

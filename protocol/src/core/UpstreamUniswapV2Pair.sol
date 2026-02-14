@@ -1,6 +1,6 @@
 pragma solidity =0.5.16;
 
-import "./UniswapV2ERC20.sol";
+import "./NadSwapV2ERC20.sol";
 
 // Baseline V2 slot reference contract (no NadSwap extensions).
 contract UpstreamUniswapV2Pair is UniswapV2ERC20 {

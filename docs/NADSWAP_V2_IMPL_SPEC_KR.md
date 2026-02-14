@@ -75,12 +75,12 @@ rawBaseBalance  = reserveBase                          (+ dust)
 
 | 파일 | 범위 | 핵심 변경 |
 |------|------|-----------|
-| `UniswapV2Pair.sol` | **높음** | vault, effective balance, 12단계 swap, 세금 설정, claim |
-| `IUniswapV2Pair.sol` | 중간 | tax/quote 조회, set, claim 인터페이스 추가 |
-| `IUniswapV2Factory.sol` | 중간 | quote 지원 getter(`isQuoteToken`) 유지, base allowlist API 제거 |
-| `UniswapV2Factory.sol` | 중간 | quote 화이트리스트, **pairAdmin 전용 pair 생성**, pair 초기화 (base allowlist 제거) |
-| `UniswapV2Library.sol` | 낮음 | `997→998`, tax-aware getAmounts |
-| `UniswapV2Router02.sol` | 낮음 | 시그니처 유지, **자동 pair 생성 제거**, Library 호출 패치, 토큰 지원 가드, **FOT 지원 swap 변형은 항상 `FOT_NOT_SUPPORTED`로 revert** |
+| `NadSwapV2Pair.sol` | **높음** | vault, effective balance, 12단계 swap, 세금 설정, claim |
+| `INadSwapV2Pair.sol` | 중간 | tax/quote 조회, set, claim 인터페이스 추가 |
+| `INadSwapV2Factory.sol` | 중간 | quote 지원 getter(`isQuoteToken`) 유지, base allowlist API 제거 |
+| `NadSwapV2Factory.sol` | 중간 | quote 화이트리스트, **pairAdmin 전용 pair 생성**, pair 초기화 (base allowlist 제거) |
+| `NadSwapV2Library.sol` | 낮음 | `997→998`, tax-aware getAmounts |
+| `NadSwapV2Router02.sol` | 낮음 | 시그니처 유지, **자동 pair 생성 제거**, Library 호출 패치, 토큰 지원 가드, **FOT 지원 swap 변형은 항상 `FOT_NOT_SUPPORTED`로 revert** |
 
 > [!WARNING]
 > **Factory ABI 비호환**: `createPair`는 시그니처가 바뀐 `pairAdmin` 전용입니다. Router의 `_addLiquidity` 자동 생성 경로도 제거되었습니다. 기존 V2 툴링과 호환되지 않습니다.
@@ -126,7 +126,7 @@ Slot K+1: [feeCollector(160)] [accumulatedQuoteFees(96)]  ← 256bit perfect
 ```bash
 # 프로덕션과 동일한 컴파일러 설정으로 빌드
 forge inspect upstream/v2-core/contracts/UniswapV2Pair.sol:UniswapV2Pair storageLayout > /tmp/v2.layout.json
-forge inspect protocol/src/core/UniswapV2Pair.sol:UniswapV2Pair storageLayout > /tmp/nad.layout.json
+forge inspect protocol/src/core/NadSwapV2Pair.sol:UniswapV2Pair storageLayout > /tmp/nad.layout.json
 ```
 
 - CI 통과 기준:

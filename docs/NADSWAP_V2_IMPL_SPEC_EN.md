@@ -75,12 +75,12 @@ rawBaseBalance  = reserveBase                          (+ dust)
 
 | File | Scope | Key Changes |
 |------|-------|-------------|
-| `UniswapV2Pair.sol` | **High** | vault, effective balance, 12-step swap, tax config, claim |
-| `IUniswapV2Pair.sol` | Medium | tax/quote query, set, claim interface additions |
-| `IUniswapV2Factory.sol` | Medium | quote support getter (`isQuoteToken`) retained; base allowlist API removed |
-| `UniswapV2Factory.sol` | Medium | quote whitelist, **pairAdmin-only pair creation**, pair init (base allowlist removed) |
-| `UniswapV2Library.sol` | Low | `997→998`, tax-aware getAmounts |
-| `UniswapV2Router02.sol` | Low | signature preserved, **auto pair creation removed**, Library call patches, token support guard, **FOT-supporting swap variants always revert `FOT_NOT_SUPPORTED`** |
+| `NadSwapV2Pair.sol` | **High** | vault, effective balance, 12-step swap, tax config, claim |
+| `INadSwapV2Pair.sol` | Medium | tax/quote query, set, claim interface additions |
+| `INadSwapV2Factory.sol` | Medium | quote support getter (`isQuoteToken`) retained; base allowlist API removed |
+| `NadSwapV2Factory.sol` | Medium | quote whitelist, **pairAdmin-only pair creation**, pair init (base allowlist removed) |
+| `NadSwapV2Library.sol` | Low | `997→998`, tax-aware getAmounts |
+| `NadSwapV2Router02.sol` | Low | signature preserved, **auto pair creation removed**, Library call patches, token support guard, **FOT-supporting swap variants always revert `FOT_NOT_SUPPORTED`** |
 
 > [!WARNING]
 > **Factory ABI Incompatible**: `createPair` is `pairAdmin`-only with a changed signature. Router's `_addLiquidity` auto-creation path is also removed. Not compatible with existing V2 tooling.
@@ -126,7 +126,7 @@ Slot K+1: [feeCollector(160)] [accumulatedQuoteFees(96)]  ← 256bit perfect
 ```bash
 # Build with the exact production compiler settings.
 forge inspect upstream/v2-core/contracts/UniswapV2Pair.sol:UniswapV2Pair storageLayout > /tmp/v2.layout.json
-forge inspect protocol/src/core/UniswapV2Pair.sol:UniswapV2Pair storageLayout > /tmp/nad.layout.json
+forge inspect protocol/src/core/NadSwapV2Pair.sol:UniswapV2Pair storageLayout > /tmp/nad.layout.json
 ```
 
 - CI pass criteria:

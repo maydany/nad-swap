@@ -1,6 +1,7 @@
+// NadSwap V2 forked from Uniswap V2; modified for NadSwap requirements.
 pragma solidity =0.5.16;
 
-import "./interfaces/IUniswapV2ERC20.sol";
+import "./interfaces/INadSwapV2ERC20.sol";
 import "./libraries/SafeMath.sol";
 
 contract UniswapV2ERC20 is IUniswapV2ERC20 {

@@ -2,7 +2,7 @@ pragma solidity =0.5.16;
 
 import "./../helpers/PairFixture.sol";
 import "./../helpers/MockERC20.sol";
-import "../../src/core/UniswapV2Pair.sol";
+import "../../src/core/NadSwapV2Pair.sol";
 
 contract FactoryAdminExtTest is PairFixture {
     MockERC20 internal alt;

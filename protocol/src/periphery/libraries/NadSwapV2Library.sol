@@ -1,7 +1,8 @@
+// NadSwap V2 forked from Uniswap V2; modified for NadSwap requirements.
 pragma solidity =0.5.16;
 
-import "../../core/interfaces/IUniswapV2Factory.sol";
-import "../../core/interfaces/IUniswapV2Pair.sol";
+import "../../core/interfaces/INadSwapV2Factory.sol";
+import "../../core/interfaces/INadSwapV2Pair.sol";
 
 library UniswapV2Library {
     uint256 private constant BPS = 10_000;
