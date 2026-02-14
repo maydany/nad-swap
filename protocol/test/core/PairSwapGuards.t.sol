@@ -23,9 +23,9 @@ contract PairSwapGuardsTest is PairFixture {
         uint256 effIn = rawIn - expectedTax;
         uint256 baseOut = _getAmountOut(effIn, rq, rb);
 
-        uint256 vaultBefore = pair.accumulatedQuoteFees();
+        uint256 vaultBefore = pair.accumulatedQuoteTax();
         _buy(rawIn, baseOut, TRADER);
-        uint256 vaultAfter = pair.accumulatedQuoteFees();
+        uint256 vaultAfter = pair.accumulatedQuoteTax();
 
         assertEq(vaultAfter - vaultBefore, expectedTax, "direct swap bypassed buy tax");
     }
@@ -162,14 +162,14 @@ contract PairSwapGuardsTest is PairFixture {
         uint256 buyEffIn = rawBuy - (rawBuy * pair.buyTaxBps() / BPS);
         uint256 buyBaseOut = _getAmountOut(buyEffIn, rq, rb);
         _buy(rawBuy, buyBaseOut, TRADER);
-        uint256 afterBuyVault = pair.accumulatedQuoteFees();
+        uint256 afterBuyVault = pair.accumulatedQuoteTax();
 
         (rq, rb) = _reservesQuoteBase();
         uint256 netQuoteOut = 150 ether;
         uint256 grossQuoteOut = _ceilDiv(netQuoteOut * BPS, BPS - pair.sellTaxBps());
         uint256 sellBaseIn = _getAmountIn(grossQuoteOut, rb, rq);
         _sell(sellBaseIn, netQuoteOut, TRADER);
-        uint256 afterSellVault = pair.accumulatedQuoteFees();
+        uint256 afterSellVault = pair.accumulatedQuoteTax();
 
         assertGt(afterBuyVault, 0, "buy did not accrue vault");
         assertGt(afterSellVault, afterBuyVault, "sell did not accrue additional vault");

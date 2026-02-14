@@ -21,7 +21,7 @@
 | **Quote** | 기축 통화(WETH, USDT 등). 페어당 1개로 고정 |
 | **Net** | 사용자가 실제로 수령하는 수량 |
 | **Gross** | 세금을 포함한 총 수량 (`Net + Tax`) |
-| **Vault** | `accumulatedQuoteFees` — 장부 상 누적 세금 |
+| **Vault** | `accumulatedQuoteTax` — 장부 상 누적 세금 |
 | **Effective Balance** | `rawBalance - vault` (quote 측) |
 | **Dust** | reserve(및 quote 측은 vault)를 초과한 raw 잔고. 주로 직접 전송/반올림으로 발생하며 `skim`으로 제거 가능 |
 
@@ -34,7 +34,7 @@ graph TD
     subgraph "Core Layer"
         F[NadFactory] -->|createPair| P[NadPair]
         P -->|"reserve = effective"| AMM["K-invariant"]
-        P -->|vault ledger accrual| VV["accumulatedQuoteFees"]
+        P -->|vault ledger accrual| VV["accumulatedQuoteTax"]
     end
     subgraph "Periphery Layer"
         R[NadRouter02] -->|swap| P
@@ -53,14 +53,14 @@ graph TD
 | `NadLibrary` | `UniswapV2Library` |
 
 1. **코어 강제(Core Enforcement)**: 모든 세금 로직을 `Pair.swap()` 수학에 내장 → 우회 가능한 대체 경로 없음(직접 호출 포함). 단, 극소 거래는 정수 내림으로 `tax=0` 가능
-2. **가상 Vault(Virtual Vault)**: `accumulatedQuoteFees`에 장부 적립 → 스왑마다 ERC20 전송을 생략해 가스 절감
+2. **가상 Vault(Virtual Vault)**: `accumulatedQuoteTax`에 장부 적립 → 스왑마다 ERC20 전송을 생략해 가스 절감
 3. **역산 수학(Reverse Math)**: Router가 인용한 Net 수량을 사용자에게 정확히 전달. 내부적으로 Gross를 역산
 4. **Reserve = Effective**: reserve 저장/조회는 모두 effective 기준 → TWAP, feeTo, quote 정확성 유지
 
 ### 회계 불변식
 
 ```
-rawQuoteBalance = reserveQuote + accumulatedQuoteFees  (+ dust)
+rawQuoteBalance = reserveQuote + accumulatedQuoteTax  (+ dust)
 rawBaseBalance  = reserveBase                          (+ dust)
 ```
 
@@ -99,8 +99,8 @@ uint16  public sellTaxBps;             //  16bit
 bool    private initialized;           //   8bit
 
 // ── Slot 2 (256 bits perfect packing) ──
-address public feeCollector;           // 160bit
-uint96  public accumulatedQuoteFees;   //  96bit (Virtual Vault)
+address public taxCollector;           // 160bit
+uint96  public accumulatedQuoteTax;   //  96bit (Virtual Vault)
 // uint96 max ≈ 7.9×10²⁸ — ~79 billion WETH(18 dec), overflow impossible
 
 // ── Constants ──
@@ -118,7 +118,7 @@ uint16  constant BPS = 10_000;
 
 ```
 Slot K  : [quoteToken(160)] [buyTaxBps(16)] [sellTaxBps(16)] [initialized(8)] [unused(56)]
-Slot K+1: [feeCollector(160)] [accumulatedQuoteFees(96)]  ← 256bit perfect
+Slot K+1: [taxCollector(160)] [accumulatedQuoteTax(96)]  ← 256bit perfect
 ```
 
 ### 스토리지 레이아웃 호환성 게이트 (필수)
@@ -151,12 +151,12 @@ python3 scripts/gates/check_slither_gate.py
 /// @notice Factory.createPair 내부에서 단 한 번만 호출. 재호출 시 revert.
 function initialize(
     address _token0, address _token1, address _quoteToken,
-    uint16 _buyTaxBps, uint16 _sellTaxBps, address _feeCollector
+    uint16 _buyTaxBps, uint16 _sellTaxBps, address _taxCollector
 ) external {
     require(msg.sender == factory, 'FORBIDDEN');
     require(!initialized, 'ALREADY_INITIALIZED');
     require(_quoteToken == _token0 || _quoteToken == _token1, 'INVALID_QUOTE');
-    require(_feeCollector != address(0), 'ZERO_COLLECTOR');
+    require(_taxCollector != address(0), 'ZERO_COLLECTOR');
     require(_buyTaxBps <= MAX_TAX_BPS && _sellTaxBps <= MAX_TAX_BPS, 'TAX_TOO_HIGH');
     require(_sellTaxBps < BPS, 'SELL_TAX_INVALID');
     initialized = true;
@@ -165,7 +165,7 @@ function initialize(
     quoteToken = _quoteToken;
     buyTaxBps = _buyTaxBps;
     sellTaxBps = _sellTaxBps;
-    feeCollector = _feeCollector;
+    taxCollector = _taxCollector;
 }
 ```
 
@@ -175,7 +175,7 @@ function initialize(
 |----------|--------|-------|
 | `initialize(...)` | `factory` (createPair 내부) | **1회만 허용**, `initialized` 플래그로 재호출 방지 |
 | `setTaxConfig(buy, sell, collector)` | `factory` (pairAdmin 경유) | 언제든 변경 가능 |
-| `claimQuoteFees(to)` | `feeCollector` | `lock` modifier 적용 |
+| `claimQuoteTax(to)` | `taxCollector` | `lock` modifier 적용 |
 
 ---
 
@@ -211,7 +211,7 @@ quoteInNet  = quoteInRaw - quoteTaxIn
 ### 5.3 Effective Balance
 
 ```
-effectiveQuote = rawQuoteBalance - accumulatedQuoteFees
+effectiveQuote = rawQuoteBalance - accumulatedQuoteTax
 effectiveBase  = rawBaseBalance    (no vault)
 ```
 
@@ -256,7 +256,7 @@ function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data)
 ### 7단계: 방향 판정 및 세금 (상세)
 
 ```solidity
-uint96 oldVault = accumulatedQuoteFees;
+uint96 oldVault = accumulatedQuoteTax;
 uint quoteTaxOut = 0;
 uint grossOut    = amountOut;  // default = Net
 
@@ -313,7 +313,7 @@ function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data)
     uint raw1 = IERC20(token1).balanceOf(address(this));
 
     // ── Step 6: Effective balance via oldVault ──
-    uint96 oldVault = accumulatedQuoteFees;
+    uint96 oldVault = accumulatedQuoteTax;
     bool isQuote0 = (quoteToken == token0);
     uint rawQuote = isQuote0 ? raw0 : raw1;
     require(rawQuote >= oldVault, 'VAULT_DRIFT');
@@ -377,12 +377,12 @@ function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data)
     }
 
     // ── Step 12: Store ──
-    accumulatedQuoteFees = newVault;
+    accumulatedQuoteTax = newVault;
     _update(eff0, eff1, _r0, _r1);    // ← effective basis!
 
     // Event: uses effective input after newVault (accounting-consistent)
     emit Swap(msg.sender, effIn0, effIn1, amount0Out, amount1Out, to);
-    emit QuoteFeesAccrued(quoteTaxIn, quoteTaxOut, newVault);
+    emit QuoteTaxAccrued(quoteTaxIn, quoteTaxOut, newVault);
 }
 ```
 
@@ -394,7 +394,7 @@ function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data)
 
 > [!IMPORTANT]
 > 모든 effective-balance 경로(`swap/mint/burn/sync`)에서 quote 측 차감 전에 반드시:
-> `require(rawQuote >= accumulatedQuoteFees, 'VAULT_DRIFT')`.
+> `require(rawQuote >= accumulatedQuoteTax, 'VAULT_DRIFT')`.
 > 이는 `rawQuote < vault` 상태를 막는 라이브니스 가드입니다.
 
 | 함수 | 변경 지점 |
@@ -407,7 +407,7 @@ function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data)
 **`skim` 방어 패턴** (언더플로우 방지):
 ```solidity
 // quote side: safe even if raw < reserve + vault
-uint256 expectedQuote = uint256(reserveQuote) + accumulatedQuoteFees;
+uint256 expectedQuote = uint256(reserveQuote) + accumulatedQuoteTax;
 uint256 excessQuote = rawQuote > expectedQuote ? rawQuote - expectedQuote : 0;
 if (excessQuote > 0) _safeTransfer(quoteToken, to, excessQuote);
 
@@ -418,20 +418,20 @@ if (excessBase > 0) _safeTransfer(baseToken, to, excessBase);
 
 ---
 
-## 8. claimQuoteFees
+## 8. claimQuoteTax
 
 ```solidity
-/// @notice feeCollector만 호출 가능. 재진입 방지 필요.
-function claimQuoteFees(address to) external lock {
-    require(msg.sender == feeCollector, 'FORBIDDEN');
+/// @notice taxCollector만 호출 가능. 재진입 방지 필요.
+function claimQuoteTax(address to) external lock {
+    require(msg.sender == taxCollector, 'FORBIDDEN');
     require(to != address(0) && to != address(this), 'INVALID_TO');  // burn + self-transfer 방지
-    uint96 fees = accumulatedQuoteFees;
-    require(fees > 0, 'NO_FEES');
+    uint96 taxAmount = accumulatedQuoteTax;
+    require(taxAmount > 0, 'NO_TAX');
     uint rawQuote = IERC20(quoteToken).balanceOf(address(this));
-    require(rawQuote >= fees, 'VAULT_DRIFT');
+    require(rawQuote >= taxAmount, 'VAULT_DRIFT');
     
-    accumulatedQuoteFees = 0;
-    _safeTransfer(quoteToken, to, uint(fees));
+    accumulatedQuoteTax = 0;
+    _safeTransfer(quoteToken, to, uint(taxAmount));
     
     // effective balance 재계산 후 reserve 재동기화
     uint raw0 = IERC20(token0).balanceOf(address(this));
@@ -439,7 +439,7 @@ function claimQuoteFees(address to) external lock {
     // vault=0 이므로 effective = raw
     _update(raw0, raw1, reserve0, reserve1);
     
-    emit QuoteFeesClaimed(to, fees);
+    emit QuoteTaxClaimed(to, fees);
 }
 ```
 
@@ -459,7 +459,7 @@ function setTaxConfig(uint16 _buyTaxBps, uint16 _sellTaxBps, address _collector)
     require(_collector != address(0), 'ZERO_COLLECTOR');
     buyTaxBps = _buyTaxBps;
     sellTaxBps = _sellTaxBps;
-    feeCollector = _collector;
+    taxCollector = _collector;
     emit TaxConfigUpdated(_buyTaxBps, _sellTaxBps, _collector);
 }
 ```
@@ -513,7 +513,7 @@ function createPair(
     address tokenB,
     uint16 buyTaxBps,
     uint16 sellTaxBps,
-    address feeCollector
+    address taxCollector
 ) external returns (address pair) {
     require(msg.sender == pairAdmin, 'FORBIDDEN');  // ← access control
     // ... 기존 정렬 & 검증 ...
@@ -530,7 +530,7 @@ function createPair(
     // ... CREATE2 ...
     
     // 원자적 초기화: tokens + Quote + Tax 동시 설정
-    IUniswapV2Pair(pair).initialize(token0, token1, qt, buyTaxBps, sellTaxBps, feeCollector);
+    IUniswapV2Pair(pair).initialize(token0, token1, qt, buyTaxBps, sellTaxBps, taxCollector);
     isPair[pair] = true;   // 무결성 매핑 등록
     // ... mapping storage ...
 }
@@ -684,9 +684,9 @@ function getAmountsIn(uint amountOut, address[] memory path) public view returns
 ## 12. 이벤트
 
 ```solidity
-event TaxConfigUpdated(uint16 buyTaxBps, uint16 sellTaxBps, address feeCollector);
-event QuoteFeesAccrued(uint256 quoteTaxIn, uint256 quoteTaxOut, uint256 accumulatedQuoteFees);
-event QuoteFeesClaimed(address indexed to, uint256 amount);
+event TaxConfigUpdated(uint16 buyTaxBps, uint16 sellTaxBps, address taxCollector);
+event QuoteTaxAccrued(uint256 quoteTaxIn, uint256 quoteTaxOut, uint256 accumulatedQuoteTax);
+event QuoteTaxClaimed(address indexed to, uint256 amount);
 ```
 
 ---
@@ -719,7 +719,7 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 | 22 | 🆕 SafeERC20 사용 | `_safeTransfer` (V2 원형 패턴) | 비표준 토큰(USDT 등) 호환 |
 | 23 | 🆕 최초 예치자 인플레이션 가드 | V2 `MINIMUM_LIQUIDITY` 1000 소각 | 초기 공급 시 LP 지분 조작 방지 |
 | 24 | 🆕 CEI 순서 안전성 | claim: vault=0(E) → transfer(I) → _update (상호작용 후 상태 동기화) | `lock` 하에서 안전, 외부 호출 전 vault 초기화 |
-| 25 | 🆕 claimQuoteFees 인센티브 설계 | feeCollector가 직접 호출(자산 회수) | 제3자 인센티브 불필요 |
+| 25 | 🆕 claimQuoteTax 인센티브 설계 | taxCollector가 직접 호출(자산 회수) | 제3자 인센티브 불필요 |
 | 26 | 🆕 ERC20 반환값 검사 | `_safeTransfer` 내부 `require(success)` | bool 미반환 토큰 처리 |
 | 27 | 🆕 Quote FOT 미지원 강제 | Router 가드가 Quote 정책 강제, FOT 변형은 항상 `FOT_NOT_SUPPORTED` | 세금 수학의 Net/Gross 불일치 방지 |
 | 28 | 🆕 라우팅에서 INIT_CODE_HASH 비의존 | `pairFor`가 `factory.getPair` 사용 | create2 해시 드리프트 위험 제거 |
@@ -811,15 +811,15 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 | `test_burn_vaultDrift_revert` | 🆕 `rawQuote < vault`면 burn이 VAULT_DRIFT revert |
 | `test_sync_vaultDrift_revert` | 🆕 `rawQuote < vault`면 sync가 VAULT_DRIFT revert |
 
-### Unit — claimQuoteFees
+### Unit — claimQuoteTax
 
 | 테스트 | 검증 |
 |------|------|
 | `test_claim_vaultReset_reserveSync` | claim 후 `vault=0`, reserve=raw, 수령 토큰 수량 일치 |
 | `test_claim_selfTransfer_revert` | 🆕 `to=address(this)` → INVALID_TO revert( vault donation 방지) |
 | `test_claim_zeroAddress_revert` | 🆕 `to=address(0)` → INVALID_TO revert |
-| `test_claim_noFees_revert` | 🆕 vault=0에서 claim → NO_FEES revert |
-| `test_claim_nonCollector_revert` | 🆕 feeCollector가 아닌 주소 → FORBIDDEN revert |
+| `test_claim_noTax_revert` | 🆕 vault=0에서 claim → NO_TAX revert |
+| `test_claim_nonCollector_revert` | 🆕 taxCollector가 아닌 주소 → FORBIDDEN revert |
 | `test_claim_reentrancy_blocked` | 🆕 lock modifier로 재진입 차단 |
 | `test_claim_vaultDrift_revert` | 🆕 `rawQuote < vault`면 claim이 VAULT_DRIFT revert |
 
@@ -853,7 +853,7 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 | `test_setFeeTo_pairAdmin_success` | 🆕 pairAdmin이 feeTo를 정상 갱신 가능 |
 | `test_constructor_zeroAddress_revert` | 🆕 생성자 `pairAdmin`이 0이면 ZERO_ADDRESS revert |
 | `test_initialize_reentryBlocked` | initialize 2회 호출 시 revert |
-| `test_initialize_zeroCollector` | feeCollector=0이면 revert |
+| `test_initialize_zeroCollector` | taxCollector=0이면 revert |
 | `test_initialize_invalidQuote` | 🆕 quoteToken이 token0/token1과 불일치 → INVALID_QUOTE revert |
 | `test_initialize_taxTooHigh_revert` | 🆕 initialize 시 buyTax/sellTax > MAX_TAX_BPS(2000) → TAX_TOO_HIGH revert |
 | `test_initialize_sellTax100pct_revert` | 🆕 initialize 시 sellTax = BPS(10000) → TAX_TOO_HIGH revert(최대세 가드 우선) |
@@ -898,7 +898,7 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 |------|------|
 | `test_safeTransfer_nonStandard` | 🆕 _safeTransfer가 bool 미반환 토큰(USDT 유사)에서 정상 동작 |
 | `test_firstDeposit_minimumLiquidity` | 🆕 최초 LP 공급 시 MINIMUM_LIQUIDITY(1000) 소각으로 인플레이션 공격 방지 |
-| `test_claim_CEI_order` | 🆕 claimQuoteFees가 전송 전에 vault=0 설정(CEI 패턴) |
+| `test_claim_CEI_order` | 🆕 claimQuoteTax가 전송 전에 vault=0 설정(CEI 패턴) |
 
 ### Fuzz
 
@@ -908,12 +908,12 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 - `getAmountsIn` 멀티홉 ceil 누적 오차 ≤ N wei (N = hop 수)
 - sell exact-in grossOut 라운드트립(floor→ceil) 오차 ≤ 1 wei
 - 🆕 임의 세금 변경 전반에서 vault 단조 증가 불변식 유지
-- 🆕 임의 claimQuoteFees 이후 `rawQuote = reserveQuote` (vault=0)
+- 🆕 임의 claimQuoteTax 이후 `rawQuote = reserveQuote` (vault=0)
 
 ### Invariant
 
 - `rawQuote = reserve + vault + dust`, `rawBase = reserve + dust`
-- `accumulatedQuoteFees`는 단조 증가(단 claim 제외), 오버플로우 없음
+- `accumulatedQuoteTax`는 단조 증가(단 claim 제외), 오버플로우 없음
 - claim은 `vault=0` 설정 후 reserve를 raw 잔고로 재동기화하며, quote dust가 reserve로 흡수될 수 있음 (`test_claim_vaultReset_reserveSync`, `test_sync_afterClaim`)
 - 🆕 `totalSupply > 0`이면 `reserve0 > 0 && reserve1 > 0` (유동성 일관성)
 - 🆕 모든 `isPair[pair] == true` 페어에 대해 `getPair[t0][t1] == pair` (Factory 매핑 일관성)
@@ -923,7 +923,7 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 | 불변식 | 검증 |
 |--------|------|
 | `invariant_raw_quote_eq_reserve_plus_vault_or_dust` | quote 측 회계가 `reserve+vault` 아래로 떨어지지 않음(dust 허용) |
-| `invariant_vault_monotonic_except_claim` | vault는 `claimQuoteFees`에서만 감소 |
+| `invariant_vault_monotonic_except_claim` | vault는 `claimQuoteTax`에서만 감소 |
 | `invariant_totalSupply_implies_positive_reserves` | LP 공급량이 양수면 양쪽 reserve도 양수 |
 | `invariant_factory_pair_mapping_consistency` | Factory pair 등록/매핑이 일관되게 유지됨 |
 | `invariant_router_quote_exec_error_le_1wei_executable_domain` | 실행 가능한 경로에서 Router quote와 실행 결과 차이가 `1 wei` 이내 |
@@ -944,7 +944,7 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 3. Quote 화이트리스트(`setQuoteToken`) 설정 (Base allowlist API 제거)
 4. **`createPair(tokenA, tokenB, buyTax, sellTax, collector)`** — 생성과 세금 설정을 동시에 수행
 5. 모니터링 후 필요 시 `setTaxConfig`로 세율/collector 즉시 변경
-6. 주기적으로 `claimQuoteFees` 실행
+6. 주기적으로 `claimQuoteTax` 실행
 
 ---
 

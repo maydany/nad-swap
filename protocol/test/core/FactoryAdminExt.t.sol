@@ -124,7 +124,7 @@ contract FactoryAdminExtTest is PairFixture {
             p.swap(baseOut, 0, TRADER, new bytes(0));
         }
 
-        assertGt(p.accumulatedQuoteFees(), 0, "first swap was tax-free");
+        assertGt(p.accumulatedQuoteTax(), 0, "first swap was tax-free");
     }
 
     function test_pairAdmin_immutable() public {
@@ -149,13 +149,13 @@ contract FactoryAdminExtTest is PairFixture {
         factory.setTaxConfig(address(pair), 100, 200, address(0xabc));
         assertEq(uint256(pair.buyTaxBps()), 100, "buy tax not updated #1");
         assertEq(uint256(pair.sellTaxBps()), 200, "sell tax not updated #1");
-        assertEq(pair.feeCollector(), address(0xabc), "collector not updated #1");
+        assertEq(pair.taxCollector(), address(0xabc), "collector not updated #1");
 
         vm.prank(PAIR_ADMIN);
         factory.setTaxConfig(address(pair), 300, 400, address(0xdef));
         assertEq(uint256(pair.buyTaxBps()), 300, "buy tax not updated #2");
         assertEq(uint256(pair.sellTaxBps()), 400, "sell tax not updated #2");
-        assertEq(pair.feeCollector(), address(0xdef), "collector not updated #2");
+        assertEq(pair.taxCollector(), address(0xdef), "collector not updated #2");
     }
 
     function test_setTaxConfig_nonFactory_revert() public {

@@ -16,9 +16,9 @@ contract IUniswapV2Pair is IUniswapV2ERC20 {
     );
     event Sync(uint112 reserve0, uint112 reserve1);
 
-    event TaxConfigUpdated(uint16 buyTaxBps, uint16 sellTaxBps, address feeCollector);
-    event QuoteFeesAccrued(uint256 quoteTaxIn, uint256 quoteTaxOut, uint256 accumulatedQuoteFees);
-    event QuoteFeesClaimed(address indexed to, uint256 amount);
+    event TaxConfigUpdated(uint16 buyTaxBps, uint16 sellTaxBps, address taxCollector);
+    event QuoteTaxAccrued(uint256 quoteTaxIn, uint256 quoteTaxOut, uint256 accumulatedQuoteTax);
+    event QuoteTaxClaimed(address indexed to, uint256 amount);
 
     function MINIMUM_LIQUIDITY() external pure returns (uint256);
 
@@ -34,9 +34,9 @@ contract IUniswapV2Pair is IUniswapV2ERC20 {
 
     function sellTaxBps() external view returns (uint16);
 
-    function feeCollector() external view returns (address);
+    function taxCollector() external view returns (address);
 
-    function accumulatedQuoteFees() external view returns (uint96);
+    function accumulatedQuoteTax() external view returns (uint96);
 
     function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
 
@@ -52,12 +52,12 @@ contract IUniswapV2Pair is IUniswapV2ERC20 {
         address _quoteToken,
         uint16 _buyTaxBps,
         uint16 _sellTaxBps,
-        address _feeCollector
+        address _taxCollector
     ) external;
 
-    function setTaxConfig(uint16 _buyTaxBps, uint16 _sellTaxBps, address _feeCollector) external;
+    function setTaxConfig(uint16 _buyTaxBps, uint16 _sellTaxBps, address _taxCollector) external;
 
-    function claimQuoteFees(address to) external;
+    function claimQuoteTax(address to) external;
 
     function mint(address to) external returns (uint256 liquidity);
 

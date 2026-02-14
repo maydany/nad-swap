@@ -25,37 +25,37 @@ contract ForkCoreClaimTest is ForkFixture {
         _accrueVault();
         vm.prank(TRADER);
         expectRevertMsg("FORBIDDEN");
-        pair.claimQuoteFees(address(0x999));
+        pair.claimQuoteTax(address(0x999));
     }
 
     function testFork_claim_zeroAddress_revert() public onlyFork {
         _accrueVault();
         vm.prank(COLLECTOR);
         expectRevertMsg("INVALID_TO");
-        pair.claimQuoteFees(address(0));
+        pair.claimQuoteTax(address(0));
     }
 
     function testFork_claim_self_revert() public onlyFork {
         _accrueVault();
         vm.prank(COLLECTOR);
         expectRevertMsg("INVALID_TO");
-        pair.claimQuoteFees(address(pair));
+        pair.claimQuoteTax(address(pair));
     }
 
-    function testFork_claim_noFees_revert() public onlyFork {
+    function testFork_claim_noTax_revert() public onlyFork {
         vm.prank(COLLECTOR);
-        expectRevertMsg("NO_FEES");
-        pair.claimQuoteFees(address(0x999));
+        expectRevertMsg("NO_TAX");
+        pair.claimQuoteTax(address(0x999));
     }
 
     function testFork_claim_success_vaultReset_and_transfer() public onlyFork {
         _accrueVault();
-        uint256 fees = pair.accumulatedQuoteFees();
+        uint256 taxAmount = pair.accumulatedQuoteTax();
         uint256 b0 = _quoteBalance(address(0x999));
         vm.prank(COLLECTOR);
-        pair.claimQuoteFees(address(0x999));
-        assertEq(pair.accumulatedQuoteFees(), 0, "vault not reset");
-        assertEq(_quoteBalance(address(0x999)) - b0, fees, "claim transfer mismatch");
+        pair.claimQuoteTax(address(0x999));
+        assertEq(pair.accumulatedQuoteTax(), 0, "vault not reset");
+        assertEq(_quoteBalance(address(0x999)) - b0, taxAmount, "claim transfer mismatch");
     }
 
     function testFork_claim_reentrancy_blocked() public onlyFork {
@@ -93,6 +93,6 @@ contract ForkCoreClaimTest is ForkFixture {
         _setVault(uint96(rawQuote + 1));
         vm.prank(COLLECTOR);
         expectRevertMsg("VAULT_DRIFT");
-        pair.claimQuoteFees(address(0x999));
+        pair.claimQuoteTax(address(0x999));
     }
 }

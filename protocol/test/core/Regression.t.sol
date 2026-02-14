@@ -96,7 +96,7 @@ contract RegressionTest is TestBase {
             pair.swap(expectedOut, 0, TRADER, new bytes(0));
         }
 
-        assertEq(pair.accumulatedQuoteFees(), 0, "vault should remain zero");
+        assertEq(pair.accumulatedQuoteTax(), 0, "vault should remain zero");
     }
 
     function test_regression_taxZero_routerQuoteMatchesExecution_buyAndSell() public {
@@ -129,7 +129,7 @@ contract RegressionTest is TestBase {
 
     function test_regression_taxZero_feeToOff_mintBurnParity() public {
         assertEq(factory.feeTo(), address(0), "feeTo should be disabled");
-        assertEq(pair.accumulatedQuoteFees(), 0, "vault should be zero when tax=0");
+        assertEq(pair.accumulatedQuoteTax(), 0, "vault should be zero when tax=0");
 
         (uint256 rq, uint256 rb) = _reservesQuoteBase();
         uint256 totalSupplyBefore = pair.totalSupply();

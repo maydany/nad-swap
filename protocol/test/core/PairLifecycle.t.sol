@@ -15,9 +15,9 @@ contract PairLifecycleTest is PairFixture {
         uint256 rawIn = 1000 ether;
         uint256 effIn = rawIn - (rawIn * pair.buyTaxBps() / BPS);
         uint256 baseOut = _getAmountOut(effIn, rq, rb);
-        uint256 beforeVault = pair.accumulatedQuoteFees();
+        uint256 beforeVault = pair.accumulatedQuoteTax();
         _buy(rawIn, baseOut, TRADER);
-        vaultDelta = pair.accumulatedQuoteFees() - beforeVault;
+        vaultDelta = pair.accumulatedQuoteTax() - beforeVault;
     }
 
     function test_mint_excludesVault() public {
@@ -64,7 +64,7 @@ contract PairLifecycleTest is PairFixture {
 
     function test_mint_afterSwap_vaultIntact() public {
         _accrueVault();
-        uint256 beforeVault = pair.accumulatedQuoteFees();
+        uint256 beforeVault = pair.accumulatedQuoteTax();
 
         _mintToken(quoteTokenAddr, LP2, 1000 ether);
         _mintToken(baseTokenAddr, LP2, 1000 ether);
@@ -75,12 +75,12 @@ contract PairLifecycleTest is PairFixture {
         vm.prank(LP2);
         pair.mint(LP2);
 
-        assertEq(pair.accumulatedQuoteFees(), beforeVault, "vault changed on mint");
+        assertEq(pair.accumulatedQuoteTax(), beforeVault, "vault changed on mint");
     }
 
     function test_burn_afterSwap_vaultIntact() public {
         _accrueVault();
-        uint256 beforeVault = pair.accumulatedQuoteFees();
+        uint256 beforeVault = pair.accumulatedQuoteTax();
 
         uint256 burnLiquidity = pair.balanceOf(LP) / 20;
         vm.prank(LP);
@@ -88,7 +88,7 @@ contract PairLifecycleTest is PairFixture {
         vm.prank(LP);
         pair.burn(LP);
 
-        assertEq(pair.accumulatedQuoteFees(), beforeVault, "vault changed on burn");
+        assertEq(pair.accumulatedQuoteTax(), beforeVault, "vault changed on burn");
     }
 
     function test_mint_vaultDrift_revert() public {
@@ -137,18 +137,18 @@ contract PairLifecycleTest is PairFixture {
 
         (uint256 reserveQuote,) = _reservesQuoteBase();
         (uint256 rawQuote,) = _rawQuoteBase();
-        assertEq(reserveQuote, rawQuote - pair.accumulatedQuoteFees(), "sync did not store effective reserve");
+        assertEq(reserveQuote, rawQuote - pair.accumulatedQuoteTax(), "sync did not store effective reserve");
     }
 
     function test_sync_afterClaim() public {
         _accrueVault();
         vm.prank(COLLECTOR);
-        pair.claimQuoteFees(FEE_RECIPIENT);
+        pair.claimQuoteTax(FEE_RECIPIENT);
         pair.sync();
 
         (uint256 reserveQuote,) = _reservesQuoteBase();
         (uint256 rawQuote,) = _rawQuoteBase();
-        assertEq(pair.accumulatedQuoteFees(), 0, "vault not zero after claim");
+        assertEq(pair.accumulatedQuoteTax(), 0, "vault not zero after claim");
         assertEq(reserveQuote, rawQuote, "sync after claim mismatch");
     }
 

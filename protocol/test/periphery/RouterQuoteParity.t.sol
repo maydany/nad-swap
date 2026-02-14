@@ -86,9 +86,9 @@ contract RouterQuoteParityTest is PairFixture {
         uint256[] memory quoted = router.getAmountsOut(amountIn, p);
         uint256 expectedTax = amountIn * pair.buyTaxBps() / BPS;
 
-        uint256 vaultBefore = pair.accumulatedQuoteFees();
+        uint256 vaultBefore = pair.accumulatedQuoteTax();
         _buy(amountIn, quoted[1], TRADER);
-        uint256 vaultAfter = pair.accumulatedQuoteFees();
+        uint256 vaultAfter = pair.accumulatedQuoteTax();
         assertEq(vaultAfter - vaultBefore, expectedTax, "library buy-tax mismatch");
     }
 

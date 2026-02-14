@@ -80,7 +80,7 @@ def library_getAmountsIn_buy(baseOut: int, buyTax: int, rQuote: int, rBase: int)
 class PairState:
     rQuote: int        # effective reserve quote
     rBase: int         # effective reserve base
-    vault: int         # accumulatedQuoteFees
+    vault: int         # accumulatedQuoteTax
     buyTax: int
     sellTax: int
     isQuote0: bool     # True if token0=Quote

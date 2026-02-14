@@ -63,11 +63,11 @@ Uniswap V2를 포크하여 **Pair `swap()` 수학 내부에 buy/sell 거래세�
 
 **코어 강제 (Core Enforcement):** 세금 로직을 Router가 아닌 Pair `swap()` 수학 내부에 배치합니다. 대안으로 Router에서 세금을 부과하는 방식(V2 FOT 패턴)이 있지만, 이는 Router를 우회하는 직접 호출을 막을 수 없습니다. 코어 내장 방식은 Pair 코드의 복잡성이 증가하는 트레이드오프가 있지만, 우회 불가능이라는 보안 보장을 얻습니다.
 
-**Tax Vault:** 매 스왑에서 세금을 즉시 ERC20 전송하지 않고, `accumulatedQuoteFees` 상태 변수에 장부 적립합니다. 이로써 스왑당 ~21,000 gas를 절감합니다. 트레이드오프는 `feeCollector`가 별도로 `claimQuoteFees()`를 호출해야 세금을 수령할 수 있다는 점이며, claim 시점의 quote dust가 LP reserve에 흡수될 수 있습니다.
+**Tax Vault:** 매 스왑에서 세금을 즉시 ERC20 전송하지 않고, `accumulatedQuoteTax` 상태 변수에 장부 적립합니다. 이로써 스왑당 ~21,000 gas를 절감합니다. 트레이드오프는 `taxCollector`가 별도로 `claimQuoteTax()`를 호출해야 세금을 수령할 수 있다는 점이며, claim 시점의 quote dust가 LP reserve에 흡수될 수 있습니다.
 
 **역산 수학 (Reverse Math):** sell 방향에서 사용자가 수령할 Net 금액을 기준으로, Pair 내부에서 세금 포함 Gross 금액을 ceil 역산합니다. 이를 통해 Router의 quote와 실제 실행 결과가 정확히 일치합니다. 트레이드오프로 Library에서 floor로 계산한 `grossOut`과 Pair에서 ceil로 역산한 `grossOut` 사이에 최대 1 wei 차이가 발생할 수 있으며, Router는 이를 `grossOut - 1` 안전 마진으로 처리합니다.
 
-**Effective Reserve 원칙:** Reserve에는 tax vault를 포함하지 않은 `effective = raw - taxVault`만 저장합니다. tax vault 적립금은 LP가 아닌 feeCollector의 자산이므로, TWAP·feeTo·LP 정산을 LP 실제 자산 기준으로 일관되게 유지합니다. 모든 경로(`swap`/`mint`/`burn`/`skim`/`sync`)가 이 원칙을 따릅니다.
+**Effective Reserve 원칙:** Reserve에는 tax vault를 포함하지 않은 `effective = raw - taxVault`만 저장합니다. tax vault 적립금은 LP가 아닌 taxCollector의 자산이므로, TWAP·feeTo·LP 정산을 LP 실제 자산 기준으로 일관되게 유지합니다. 모든 경로(`swap`/`mint`/`burn`/`skim`/`sync`)가 이 원칙을 따릅니다.
 
 > 상세 구현 명세: [docs/NADSWAP_V2_IMPL_SPEC_KR.md](docs/NADSWAP_V2_IMPL_SPEC_KR.md)
 
@@ -90,18 +90,20 @@ ABI 변경 상세: [NADSWAP_V2_ABI_DIFF.md](docs/abi/NADSWAP_V2_ABI_DIFF.md)
 | 역할/개념 | 소속 | 설명 |
 |-----------|------|------|
 | `pairAdmin` | Factory | 유일한 관리자. pair 생성, 세율 변경, Quote 화이트리스트, `feeTo` 설정 권한. 배포 시 고정, 이후 변경 불가 |
-| `feeCollector` | Pair | 누적된 세금을 수령하는 주소. pair별 설정, `pairAdmin`이 변경 가능 |
+| `taxCollector` | Pair | 누적된 세금을 수령하는 주소. pair별 설정, `pairAdmin`이 변경 가능 |
 | Quote 토큰 | Pair | pair당 정확히 1개. 세금이 이 토큰으로만 누적됨 (예: WETH, USDT) |
 | Base 토큰 | Pair | Quote의 상대 토큰. 별도 allowlist 강제 없음 |
-| Tax Vault | Pair | `accumulatedQuoteFees` — 누적 세금 잔고. ERC20 전송 없이 장부 적립 |
+| Tax Vault | Pair | `accumulatedQuoteTax` — 누적 세금 잔고. ERC20 전송 없이 장부 적립 |
 
 **권한 구조:**
 - `pairAdmin` → `createPair()`, `setTaxConfig()`, `setQuoteToken()`, `setFeeTo()` 호출 가능
-- `feeCollector` → `claimQuoteFees()` 호출 가능
+- `taxCollector` → `claimQuoteTax()` 호출 가능
 
 **V2의 `feeToSetter`와의 차이:** V2에서는 `feeToSetter`가 `feeTo` 주소만 관리합니다. NadSwap에서는 `feeToSetter` 역할을 제거하고, 모든 관리 권한을 `pairAdmin` 하나로 통합했습니다. pair 생성·세율·Quote 화이트리스트·`feeTo` 설정을 단일 관리자가 담당하여 권한 모델을 단순화합니다.
 
-> **용어 정리 — tax vs fee:** 이 문서에서는 거래세를 **tax**로 통일합니다. 코드 변수명(`accumulatedQuoteFees`, `feeCollector`, `claimQuoteFees`)에 "fee"가 사용되지만, 이는 LP 수수료(0.2%)와 구분되는 **거래세(tax)**를 의미합니다. LP 수수료는 K-invariant 수학에 내장되어 있고, tax는 tax vault에 별도 적립됩니다.
+> **용어 정리 — tax vs fee:** 이 문서에서는 거래세를 **tax**로 통일합니다. tax 관련 코드 식별자는 `accumulatedQuoteTax`, `taxCollector`, `claimQuoteTax`로 명확히 분리합니다. LP 수수료는 K-invariant 수학에 내장되어 있고, tax는 tax vault에 별도 적립됩니다.
+>
+> **프리릴리즈 ABI 변경 공지:** 초기버전 정리 과정에서 tax 관련 selector를 하드브레이크로 변경했습니다. 구 selector(`feeCollector()`, `accumulatedQuoteFees()`, `claimQuoteFees(address)`)는 더 이상 지원하지 않습니다.
 
 ---
 
@@ -115,7 +117,7 @@ NadSwap: rawBalance == reserve + taxVault(누적 세금)   (+ skim-able dust)
          effective  == rawBalance - taxVault
 ```
 
-V2에서는 Pair 계약에 있는 토큰 잔고(`rawBalance`)가 곧 LP의 reserve입니다. NadSwap에서는 세금이 ERC20으로 전송되지 않고 Pair 내부에 장부로 남아 있으므로, `rawBalance`에는 LP의 자산(reserve)과 feeCollector의 자산(tax vault)이 함께 들어 있습니다.
+V2에서는 Pair 계약에 있는 토큰 잔고(`rawBalance`)가 곧 LP의 reserve입니다. NadSwap에서는 세금이 ERC20으로 전송되지 않고 Pair 내부에 장부로 남아 있으므로, `rawBalance`에는 LP의 자산(reserve)과 taxCollector의 자산(tax vault)이 함께 들어 있습니다.
 
 **Effective Balance** = `rawBalance - taxVault`로, LP가 실제로 소유한 자산만을 의미합니다. NadSwap의 모든 경로는 이 값을 기준으로 동작합니다:
 
@@ -139,7 +141,7 @@ V2에서는 Pair 계약에 있는 토큰 잔고(`rawBalance`)가 곧 LP의 reser
 +function createPair(
 +    address tokenA, address tokenB,
 +    uint16 buyTaxBps, uint16 sellTaxBps,
-+    address feeCollector
++    address taxCollector
 +) external returns (address pair);
 +// require(msg.sender == pairAdmin)
 ```
@@ -147,7 +149,7 @@ V2에서는 Pair 계약에 있는 토큰 잔고(`rawBalance`)가 곧 LP의 reser
 | 항목 | V2 | NadSwap |
 |------|-----|---------|
 | 호출자 | 누구나 | `pairAdmin` only |
-| 인자 | 2개 (tokenA, tokenB) | 5개 (+buyTax, sellTax, feeCollector) |
+| 인자 | 2개 (tokenA, tokenB) | 5개 (+buyTax, sellTax, taxCollector) |
 | 시그니처 | `createPair(address,address)` | `createPair(address,address,uint16,uint16,address)` |
 
 Pair 생성과 세금 설정을 **원자적으로 초기화**해야 무세금 거래 구간(tax=0 윈도우)과 pair 선점 공격을 방지할 수 있습니다. `pairAdmin` 접근 제어는 무허가 pair 생성으로 인한 front-running을 차단합니다.
@@ -204,8 +206,8 @@ uint16  public sellTaxBps;             // sell 세율 (bps, 최대 2000, < 10000
 bool    private initialized;           // 1회 초기화 플래그
 
 // ── Slot K+1 (256 bits perfect packing) ──
-address public feeCollector;           // 세금 수령자
-uint96  public accumulatedQuoteFees;   // Virtual Vault (장부 누적 세금)
+address public taxCollector;           // 세금 수령자
+uint96  public accumulatedQuoteTax;   // Virtual Vault (장부 누적 세금)
 ```
 
 #### 2-2. `initialize` 시그니처 확장
@@ -218,7 +220,7 @@ uint96  public accumulatedQuoteFees;   // Virtual Vault (장부 누적 세금)
 +    address _token0, address _token1,
 +    address _quoteToken,
 +    uint16 _buyTaxBps, uint16 _sellTaxBps,
-+    address _feeCollector
++    address _taxCollector
 +) external
 ```
 
@@ -253,7 +255,7 @@ NadSwap은 이를 **12단계**로 확장하여 세금 계산을 수학 내부에
 | 듀얼 출력 | 허용 (amount0Out > 0 && amount1Out > 0) | **거부** (`SINGLE_SIDE_ONLY`) |
 | K 상수 | `997/1000` (0.3% fee) | `998/1000` (0.2% fee) |
 | Swap 이벤트 입력 | raw amountIn | effective amountIn (newVault 반영) |
-| Tax Vault 누적 | N/A | `accumulatedQuoteFees += taxIn + taxOut` |
+| Tax Vault 누적 | N/A | `accumulatedQuoteTax += taxIn + taxOut` |
 
 **듀얼 출력 거부 — 트레이드오프 상세:**
 
@@ -295,16 +297,16 @@ V2에서는 raw balance를 직접 사용하지만, NadSwap에서는 **모든 경
 | `skim` | `excess = balance - reserve` | `expected = reserve + taxVault`, `excess = raw > expected ? raw - expected : 0` |
 | `sync` | `_update(balance0, balance1)` | `_update(effBalance0, effBalance1)` |
 
-Tax vault 적립금은 LP가 아닌 feeCollector의 자산입니다. Reserve에 tax vault를 혼재시키면 LP 정산, TWAP, feeTo 모두 왜곡됩니다.
+Tax vault 적립금은 LP가 아닌 taxCollector의 자산입니다. Reserve에 tax vault를 혼재시키면 LP 정산, TWAP, feeTo 모두 왜곡됩니다.
 
-#### 2-6. `claimQuoteFees` — 새로 추가
+#### 2-6. `claimQuoteTax` — 새로 추가
 
 ```solidity
-function claimQuoteFees(address to) external lock;
-// require(msg.sender == feeCollector)
+function claimQuoteTax(address to) external lock;
+// require(msg.sender == taxCollector)
 ```
 
-`feeCollector`가 누적된 quote 세금을 수령합니다. Claim 후 tax vault=0이 되고, reserve가 raw 잔고 기준으로 재동기화됩니다.
+`taxCollector`가 누적된 quote 세금을 수령합니다. Claim 후 tax vault=0이 되고, reserve가 raw 잔고 기준으로 재동기화됩니다.
 
 > **참고**: claim 시점의 quote 측 dust(직접 전송 등으로 발생한 미량)가 LP reserve에 흡수될 수 있습니다. 이는 의도된 동작입니다.
 
@@ -320,9 +322,9 @@ function setTaxConfig(uint16 _buyTaxBps, uint16 _sellTaxBps, address _collector)
 #### 2-8. 추가된 이벤트
 
 ```solidity
-event TaxConfigUpdated(uint16 buyTaxBps, uint16 sellTaxBps, address feeCollector);
-event QuoteFeesAccrued(uint256 quoteTaxIn, uint256 quoteTaxOut, uint256 accumulatedQuoteFees);
-event QuoteFeesClaimed(address indexed to, uint256 amount);
+event TaxConfigUpdated(uint16 buyTaxBps, uint16 sellTaxBps, address taxCollector);
+event QuoteTaxAccrued(uint256 quoteTaxIn, uint256 quoteTaxOut, uint256 accumulatedQuoteTax);
+event QuoteTaxClaimed(address indexed to, uint256 amount);
 ```
 
 V2의 `Swap` 이벤트 시그니처는 동일하지만, **입력값의 의미가 다릅니다**: NadSwap은 newVault 반영 후의 effective input을 emit합니다. 인덱서는 이를 고려해야 합니다.

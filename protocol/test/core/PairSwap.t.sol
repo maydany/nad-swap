@@ -109,9 +109,9 @@ contract PairSwapTest is TestBase {
         uint256 effIn = rawQuoteIn - expectedTax;
         uint256 baseOut = _getAmountOut(effIn, rq, rb);
 
-        uint256 beforeVault = uint256(pair.accumulatedQuoteFees());
+        uint256 beforeVault = uint256(pair.accumulatedQuoteTax());
         _buy(rawQuoteIn, baseOut, TRADER);
-        uint256 afterVault = uint256(pair.accumulatedQuoteFees());
+        uint256 afterVault = uint256(pair.accumulatedQuoteTax());
 
         assertEq(afterVault - beforeVault, expectedTax, "buy taxIn mismatch");
     }
@@ -123,9 +123,9 @@ contract PairSwapTest is TestBase {
         uint256 expectedTaxOut = grossQuoteOut - netQuoteOut;
         uint256 baseIn = _getAmountIn(grossQuoteOut, rb, rq);
 
-        uint256 beforeVault = uint256(pair.accumulatedQuoteFees());
+        uint256 beforeVault = uint256(pair.accumulatedQuoteTax());
         _sell(baseIn, netQuoteOut, TRADER);
-        uint256 afterVault = uint256(pair.accumulatedQuoteFees());
+        uint256 afterVault = uint256(pair.accumulatedQuoteTax());
 
         assertEq(afterVault - beforeVault, expectedTaxOut, "sell taxOut mismatch");
     }
@@ -158,13 +158,13 @@ contract PairSwapTest is TestBase {
     function test_claim_nonCollector_revert() public {
         vm.prank(TRADER);
         expectRevertMsg("FORBIDDEN");
-        pair.claimQuoteFees(FEE_RECIPIENT);
+        pair.claimQuoteTax(FEE_RECIPIENT);
     }
 
-    function test_claim_noFees_revert() public {
+    function test_claim_noTax_revert() public {
         vm.prank(COLLECTOR);
-        expectRevertMsg("NO_FEES");
-        pair.claimQuoteFees(FEE_RECIPIENT);
+        expectRevertMsg("NO_TAX");
+        pair.claimQuoteTax(FEE_RECIPIENT);
     }
 
     function test_claim_zeroAddress_revert() public {
@@ -175,7 +175,7 @@ contract PairSwapTest is TestBase {
 
         vm.prank(COLLECTOR);
         expectRevertMsg("INVALID_TO");
-        pair.claimQuoteFees(address(0));
+        pair.claimQuoteTax(address(0));
     }
 
     function test_claim_vaultReset_reserveSync() public {
@@ -184,17 +184,17 @@ contract PairSwapTest is TestBase {
         uint256 baseOut = _getAmountOut(rawQuoteIn - (rawQuoteIn * 300 / BPS), rq, rb);
         _buy(rawQuoteIn, baseOut, TRADER);
 
-        uint256 fees = pair.accumulatedQuoteFees();
-        assertGt(fees, 0, "fees not accrued");
+        uint256 taxAmount = pair.accumulatedQuoteTax();
+        assertGt(taxAmount, 0, "tax not accrued");
 
         uint256 beforeBal = quote.balanceOf(FEE_RECIPIENT);
         vm.prank(COLLECTOR);
-        pair.claimQuoteFees(FEE_RECIPIENT);
+        pair.claimQuoteTax(FEE_RECIPIENT);
 
         (uint256 reserveQuote, uint256 reserveBase) = _reservesQuoteBase();
         (uint256 rawQuote, uint256 rawBase) = _rawQuoteBase();
-        assertEq(pair.accumulatedQuoteFees(), 0, "vault not reset");
-        assertEq(quote.balanceOf(FEE_RECIPIENT) - beforeBal, fees, "fee transfer mismatch");
+        assertEq(pair.accumulatedQuoteTax(), 0, "vault not reset");
+        assertEq(quote.balanceOf(FEE_RECIPIENT) - beforeBal, taxAmount, "tax transfer mismatch");
         assertEq(reserveQuote, rawQuote, "quote reserve not synced to raw");
         assertEq(reserveBase, rawBase, "base reserve not synced to raw");
     }

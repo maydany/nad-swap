@@ -21,14 +21,14 @@ requirements:
     section: "6. Step 8-a"
     statement: "swap requires non-zero effective input and reverts INSUFFICIENT_INPUT otherwise."
   - id: PAIR-008
-    section: "8. claimQuoteFees"
-    statement: "claimQuoteFees is collector-only and rejects invalid recipients."
+    section: "8. claimQuoteTax"
+    statement: "claimQuoteTax is collector-only and rejects invalid recipients."
   - id: PAIR-009
-    section: "8. claimQuoteFees"
-    statement: "claimQuoteFees resets vault and transfers claimed quote fees."
+    section: "8. claimQuoteTax"
+    statement: "claimQuoteTax resets vault and transfers claimed quote fees."
   - id: PAIR-010
-    section: "8. claimQuoteFees"
-    statement: "claimQuoteFees re-syncs reserves to raw balances after vault reset; quote-side dust may be absorbed into reserves."
+    section: "8. claimQuoteTax"
+    statement: "claimQuoteTax re-syncs reserves to raw balances after vault reset; quote-side dust may be absorbed into reserves."
   - id: FACT-001
     section: "10. Factory"
     statement: "createPair is pairAdmin-only."
@@ -79,7 +79,7 @@ requirements:
     statement: "buy tax floor rounding stays aligned with pair accrual across fuzzed inputs."
   - id: INV-001
     section: "16. Invariant"
-    statement: "rawQuote equals reserveQuote + accumulatedQuoteFees (+dust) after sync."
+    statement: "rawQuote equals reserveQuote + accumulatedQuoteTax (+dust) after sync."
   - id: SEC-001
     section: "4. Storage layout gate"
     statement: "V2 original fields keep slot/offset/type parity; NadSwap fields append-only."

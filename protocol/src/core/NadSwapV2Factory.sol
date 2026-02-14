@@ -34,7 +34,7 @@ contract UniswapV2Factory is IUniswapV2Factory {
         address tokenB,
         uint16 buyTaxBps,
         uint16 sellTaxBps,
-        address feeCollector
+        address taxCollector
     ) external returns (address pair) {
         require(msg.sender == pairAdmin, "FORBIDDEN");
         require(tokenA != tokenB, "UniswapV2: IDENTICAL_ADDRESSES");
@@ -64,16 +64,16 @@ contract UniswapV2Factory is IUniswapV2Factory {
         allPairs.push(pair);
         isPair[pair] = true;
 
-        IUniswapV2Pair(pair).initialize(token0, token1, qt, buyTaxBps, sellTaxBps, feeCollector);
+        IUniswapV2Pair(pair).initialize(token0, token1, qt, buyTaxBps, sellTaxBps, taxCollector);
         emit PairCreated(token0, token1, pair, allPairs.length);
     }
 
-    function setTaxConfig(address pair, uint16 buyTaxBps, uint16 sellTaxBps, address feeCollector)
+    function setTaxConfig(address pair, uint16 buyTaxBps, uint16 sellTaxBps, address taxCollector)
         external
         onlyValidPair(pair)
     {
         require(msg.sender == pairAdmin, "FORBIDDEN");
-        IUniswapV2Pair(pair).setTaxConfig(buyTaxBps, sellTaxBps, feeCollector);
+        IUniswapV2Pair(pair).setTaxConfig(buyTaxBps, sellTaxBps, taxCollector);
     }
 
     function setQuoteToken(address token, bool enabled) external {

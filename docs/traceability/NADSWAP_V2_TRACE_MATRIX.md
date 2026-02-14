@@ -82,7 +82,7 @@
 | `test_claim_vaultReset_reserveSync` | `protocol/test/core/PairSwap.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_vaultReset_reserveSync` | Implemented |
 | `test_claim_selfTransfer_revert` | `protocol/test/core/ClaimFeesAdvanced.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_selfTransfer_revert` | Implemented |
 | `test_claim_zeroAddress_revert` | `protocol/test/core/PairSwap.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_zeroAddress_revert` | Implemented |
-| `test_claim_noFees_revert` | `protocol/test/core/PairSwap.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_noFees_revert` | Implemented |
+| `test_claim_noTax_revert` | `protocol/test/core/PairSwap.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_noTax_revert` | Implemented |
 | `test_claim_nonCollector_revert` | `protocol/test/core/PairSwap.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_nonCollector_revert` | Implemented |
 | `test_claim_reentrancy_blocked` | `protocol/test/core/ClaimFeesAdvanced.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_reentrancy_blocked` | Implemented |
 | `test_claim_vaultDrift_revert` | `protocol/test/core/ClaimFeesAdvanced.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_vaultDrift_revert` | Implemented |

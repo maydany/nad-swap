@@ -5,7 +5,7 @@
 ### Breaking changes
 - `createPair(address,address)` removed.
 - New signature:
-  - `createPair(address tokenA, address tokenB, uint16 buyTaxBps, uint16 sellTaxBps, address feeCollector)`
+  - `createPair(address tokenA, address tokenB, uint16 buyTaxBps, uint16 sellTaxBps, address taxCollector)`
 - Access control: `createPair` is `pairAdmin`-only.
 - Constructor changed:
   - `constructor(address pairAdmin)`
@@ -26,7 +26,7 @@
 - `isQuoteToken(address) -> bool`
 - `isPair(address) -> bool`
 - `setQuoteToken(address,bool)`
-- `setTaxConfig(address pair,uint16 buyTaxBps,uint16 sellTaxBps,address feeCollector)`
+- `setTaxConfig(address pair,uint16 buyTaxBps,uint16 sellTaxBps,address taxCollector)`
 
 ## Pair
 
@@ -34,13 +34,13 @@
 - `quoteToken() -> address`
 - `buyTaxBps() -> uint16`
 - `sellTaxBps() -> uint16`
-- `feeCollector() -> address`
-- `accumulatedQuoteFees() -> uint96`
+- `taxCollector() -> address`
+- `accumulatedQuoteTax() -> uint96`
 
 ### Added methods
-- `initialize(address token0,address token1,address quoteToken,uint16 buyTaxBps,uint16 sellTaxBps,address feeCollector)`
-- `setTaxConfig(uint16 buyTaxBps,uint16 sellTaxBps,address feeCollector)`
-- `claimQuoteFees(address to)`
+- `initialize(address token0,address token1,address quoteToken,uint16 buyTaxBps,uint16 sellTaxBps,address taxCollector)`
+- `setTaxConfig(uint16 buyTaxBps,uint16 sellTaxBps,address taxCollector)`
+- `claimQuoteTax(address to)`
 
 ### Behavior differences
 - `swap` enforces single-sided output (`SINGLE_SIDE_ONLY`).
@@ -48,8 +48,8 @@
 
 ### Added events
 - `TaxConfigUpdated(uint16,uint16,address)`
-- `QuoteFeesAccrued(uint256,uint256,uint256)`
-- `QuoteFeesClaimed(address,uint256)`
+- `QuoteTaxAccrued(uint256,uint256,uint256)`
+- `QuoteTaxClaimed(address,uint256)`
 
 ## Router
 

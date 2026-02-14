@@ -67,7 +67,7 @@ contract StatefulPairInvariantTest is TestBase {
         (uint112 r0, uint112 r1,) = pair.getReserves();
         uint256 reserveQuote = _isQuote0() ? uint256(r0) : uint256(r1);
         uint256 rawQuote = IERC20(address(quote)).balanceOf(address(pair));
-        uint256 vault = pair.accumulatedQuoteFees();
+        uint256 vault = pair.accumulatedQuoteTax();
 
         assertGe(rawQuote, reserveQuote + vault, "raw quote fell below reserve+vault");
     }

@@ -16,7 +16,7 @@ contract PairHandler is TestBase {
     address public quoteToken;
     address public baseToken;
     address public lp;
-    address public feeCollector;
+    address public taxCollector;
     address public pairAdmin;
 
     uint256 public actionCount;
@@ -33,7 +33,7 @@ contract PairHandler is TestBase {
         address _quoteToken,
         address _baseToken,
         address _lp,
-        address _feeCollector,
+        address _taxCollector,
         address _pairAdmin
     ) public {
         factory = UniswapV2Factory(_factory);
@@ -42,9 +42,9 @@ contract PairHandler is TestBase {
         quoteToken = _quoteToken;
         baseToken = _baseToken;
         lp = _lp;
-        feeCollector = _feeCollector;
+        taxCollector = _taxCollector;
         pairAdmin = _pairAdmin;
-        lastVault = pair.accumulatedQuoteFees();
+        lastVault = pair.accumulatedQuoteTax();
     }
 
     function buy(uint256 seed) external {
@@ -169,16 +169,16 @@ contract PairHandler is TestBase {
     function claim(uint256 seed) external {
         actionCount += 1;
 
-        uint256 fees = pair.accumulatedQuoteFees();
-        if (fees == 0) {
+        uint256 taxAmount = pair.accumulatedQuoteTax();
+        if (taxAmount == 0) {
             _postActionVaultCheck();
             return;
         }
 
         allowVaultDecrease = true;
         address recipient = _recipient(seed, 0xD4);
-        vm.prank(feeCollector);
-        pair.claimQuoteFees(recipient);
+        vm.prank(taxCollector);
+        pair.claimQuoteTax(recipient);
 
         _postActionVaultCheck();
     }
@@ -192,7 +192,7 @@ contract PairHandler is TestBase {
 
         vm.prank(pairAdmin);
         factory.setTaxConfig(address(pair), buyTax, sellTax, collector);
-        feeCollector = collector;
+        taxCollector = collector;
 
         _postActionVaultCheck();
     }
@@ -259,7 +259,7 @@ contract PairHandler is TestBase {
     }
 
     function _postActionVaultCheck() internal {
-        uint256 currentVault = pair.accumulatedQuoteFees();
+        uint256 currentVault = pair.accumulatedQuoteTax();
         if (currentVault < lastVault && !allowVaultDecrease) {
             vaultDecreaseViolations += 1;
         }

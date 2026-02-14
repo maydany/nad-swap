@@ -17,21 +17,21 @@ contract ClaimFeesAdvancedTest is PairFixture {
         uint256 rawIn = 1200 ether;
         uint256 effIn = rawIn - (rawIn * pair.buyTaxBps() / BPS);
         uint256 baseOut = _getAmountOut(effIn, rq, rb);
-        uint256 beforeVault = pair.accumulatedQuoteFees();
+        uint256 beforeVault = pair.accumulatedQuoteTax();
         _buy(rawIn, baseOut, TRADER);
-        accrued = pair.accumulatedQuoteFees() - beforeVault;
+        accrued = pair.accumulatedQuoteTax() - beforeVault;
     }
 
     function test_claim_CEI_order() public {
-        uint256 fees = _accrueVault();
+        uint256 taxAmount = _accrueVault();
         uint256 beforeRecipient = _quoteBalance(FEE_RECIPIENT);
 
         vm.prank(COLLECTOR);
-        pair.claimQuoteFees(FEE_RECIPIENT);
+        pair.claimQuoteTax(FEE_RECIPIENT);
 
         uint256 afterRecipient = _quoteBalance(FEE_RECIPIENT);
-        assertEq(pair.accumulatedQuoteFees(), 0, "vault not reset");
-        assertEq(afterRecipient - beforeRecipient, fees, "claim transfer mismatch");
+        assertEq(pair.accumulatedQuoteTax(), 0, "vault not reset");
+        assertEq(afterRecipient - beforeRecipient, taxAmount, "claim transfer mismatch");
     }
 
     function test_claim_reentrancy_blocked() public {
@@ -63,7 +63,7 @@ contract ClaimFeesAdvancedTest is PairFixture {
         _accrueVault();
         vm.prank(COLLECTOR);
         expectRevertMsg("INVALID_TO");
-        pair.claimQuoteFees(address(pair));
+        pair.claimQuoteTax(address(pair));
     }
 
     function test_claim_vaultDrift_revert() public {
@@ -73,7 +73,7 @@ contract ClaimFeesAdvancedTest is PairFixture {
 
         vm.prank(COLLECTOR);
         expectRevertMsg("VAULT_DRIFT");
-        pair.claimQuoteFees(FEE_RECIPIENT);
+        pair.claimQuoteTax(FEE_RECIPIENT);
     }
 
     function test_safeTransfer_nonStandard() public {
@@ -116,10 +116,10 @@ contract ClaimFeesAdvancedTest is PairFixture {
 
         uint256 beforeBal = q.balanceOf(FEE_RECIPIENT);
         vm.prank(COLLECTOR);
-        p.claimQuoteFees(FEE_RECIPIENT);
+        p.claimQuoteTax(FEE_RECIPIENT);
         uint256 afterBal = q.balanceOf(FEE_RECIPIENT);
 
         assertGt(afterBal, beforeBal, "claim did not transfer non-standard token");
-        assertEq(p.accumulatedQuoteFees(), 0, "vault not reset");
+        assertEq(p.accumulatedQuoteTax(), 0, "vault not reset");
     }
 }

@@ -28,26 +28,26 @@ contract PairFlashQuoteTest is PairFixture {
     }
 
     function test_quoteFlash_sameToken_sellTax_applies() public {
-        uint256 vaultBefore = pair.accumulatedQuoteFees();
+        uint256 vaultBefore = pair.accumulatedQuoteTax();
         (, uint256 quoteTaxOut,) = _runQuoteFlash(100 ether, 0);
-        uint256 vaultAfter = pair.accumulatedQuoteFees();
+        uint256 vaultAfter = pair.accumulatedQuoteTax();
 
         assertEq(vaultAfter - vaultBefore, quoteTaxOut, "sell tax not accrued on quote flash");
         assertGt(quoteTaxOut, 0, "expected positive sell tax");
     }
 
     function test_quoteFlash_sameToken_noBypass_coreTax() public {
-        uint256 vaultBefore = pair.accumulatedQuoteFees();
+        uint256 vaultBefore = pair.accumulatedQuoteTax();
         (, uint256 quoteTaxOut,) = _runQuoteFlash(50 ether, 10 ether);
-        uint256 vaultAfter = pair.accumulatedQuoteFees();
+        uint256 vaultAfter = pair.accumulatedQuoteTax();
 
         assertEq(vaultAfter - vaultBefore, quoteTaxOut, "flash callback bypassed core tax");
     }
 
     function test_quoteFlash_sameToken_buyTax_notApplied_when_noBaseOut() public {
-        uint256 vaultBefore = pair.accumulatedQuoteFees();
+        uint256 vaultBefore = pair.accumulatedQuoteTax();
         (, uint256 quoteTaxOut,) = _runQuoteFlash(75 ether, 1 ether);
-        uint256 vaultAfter = pair.accumulatedQuoteFees();
+        uint256 vaultAfter = pair.accumulatedQuoteTax();
 
         assertEq(vaultAfter - vaultBefore, quoteTaxOut, "buy tax should not apply on no-base-out flash");
     }

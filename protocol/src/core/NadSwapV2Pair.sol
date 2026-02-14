@@ -37,8 +37,8 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
     uint16 public sellTaxBps;
     bool private initialized;
 
-    address public feeCollector;
-    uint96 public accumulatedQuoteFees;
+    address public taxCollector;
+    uint96 public accumulatedQuoteTax;
 
     uint16 public constant MAX_TAX_BPS = 2000;
     uint16 private constant BPS = 10_000;
@@ -95,12 +95,12 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
         address _quoteToken,
         uint16 _buyTaxBps,
         uint16 _sellTaxBps,
-        address _feeCollector
+        address _taxCollector
     ) external {
         require(msg.sender == factory, "FORBIDDEN");
         require(!initialized, "ALREADY_INITIALIZED");
         require(_quoteToken == _token0 || _quoteToken == _token1, "INVALID_QUOTE");
-        require(_feeCollector != address(0), "ZERO_COLLECTOR");
+        require(_taxCollector != address(0), "ZERO_COLLECTOR");
         require(_buyTaxBps <= MAX_TAX_BPS && _sellTaxBps <= MAX_TAX_BPS, "TAX_TOO_HIGH");
         require(_sellTaxBps < BPS, "SELL_TAX_INVALID");
 
@@ -110,20 +110,20 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
         quoteToken = _quoteToken;
         buyTaxBps = _buyTaxBps;
         sellTaxBps = _sellTaxBps;
-        feeCollector = _feeCollector;
+        taxCollector = _taxCollector;
     }
 
-    function setTaxConfig(uint16 _buyTaxBps, uint16 _sellTaxBps, address _collector) external {
+    function setTaxConfig(uint16 _buyTaxBps, uint16 _sellTaxBps, address _taxCollector) external {
         require(msg.sender == factory, "FORBIDDEN");
         require(_buyTaxBps <= MAX_TAX_BPS && _sellTaxBps <= MAX_TAX_BPS, "TAX_TOO_HIGH");
         require(_sellTaxBps < BPS, "SELL_TAX_INVALID");
-        require(_collector != address(0), "ZERO_COLLECTOR");
+        require(_taxCollector != address(0), "ZERO_COLLECTOR");
 
         buyTaxBps = _buyTaxBps;
         sellTaxBps = _sellTaxBps;
-        feeCollector = _collector;
+        taxCollector = _taxCollector;
 
-        emit TaxConfigUpdated(_buyTaxBps, _sellTaxBps, _collector);
+        emit TaxConfigUpdated(_buyTaxBps, _sellTaxBps, _taxCollector);
     }
 
     function _effectiveBalances(uint256 raw0, uint256 raw1, uint96 vault)
@@ -181,7 +181,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
         (uint112 _reserve0, uint112 _reserve1,) = getReserves();
         uint256 raw0 = IERC20(token0).balanceOf(address(this));
         uint256 raw1 = IERC20(token1).balanceOf(address(this));
-        (uint256 balance0, uint256 balance1) = _effectiveBalances(raw0, raw1, accumulatedQuoteFees);
+        (uint256 balance0, uint256 balance1) = _effectiveBalances(raw0, raw1, accumulatedQuoteTax);
 
         uint256 amount0 = balance0.sub(_reserve0);
         uint256 amount1 = balance1.sub(_reserve1);
@@ -210,7 +210,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
 
         uint256 raw0 = IERC20(_token0).balanceOf(address(this));
         uint256 raw1 = IERC20(_token1).balanceOf(address(this));
-        (uint256 balance0, uint256 balance1) = _effectiveBalances(raw0, raw1, accumulatedQuoteFees);
+        (uint256 balance0, uint256 balance1) = _effectiveBalances(raw0, raw1, accumulatedQuoteTax);
 
         uint256 liquidity = balanceOf[address(this)];
         bool feeOn = _mintFee(_reserve0, _reserve1);
@@ -224,7 +224,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
 
         raw0 = IERC20(_token0).balanceOf(address(this));
         raw1 = IERC20(_token1).balanceOf(address(this));
-        (balance0, balance1) = _effectiveBalances(raw0, raw1, accumulatedQuoteFees);
+        (balance0, balance1) = _effectiveBalances(raw0, raw1, accumulatedQuoteTax);
         _update(balance0, balance1, _reserve0, _reserve1);
         if (feeOn) kLast = uint256(reserve0).mul(reserve1);
         emit Burn(msg.sender, amount0, amount1, to);
@@ -253,7 +253,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
 
         v.raw0 = IERC20(token0).balanceOf(address(this));
         v.raw1 = IERC20(token1).balanceOf(address(this));
-        v.oldVault = accumulatedQuoteFees;
+        v.oldVault = accumulatedQuoteTax;
         v.isQuote0 = quoteToken == token0;
         v.rawQuote = v.isQuote0 ? v.raw0 : v.raw1;
         require(v.rawQuote >= v.oldVault, "VAULT_DRIFT");
@@ -303,11 +303,11 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
         }
         require(adj0.mul(adj1) >= uint256(v.r0).mul(v.r1).mul(1000**2), "K");
 
-        accumulatedQuoteFees = v.newVault;
+        accumulatedQuoteTax = v.newVault;
         _update(v.eff0, v.eff1, v.r0, v.r1);
 
         emit Swap(msg.sender, v.effIn0, v.effIn1, amount0Out, amount1Out, to);
-        emit QuoteFeesAccrued(v.quoteTaxIn, v.quoteTaxOut, v.newVault);
+        emit QuoteTaxAccrued(v.quoteTaxIn, v.quoteTaxOut, v.newVault);
     }
 
     function skim(address to) external lock {
@@ -315,14 +315,14 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
         uint256 raw1 = IERC20(token1).balanceOf(address(this));
 
         if (quoteToken == token0) {
-            uint256 expectedQuote = uint256(reserve0).add(accumulatedQuoteFees);
+            uint256 expectedQuote = uint256(reserve0).add(accumulatedQuoteTax);
             uint256 excessQuote = raw0 > expectedQuote ? raw0.sub(expectedQuote) : 0;
             if (excessQuote > 0) _safeTransfer(token0, to, excessQuote);
 
             uint256 excessBase = raw1 > reserve1 ? raw1.sub(reserve1) : 0;
             if (excessBase > 0) _safeTransfer(token1, to, excessBase);
         } else {
-            uint256 expectedQuote = uint256(reserve1).add(accumulatedQuoteFees);
+            uint256 expectedQuote = uint256(reserve1).add(accumulatedQuoteTax);
             uint256 excessQuote = raw1 > expectedQuote ? raw1.sub(expectedQuote) : 0;
             if (excessQuote > 0) _safeTransfer(token1, to, excessQuote);
 
@@ -334,28 +334,28 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
     function sync() external lock {
         uint256 raw0 = IERC20(token0).balanceOf(address(this));
         uint256 raw1 = IERC20(token1).balanceOf(address(this));
-        (uint256 eff0, uint256 eff1) = _effectiveBalances(raw0, raw1, accumulatedQuoteFees);
+        (uint256 eff0, uint256 eff1) = _effectiveBalances(raw0, raw1, accumulatedQuoteTax);
         _update(eff0, eff1, reserve0, reserve1);
     }
 
-    function claimQuoteFees(address to) external lock {
-        require(msg.sender == feeCollector, "FORBIDDEN");
+    function claimQuoteTax(address to) external lock {
+        require(msg.sender == taxCollector, "FORBIDDEN");
         require(to != address(0) && to != address(this), "INVALID_TO");
 
-        uint96 fees = accumulatedQuoteFees;
-        require(fees > 0, "NO_FEES");
+        uint96 taxAmount = accumulatedQuoteTax;
+        require(taxAmount > 0, "NO_TAX");
 
         uint256 rawQuote = IERC20(quoteToken).balanceOf(address(this));
-        require(rawQuote >= fees, "VAULT_DRIFT");
+        require(rawQuote >= taxAmount, "VAULT_DRIFT");
 
-        accumulatedQuoteFees = 0;
-        _safeTransfer(quoteToken, to, uint256(fees));
+        accumulatedQuoteTax = 0;
+        _safeTransfer(quoteToken, to, uint256(taxAmount));
 
         uint256 raw0 = IERC20(token0).balanceOf(address(this));
         uint256 raw1 = IERC20(token1).balanceOf(address(this));
         (uint112 _reserve0, uint112 _reserve1,) = getReserves();
         _update(raw0, raw1, _reserve0, _reserve1);
 
-        emit QuoteFeesClaimed(to, fees);
+        emit QuoteTaxClaimed(to, taxAmount);
     }
 }

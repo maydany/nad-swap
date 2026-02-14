@@ -23,12 +23,12 @@ interface IUniswapV2Factory {
         address tokenB,
         uint16 buyTaxBps,
         uint16 sellTaxBps,
-        address feeCollector
+        address taxCollector
     ) external returns (address pair);
 
     function setFeeTo(address) external;
 
     function setQuoteToken(address token, bool enabled) external;
 
-    function setTaxConfig(address pair, uint16 buyTaxBps, uint16 sellTaxBps, address feeCollector) external;
+    function setTaxConfig(address pair, uint16 buyTaxBps, uint16 sellTaxBps, address taxCollector) external;
 }

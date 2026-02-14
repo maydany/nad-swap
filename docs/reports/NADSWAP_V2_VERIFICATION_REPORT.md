@@ -22,8 +22,8 @@ Date: 2026-02-14
 ## Results
 <!-- GENERATED:START -->
 - Metrics source: `docs/reports/NADSWAP_V2_VERIFICATION_METRICS.json`
-- Generated at: `2026-02-14T19:46:01.039774+00:00`
-- Git SHA: `c8892dd976e4f78a677ffe7c6992037deca20175`
+- Generated at: `2026-02-14T20:05:09.241498+00:00`
+- Git SHA: `de4cdaba4a1b8fc94d6c46145eef8e954d280352`
 - Baseline source: `docs/reports/NADSWAP_V2_VERIFICATION_BASELINE.json`
 - Foundry tests (non-fork strict): **PASS** (`104/104`)
 - Foundry tests (fork suites): **PASS** (`47/47`)

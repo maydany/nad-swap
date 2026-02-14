@@ -35,8 +35,8 @@ NAD_FIELDS = [
     "buyTaxBps",
     "sellTaxBps",
     "initialized",
-    "feeCollector",
-    "accumulatedQuoteFees",
+    "taxCollector",
+    "accumulatedQuoteTax",
 ]
 
 

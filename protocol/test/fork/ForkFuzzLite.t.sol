@@ -15,9 +15,9 @@ contract ForkFuzzLiteTest is ForkFixture {
         uint256 effIn = rawIn - tax;
         uint256 out = _getAmountOut(effIn, rq, rb);
         vm.assume(out > 0);
-        uint256 v0 = pair.accumulatedQuoteFees();
+        uint256 v0 = pair.accumulatedQuoteTax();
         _buy(rawIn, out, TRADER);
-        uint256 v1 = pair.accumulatedQuoteFees();
+        uint256 v1 = pair.accumulatedQuoteTax();
         assertEq(v1 - v0, tax, "buy tax fuzz mismatch");
     }
 
@@ -30,9 +30,9 @@ contract ForkFuzzLiteTest is ForkFixture {
         uint256 grossOut = _ceilDiv(netOut * BPS, BPS - pair.sellTaxBps());
         vm.assume(grossOut < rq);
         uint256 inBase = _getAmountIn(grossOut, rb, rq);
-        uint256 v0 = pair.accumulatedQuoteFees();
+        uint256 v0 = pair.accumulatedQuoteTax();
         _sell(inBase, netOut, TRADER);
-        uint256 v1 = pair.accumulatedQuoteFees();
+        uint256 v1 = pair.accumulatedQuoteTax();
         assertEq(v1 - v0, grossOut - netOut, "sell tax fuzz mismatch");
     }
 

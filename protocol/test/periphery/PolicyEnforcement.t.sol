@@ -96,10 +96,10 @@ contract PolicyEnforcementTest is PairFixture {
             p.swap(0, netQuoteOut, TRADER, new bytes(0));
         }
 
-        uint256 fees = p.accumulatedQuoteFees();
-        assertGt(fees, 0, "fees not accrued");
+        uint256 taxAmount = p.accumulatedQuoteTax();
+        assertGt(taxAmount, 0, "tax not accrued");
         uint256 rawQuote = q.balanceOf(pairAddr);
-        uint256 burnAmount = rawQuote - fees + 1;
+        uint256 burnAmount = rawQuote - taxAmount + 1;
         q.burn(pairAddr, burnAmount);
 
         expectRevertMsg("VAULT_DRIFT");

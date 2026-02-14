@@ -104,7 +104,7 @@ contract FuzzInvariantTest is TestBase {
         uint256 baseOut = _getAmountOut(effIn, rq, rb);
         vm.assume(baseOut > 0);
 
-        uint256 vaultBefore = pair.accumulatedQuoteFees();
+        uint256 vaultBefore = pair.accumulatedQuoteTax();
 
         quote.mint(TRADER, rawIn);
         vm.prank(TRADER);
@@ -118,7 +118,7 @@ contract FuzzInvariantTest is TestBase {
             pair.swap(baseOut, 0, TRADER, new bytes(0));
         }
 
-        uint256 vaultAfter = pair.accumulatedQuoteFees();
+        uint256 vaultAfter = pair.accumulatedQuoteTax();
         assertEq(vaultAfter - vaultBefore, tax, "fuzz tax mismatch");
     }
 
@@ -130,7 +130,7 @@ contract FuzzInvariantTest is TestBase {
         uint256 rawQuote = quote.balanceOf(address(pair));
         uint256 reserveQuote = _isQuote0() ? uint256(r0) : uint256(r1);
 
-        assertEq(rawQuote, reserveQuote + pair.accumulatedQuoteFees(), "accounting invariant mismatch");
+        assertEq(rawQuote, reserveQuote + pair.accumulatedQuoteTax(), "accounting invariant mismatch");
     }
 
     function testFuzz_sellTax_boundary_rounding(uint16 sellTaxBps, uint96 netQuoteOutSeed) public {
@@ -149,9 +149,9 @@ contract FuzzInvariantTest is TestBase {
         vm.assume(grossOut < rq);
         uint256 baseIn = _getAmountIn(grossOut, rb, rq);
 
-        uint256 beforeVault = pair.accumulatedQuoteFees();
+        uint256 beforeVault = pair.accumulatedQuoteTax();
         _sell(baseIn, netQuoteOut, TRADER);
-        uint256 afterVault = pair.accumulatedQuoteFees();
+        uint256 afterVault = pair.accumulatedQuoteTax();
         assertEq(afterVault - beforeVault, grossOut - netQuoteOut, "sell tax rounding mismatch");
     }
 
@@ -168,16 +168,16 @@ contract FuzzInvariantTest is TestBase {
         uint256 buyRawIn = 1_000 ether;
         uint256 buyEffIn = buyRawIn - (buyRawIn * pair.buyTaxBps() / BPS);
         uint256 buyBaseOut = _getAmountOut(buyEffIn, rq, rb);
-        uint256 v0 = pair.accumulatedQuoteFees();
+        uint256 v0 = pair.accumulatedQuoteTax();
         _buy(buyRawIn, buyBaseOut, TRADER);
-        uint256 v1 = pair.accumulatedQuoteFees();
+        uint256 v1 = pair.accumulatedQuoteTax();
 
         (rq, rb) = _reservesQuoteBase();
         uint256 netQuoteOut = 120 ether;
         uint256 grossQuoteOut = _ceilDiv(netQuoteOut * BPS, BPS - pair.sellTaxBps());
         uint256 sellBaseIn = _getAmountIn(grossQuoteOut, rb, rq);
         _sell(sellBaseIn, netQuoteOut, TRADER);
-        uint256 v2 = pair.accumulatedQuoteFees();
+        uint256 v2 = pair.accumulatedQuoteTax();
 
         assertGe(v1, v0, "vault decreased after buy");
         assertGe(v2, v1, "vault decreased after sell");
@@ -191,7 +191,7 @@ contract FuzzInvariantTest is TestBase {
         _buy(rawIn, baseOut, TRADER);
 
         vm.prank(COLLECTOR);
-        pair.claimQuoteFees(address(0x999));
+        pair.claimQuoteTax(address(0x999));
 
         (uint112 r0, uint112 r1,) = pair.getReserves();
         uint256 reserveQuote = _isQuote0() ? uint256(r0) : uint256(r1);

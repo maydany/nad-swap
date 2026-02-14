@@ -14,9 +14,9 @@ contract ForkCoreSwapTest is ForkFixture {
         uint256 effIn = rawIn - tax;
         uint256 out = _getAmountOut(effIn, rq, rb);
 
-        uint256 beforeVault = pair.accumulatedQuoteFees();
+        uint256 beforeVault = pair.accumulatedQuoteTax();
         _buy(rawIn, out, TRADER);
-        uint256 afterVault = pair.accumulatedQuoteFees();
+        uint256 afterVault = pair.accumulatedQuoteTax();
         assertEq(afterVault - beforeVault, tax, "buy tax accrual mismatch");
     }
 
@@ -27,9 +27,9 @@ contract ForkCoreSwapTest is ForkFixture {
         uint256 taxOut = grossOut - netOut;
         uint256 inBase = _getAmountIn(grossOut, rb, rq);
 
-        uint256 beforeVault = pair.accumulatedQuoteFees();
+        uint256 beforeVault = pair.accumulatedQuoteTax();
         _sell(inBase, netOut, TRADER);
-        uint256 afterVault = pair.accumulatedQuoteFees();
+        uint256 afterVault = pair.accumulatedQuoteTax();
         assertEq(afterVault - beforeVault, taxOut, "sell tax accrual mismatch");
     }
 

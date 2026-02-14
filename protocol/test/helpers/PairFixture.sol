@@ -174,7 +174,7 @@ contract PairFixture is TestBase {
     function _setVault(uint96 newVault) internal {
         uint256 slot = 14;
         uint256 packed = uint256(vm.load(address(pair), bytes32(slot)));
-        uint256 lowMask = uint256(-1) >> 96; // low 160 bits = feeCollector
+        uint256 lowMask = uint256(-1) >> 96; // low 160 bits = taxCollector
         uint256 nextPacked = (packed & lowMask) | (uint256(newVault) << 160);
         vm.store(address(pair), bytes32(slot), bytes32(nextPacked));
     }

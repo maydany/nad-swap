@@ -21,7 +21,7 @@
 | **Quote** | Reserve currency (WETH, USDT, etc.). One per pair, fixed |
 | **Net** | Amount actually received by user |
 | **Gross** | Total amount including tax (`Net + Tax`) |
-| **Vault** | `accumulatedQuoteFees` — on-ledger accumulated tax |
+| **Vault** | `accumulatedQuoteTax` — on-ledger accumulated tax |
 | **Effective Balance** | `rawBalance - vault` (quote side) |
 | **Dust** | Raw balance excess beyond reserve (+ vault on quote side), typically from direct transfers or rounding; removable via `skim` |
 
@@ -34,7 +34,7 @@ graph TD
     subgraph "Core Layer"
         F[NadFactory] -->|createPair| P[NadPair]
         P -->|"reserve = effective"| AMM["K-invariant"]
-        P -->|vault ledger accrual| VV["accumulatedQuoteFees"]
+        P -->|vault ledger accrual| VV["accumulatedQuoteTax"]
     end
     subgraph "Periphery Layer"
         R[NadRouter02] -->|swap| P
@@ -53,14 +53,14 @@ graph TD
 | `NadLibrary` | `UniswapV2Library` |
 
 1. **Core Enforcement**: All tax logic is embedded in `Pair.swap()` math → no alternative code path can bypass tax logic (direct calls included); tiny trades may still yield `tax=0` due to integer-floor rounding
-2. **Virtual Vault**: Ledger accrual in `accumulatedQuoteFees` → gas savings by avoiding ERC20 transfers per swap
+2. **Virtual Vault**: Ledger accrual in `accumulatedQuoteTax` → gas savings by avoiding ERC20 transfers per swap
 3. **Reverse Math**: Delivers exact Net amount to user as quoted by Router; internally reverse-calculates Gross
 4. **Reserve = Effective**: Reserve storage/queries all use effective basis → TWAP, feeTo, and quotes are accurate
 
 ### Accounting Invariant
 
 ```
-rawQuoteBalance = reserveQuote + accumulatedQuoteFees  (+ dust)
+rawQuoteBalance = reserveQuote + accumulatedQuoteTax  (+ dust)
 rawBaseBalance  = reserveBase                          (+ dust)
 ```
 
@@ -99,8 +99,8 @@ uint16  public sellTaxBps;             //  16bit
 bool    private initialized;           //   8bit
 
 // ── Slot 2 (256 bits perfect packing) ──
-address public feeCollector;           // 160bit
-uint96  public accumulatedQuoteFees;   //  96bit (Virtual Vault)
+address public taxCollector;           // 160bit
+uint96  public accumulatedQuoteTax;   //  96bit (Virtual Vault)
 // uint96 max ≈ 7.9×10²⁸ — ~79 billion WETH(18 dec), overflow impossible
 
 // ── Constants ──
@@ -118,7 +118,7 @@ uint16  constant BPS = 10_000;
 
 ```
 Slot K  : [quoteToken(160)] [buyTaxBps(16)] [sellTaxBps(16)] [initialized(8)] [unused(56)]
-Slot K+1: [feeCollector(160)] [accumulatedQuoteFees(96)]  ← 256bit perfect
+Slot K+1: [taxCollector(160)] [accumulatedQuoteTax(96)]  ← 256bit perfect
 ```
 
 ### Storage Layout Compatibility Gate (Required)
@@ -151,12 +151,12 @@ python3 scripts/gates/check_slither_gate.py
 /// @notice Called only once inside Factory.createPair. Reverts on re-call.
 function initialize(
     address _token0, address _token1, address _quoteToken,
-    uint16 _buyTaxBps, uint16 _sellTaxBps, address _feeCollector
+    uint16 _buyTaxBps, uint16 _sellTaxBps, address _taxCollector
 ) external {
     require(msg.sender == factory, 'FORBIDDEN');
     require(!initialized, 'ALREADY_INITIALIZED');
     require(_quoteToken == _token0 || _quoteToken == _token1, 'INVALID_QUOTE');
-    require(_feeCollector != address(0), 'ZERO_COLLECTOR');
+    require(_taxCollector != address(0), 'ZERO_COLLECTOR');
     require(_buyTaxBps <= MAX_TAX_BPS && _sellTaxBps <= MAX_TAX_BPS, 'TAX_TOO_HIGH');
     require(_sellTaxBps < BPS, 'SELL_TAX_INVALID');
     initialized = true;
@@ -165,7 +165,7 @@ function initialize(
     quoteToken = _quoteToken;
     buyTaxBps = _buyTaxBps;
     sellTaxBps = _sellTaxBps;
-    feeCollector = _feeCollector;
+    taxCollector = _taxCollector;
 }
 ```
 
@@ -175,7 +175,7 @@ function initialize(
 |----------|--------|-------|
 | `initialize(...)` | `factory` (inside createPair) | **Once only**, re-call prevented by `initialized` flag |
 | `setTaxConfig(buy, sell, collector)` | `factory` (via pairAdmin) | Mutable at any time |
-| `claimQuoteFees(to)` | `feeCollector` | `lock` modifier applied |
+| `claimQuoteTax(to)` | `taxCollector` | `lock` modifier applied |
 
 ---
 
@@ -211,7 +211,7 @@ quoteInNet  = quoteInRaw - quoteTaxIn
 ### 5.3 Effective Balance
 
 ```
-effectiveQuote = rawQuoteBalance - accumulatedQuoteFees
+effectiveQuote = rawQuoteBalance - accumulatedQuoteTax
 effectiveBase  = rawBaseBalance    (no vault)
 ```
 
@@ -256,7 +256,7 @@ function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data)
 ### Step 7: Direction Detection & Tax (Detail)
 
 ```solidity
-uint96 oldVault = accumulatedQuoteFees;
+uint96 oldVault = accumulatedQuoteTax;
 uint quoteTaxOut = 0;
 uint grossOut    = amountOut;  // default = Net
 
@@ -313,7 +313,7 @@ function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data)
     uint raw1 = IERC20(token1).balanceOf(address(this));
 
     // ── Step 6: Effective balance via oldVault ──
-    uint96 oldVault = accumulatedQuoteFees;
+    uint96 oldVault = accumulatedQuoteTax;
     bool isQuote0 = (quoteToken == token0);
     uint rawQuote = isQuote0 ? raw0 : raw1;
     require(rawQuote >= oldVault, 'VAULT_DRIFT');
@@ -377,12 +377,12 @@ function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data)
     }
 
     // ── Step 12: Store ──
-    accumulatedQuoteFees = newVault;
+    accumulatedQuoteTax = newVault;
     _update(eff0, eff1, _r0, _r1);    // ← effective basis!
 
     // Event: uses effective input after newVault (accounting-consistent)
     emit Swap(msg.sender, effIn0, effIn1, amount0Out, amount1Out, to);
-    emit QuoteFeesAccrued(quoteTaxIn, quoteTaxOut, newVault);
+    emit QuoteTaxAccrued(quoteTaxIn, quoteTaxOut, newVault);
 }
 ```
 
@@ -394,7 +394,7 @@ All paths use **effective balance**:
 
 > [!IMPORTANT]
 > Before quote-side subtraction in all effective-balance paths (`swap/mint/burn/sync`), enforce:
-> `require(rawQuote >= accumulatedQuoteFees, 'VAULT_DRIFT')`.
+> `require(rawQuote >= accumulatedQuoteTax, 'VAULT_DRIFT')`.
 > This is a liveness guard against vault drift states (`rawQuote < vault`).
 
 | Function | Change Point |
@@ -407,7 +407,7 @@ All paths use **effective balance**:
 **skim defensive pattern** (underflow prevention):
 ```solidity
 // quote side: safe even if raw < reserve + vault
-uint256 expectedQuote = uint256(reserveQuote) + accumulatedQuoteFees;
+uint256 expectedQuote = uint256(reserveQuote) + accumulatedQuoteTax;
 uint256 excessQuote = rawQuote > expectedQuote ? rawQuote - expectedQuote : 0;
 if (excessQuote > 0) _safeTransfer(quoteToken, to, excessQuote);
 
@@ -418,20 +418,20 @@ if (excessBase > 0) _safeTransfer(baseToken, to, excessBase);
 
 ---
 
-## 8. claimQuoteFees
+## 8. claimQuoteTax
 
 ```solidity
-/// @notice Only callable by feeCollector. Reentrancy protection required.
-function claimQuoteFees(address to) external lock {
-    require(msg.sender == feeCollector, 'FORBIDDEN');
+/// @notice Only callable by taxCollector. Reentrancy protection required.
+function claimQuoteTax(address to) external lock {
+    require(msg.sender == taxCollector, 'FORBIDDEN');
     require(to != address(0) && to != address(this), 'INVALID_TO');  // prevent burn + self-transfer
-    uint96 fees = accumulatedQuoteFees;
-    require(fees > 0, 'NO_FEES');
+    uint96 taxAmount = accumulatedQuoteTax;
+    require(taxAmount > 0, 'NO_TAX');
     uint rawQuote = IERC20(quoteToken).balanceOf(address(this));
-    require(rawQuote >= fees, 'VAULT_DRIFT');
+    require(rawQuote >= taxAmount, 'VAULT_DRIFT');
     
-    accumulatedQuoteFees = 0;
-    _safeTransfer(quoteToken, to, uint(fees));
+    accumulatedQuoteTax = 0;
+    _safeTransfer(quoteToken, to, uint(taxAmount));
     
     // Re-sync reserves after effective balance recalculation
     uint raw0 = IERC20(token0).balanceOf(address(this));
@@ -439,7 +439,7 @@ function claimQuoteFees(address to) external lock {
     // vault=0 so effective = raw
     _update(raw0, raw1, reserve0, reserve1);
     
-    emit QuoteFeesClaimed(to, fees);
+    emit QuoteTaxClaimed(to, fees);
 }
 ```
 
@@ -459,7 +459,7 @@ function setTaxConfig(uint16 _buyTaxBps, uint16 _sellTaxBps, address _collector)
     require(_collector != address(0), 'ZERO_COLLECTOR');
     buyTaxBps = _buyTaxBps;
     sellTaxBps = _sellTaxBps;
-    feeCollector = _collector;
+    taxCollector = _collector;
     emit TaxConfigUpdated(_buyTaxBps, _sellTaxBps, _collector);
 }
 ```
@@ -513,7 +513,7 @@ function createPair(
     address tokenB,
     uint16 buyTaxBps,
     uint16 sellTaxBps,
-    address feeCollector
+    address taxCollector
 ) external returns (address pair) {
     require(msg.sender == pairAdmin, 'FORBIDDEN');  // ← access control
     // ... existing sort & validation ...
@@ -530,7 +530,7 @@ function createPair(
     // ... CREATE2 ...
     
     // Atomic initialization: tokens + Quote + Tax simultaneously
-    IUniswapV2Pair(pair).initialize(token0, token1, qt, buyTaxBps, sellTaxBps, feeCollector);
+    IUniswapV2Pair(pair).initialize(token0, token1, qt, buyTaxBps, sellTaxBps, taxCollector);
     isPair[pair] = true;   // register in integrity mapping
     // ... mapping storage ...
 }
@@ -684,9 +684,9 @@ function getAmountsIn(uint amountOut, address[] memory path) public view returns
 ## 12. Events
 
 ```solidity
-event TaxConfigUpdated(uint16 buyTaxBps, uint16 sellTaxBps, address feeCollector);
-event QuoteFeesAccrued(uint256 quoteTaxIn, uint256 quoteTaxOut, uint256 accumulatedQuoteFees);
-event QuoteFeesClaimed(address indexed to, uint256 amount);
+event TaxConfigUpdated(uint16 buyTaxBps, uint16 sellTaxBps, address taxCollector);
+event QuoteTaxAccrued(uint256 quoteTaxIn, uint256 quoteTaxOut, uint256 accumulatedQuoteTax);
+event QuoteTaxClaimed(address indexed to, uint256 amount);
 ```
 
 ---
@@ -719,7 +719,7 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 | 22 | 🆕 SafeERC20 usage | `_safeTransfer` (V2 original pattern) | Non-standard token (USDT etc.) compatible |
 | 23 | 🆕 First-depositor inflation guard | V2 `MINIMUM_LIQUIDITY` 1000 burn | Prevents LP share manipulation on initial supply |
 | 24 | 🆕 CEI-order safety | claim: vault=0(E) → transfer(I) → _update (post-interaction state sync) | Safe under `lock`; vault reset precedes external call |
-| 25 | 🆕 claimQuoteFees incentive design | feeCollector calls directly (own asset recovery) | No third-party incentive needed |
+| 25 | 🆕 claimQuoteTax incentive design | taxCollector calls directly (own asset recovery) | No third-party incentive needed |
 | 26 | 🆕 ERC20 return value check | `_safeTransfer` internal `require(success)` | Handles tokens that don’t return bool |
 | 27 | 🆕 Quote FOT unsupported enforcement | Router guard enforces Quote policy; FOT-style variants always revert `FOT_NOT_SUPPORTED` | Prevents Net/Gross mismatch in tax math |
 | 28 | 🆕 No INIT_CODE_HASH dependency in routing | `pairFor` uses `factory.getPair` | Eliminates create2 hash drift risk |
@@ -811,15 +811,15 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 | `test_burn_vaultDrift_revert` | 🆕 burn reverts with VAULT_DRIFT when `rawQuote < vault` |
 | `test_sync_vaultDrift_revert` | 🆕 sync reverts with VAULT_DRIFT when `rawQuote < vault` |
 
-### Unit — claimQuoteFees
+### Unit — claimQuoteTax
 
 | Test | Verification |
 |------|-------------|
 | `test_claim_vaultReset_reserveSync` | After claim: `vault=0`, reserve=raw, token receipt matches |
 | `test_claim_selfTransfer_revert` | 🆕 `to=address(this)` → INVALID_TO revert (prevents vault donation) |
 | `test_claim_zeroAddress_revert` | 🆕 `to=address(0)` → INVALID_TO revert |
-| `test_claim_noFees_revert` | 🆕 Claim when vault=0 → NO_FEES revert |
-| `test_claim_nonCollector_revert` | 🆕 Non-feeCollector address → FORBIDDEN revert |
+| `test_claim_noTax_revert` | 🆕 Claim when vault=0 → NO_TAX revert |
+| `test_claim_nonCollector_revert` | 🆕 Non-taxCollector address → FORBIDDEN revert |
 | `test_claim_reentrancy_blocked` | 🆕 Lock modifier prevents reentrancy |
 | `test_claim_vaultDrift_revert` | 🆕 claim reverts with VAULT_DRIFT when `rawQuote < vault` |
 
@@ -853,7 +853,7 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 | `test_setFeeTo_pairAdmin_success` | 🆕 pairAdmin can update feeTo successfully |
 | `test_constructor_zeroAddress_revert` | 🆕 constructor with zero `pairAdmin` → ZERO_ADDRESS revert |
 | `test_initialize_reentryBlocked` | Second initialize call reverts |
-| `test_initialize_zeroCollector` | feeCollector=0 reverts |
+| `test_initialize_zeroCollector` | taxCollector=0 reverts |
 | `test_initialize_invalidQuote` | 🆕 quoteToken not matching token0 or token1 → INVALID_QUOTE revert |
 | `test_initialize_taxTooHigh_revert` | 🆕 initialize with buyTax or sellTax > MAX_TAX_BPS(2000) → TAX_TOO_HIGH revert |
 | `test_initialize_sellTax100pct_revert` | 🆕 initialize with sellTax = BPS(10000) → TAX_TOO_HIGH revert (max-tax guard precedence) |
@@ -898,7 +898,7 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 |------|-------------|
 | `test_safeTransfer_nonStandard` | 🆕 _safeTransfer works correctly with non-bool-returning tokens (USDT-like) |
 | `test_firstDeposit_minimumLiquidity` | 🆕 First LP supply burns MINIMUM_LIQUIDITY(1000), prevents inflation attack |
-| `test_claim_CEI_order` | 🆕 claimQuoteFees sets vault=0 before transfer (CEI pattern) |
+| `test_claim_CEI_order` | 🆕 claimQuoteTax sets vault=0 before transfer (CEI pattern) |
 
 ### Fuzz
 
@@ -908,12 +908,12 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 - `getAmountsIn` multi-hop ceil cumulative error ≤ N wei (N = hop count)
 - Sell exact-in grossOut roundtrip (floor→ceil) error ≤ 1 wei
 - 🆕 Vault monotonically increasing invariant maintained across arbitrary tax changes
-- 🆕 `rawQuote = reserveQuote` (vault=0) after arbitrary claimQuoteFees
+- 🆕 `rawQuote = reserveQuote` (vault=0) after arbitrary claimQuoteTax
 
 ### Invariant
 
 - `rawQuote = reserve + vault + dust`, `rawBase = reserve + dust`
-- `accumulatedQuoteFees` monotonically increasing (except claim), no overflow
+- `accumulatedQuoteTax` monotonically increasing (except claim), no overflow
 - claim sets `vault=0` and re-syncs reserves to raw balances; quote-side dust may be absorbed into reserves (`test_claim_vaultReset_reserveSync`, `test_sync_afterClaim`)
 - 🆕 If `totalSupply > 0` then `reserve0 > 0 && reserve1 > 0` (liquidity consistency)
 - 🆕 For all pairs where `isPair[pair] == true`: `getPair[t0][t1] == pair` (Factory mapping consistency)
@@ -923,7 +923,7 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 | Invariant | Verification |
 |-----------|--------------|
 | `invariant_raw_quote_eq_reserve_plus_vault_or_dust` | Quote-side accounting never drops below `reserve+vault` (dust allowed) |
-| `invariant_vault_monotonic_except_claim` | Vault decreases only on `claimQuoteFees` |
+| `invariant_vault_monotonic_except_claim` | Vault decreases only on `claimQuoteTax` |
 | `invariant_totalSupply_implies_positive_reserves` | Positive LP supply implies both reserves are positive |
 | `invariant_factory_pair_mapping_consistency` | Factory pair registration/mapping remains consistent |
 | `invariant_router_quote_exec_error_le_1wei_executable_domain` | Router quote vs execution drift stays within `1 wei` for executable paths |
@@ -944,7 +944,7 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 3. Set Quote whitelist (`setQuoteToken`) (Base allowlist API removed)
 4. **`createPair(tokenA, tokenB, buyTax, sellTax, collector)`** — creation and tax set simultaneously
 5. Monitor → change rates/collector instantly via `setTaxConfig` as needed
-6. Periodically execute `claimQuoteFees`
+6. Periodically execute `claimQuoteTax`
 
 ---
 

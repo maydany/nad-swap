@@ -54,7 +54,7 @@ contract ForkCoreLifecycleTest is ForkFixture {
 
     function testFork_mint_afterSwap_vaultIntact() public onlyFork {
         _accrueVault();
-        uint256 v0 = pair.accumulatedQuoteFees();
+        uint256 v0 = pair.accumulatedQuoteTax();
         _fundQuote(LP2, 5 ether);
         _fundBase(LP2, 5 ether);
         vm.prank(LP2);
@@ -63,18 +63,18 @@ contract ForkCoreLifecycleTest is ForkFixture {
         _safeTokenTransfer(monadBaseToken, address(pair), 5 ether);
         vm.prank(LP2);
         pair.mint(LP2);
-        assertEq(pair.accumulatedQuoteFees(), v0, "vault changed on mint");
+        assertEq(pair.accumulatedQuoteTax(), v0, "vault changed on mint");
     }
 
     function testFork_burn_afterSwap_vaultIntact() public onlyFork {
         _accrueVault();
-        uint256 v0 = pair.accumulatedQuoteFees();
+        uint256 v0 = pair.accumulatedQuoteTax();
         uint256 liq = pair.balanceOf(LP) / 50;
         vm.prank(LP);
         pair.transfer(address(pair), liq);
         vm.prank(LP);
         pair.burn(LP);
-        assertEq(pair.accumulatedQuoteFees(), v0, "vault changed on burn");
+        assertEq(pair.accumulatedQuoteTax(), v0, "vault changed on burn");
     }
 
     function testFork_sync_withVault_usesEffective() public onlyFork {
@@ -85,17 +85,17 @@ contract ForkCoreLifecycleTest is ForkFixture {
         pair.sync();
         (uint256 reserveQuote,) = _reservesQuoteBase();
         (uint256 rawQuote,) = _rawQuoteBase();
-        assertEq(reserveQuote, rawQuote - pair.accumulatedQuoteFees(), "sync effective mismatch");
+        assertEq(reserveQuote, rawQuote - pair.accumulatedQuoteTax(), "sync effective mismatch");
     }
 
     function testFork_sync_afterClaim_reserveEqualsRaw() public onlyFork {
         _accrueVault();
         vm.prank(COLLECTOR);
-        pair.claimQuoteFees(address(0x999));
+        pair.claimQuoteTax(address(0x999));
         pair.sync();
         (uint256 reserveQuote,) = _reservesQuoteBase();
         (uint256 rawQuote,) = _rawQuoteBase();
-        assertEq(pair.accumulatedQuoteFees(), 0, "vault not zero");
+        assertEq(pair.accumulatedQuoteTax(), 0, "vault not zero");
         assertEq(reserveQuote, rawQuote, "reserve/raw mismatch");
     }
 

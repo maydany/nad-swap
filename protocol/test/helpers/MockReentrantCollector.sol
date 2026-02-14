@@ -20,13 +20,13 @@ contract MockReentrantCollector is IUniswapV2Callee {
     }
 
     function claim(address to) external {
-        IUniswapV2Pair(pair).claimQuoteFees(to);
+        IUniswapV2Pair(pair).claimQuoteTax(to);
     }
 
     function uniswapV2Call(address, uint256, uint256, bytes calldata) external {
         require(msg.sender == pair, "PAIR_ONLY");
         callbackEntered = true;
-        (claimCallSucceeded,) = pair.call(abi.encodeWithSignature("claimQuoteFees(address)", address(this)));
+        (claimCallSucceeded,) = pair.call(abi.encodeWithSignature("claimQuoteTax(address)", address(this)));
 
         if (repayAmount > 0) {
             (bool success, bytes memory data) =
