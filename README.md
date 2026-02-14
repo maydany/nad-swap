@@ -181,7 +181,7 @@ NadSwap은 pair 당 **정확히 1개의 Quote 토큰**(WETH, USDT 등)을 가지
 #### 1-4. `setTaxConfig` — 새로 추가 (Factory 경유)
 
 ```solidity
-function setTaxConfig(address pair, uint16 buy, uint16 sell, address collector) external;
+function setTaxConfig(address pair, uint16 buy, uint16 sell, address taxCollector) external;
 // require(msg.sender == pairAdmin)
 // require(isPair[pair])  -- onlyValidPair modifier
 ```
