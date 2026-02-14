@@ -108,7 +108,7 @@ done
 START_TIME=$(date +%s)
 
 # ─── Build gate args ───
-GATE_ARGS=()
+declare -a GATE_ARGS=()
 [[ "${SKIP_SLITHER}" -eq 1 ]]  && GATE_ARGS+=("--skip-slither")
 [[ "${SKIP_UPSTREAM}" -eq 1 ]] && GATE_ARGS+=("--skip-upstream-sync")
 
@@ -119,9 +119,17 @@ run_gates() {
   else
     log_step "Running: scripts/runners/run_local_gates.sh"
   fi
-  if ! "${RUNNERS}/run_local_gates.sh" "${GATE_ARGS[@]}"; then
-    log_fail "Strict gate + nightly invariant failed"
-    return 1
+  # Bash 3.2 + nounset can treat empty array expansion as unbound.
+  if [[ "${#GATE_ARGS[@]}" -gt 0 ]]; then
+    if ! "${RUNNERS}/run_local_gates.sh" "${GATE_ARGS[@]}"; then
+      log_fail "Strict gate + nightly invariant failed"
+      return 1
+    fi
+  else
+    if ! "${RUNNERS}/run_local_gates.sh"; then
+      log_fail "Strict gate + nightly invariant failed"
+      return 1
+    fi
   fi
   log_pass "Strict gate + nightly invariant completed"
 }
