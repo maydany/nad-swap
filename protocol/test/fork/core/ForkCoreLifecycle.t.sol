@@ -114,10 +114,10 @@ contract ForkCoreLifecycleTest is ForkFixture {
     }
 
     function testFork_firstDeposit_minimumLiquidity() public onlyFork {
-        UniswapV2Factory f = new UniswapV2Factory(FEE_TO_SETTER, PAIR_ADMIN);
-        vm.prank(FEE_TO_SETTER);
+        UniswapV2Factory f = new UniswapV2Factory(PAIR_ADMIN);
+        vm.prank(PAIR_ADMIN);
         f.setQuoteToken(monadQuoteToken, true);
-        vm.prank(FEE_TO_SETTER);
+        vm.prank(PAIR_ADMIN);
         f.setBaseTokenSupported(monadBaseToken, true);
         vm.prank(PAIR_ADMIN);
         address pairAddr = f.createPair(monadQuoteToken, monadBaseToken, 300, 500, COLLECTOR);

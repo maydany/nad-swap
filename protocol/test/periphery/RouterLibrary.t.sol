@@ -29,7 +29,6 @@ contract RouterLibraryTest is TestBase {
     MockERC20 internal base;
     MockWETH internal weth;
 
-    address internal constant FEE_TO_SETTER = address(0x100);
     address internal constant PAIR_ADMIN = address(0x200);
     address internal constant COLLECTOR = address(0x300);
     address internal constant LP = address(0x111);
@@ -39,13 +38,13 @@ contract RouterLibraryTest is TestBase {
         base = new MockERC20("Base", "BS", 18);
         weth = new MockWETH();
 
-        factory = new UniswapV2Factory(FEE_TO_SETTER, PAIR_ADMIN);
+        factory = new UniswapV2Factory(PAIR_ADMIN);
         router = new UniswapV2Router02(address(factory), address(weth));
         harness = new LibraryHarness();
 
-        vm.prank(FEE_TO_SETTER);
+        vm.prank(PAIR_ADMIN);
         factory.setQuoteToken(address(quote), true);
-        vm.prank(FEE_TO_SETTER);
+        vm.prank(PAIR_ADMIN);
         factory.setBaseTokenSupported(address(base), true);
 
         vm.prank(PAIR_ADMIN);
@@ -77,9 +76,9 @@ contract RouterLibraryTest is TestBase {
         MockERC20 x = new MockERC20("X", "X", 18);
         MockERC20 y = new MockERC20("Y", "Y", 18);
 
-        vm.prank(FEE_TO_SETTER);
+        vm.prank(PAIR_ADMIN);
         factory.setQuoteToken(address(x), true);
-        vm.prank(FEE_TO_SETTER);
+        vm.prank(PAIR_ADMIN);
         factory.setBaseTokenSupported(address(y), true);
 
         x.mint(address(this), 1000 ether);

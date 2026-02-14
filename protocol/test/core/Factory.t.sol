@@ -11,7 +11,6 @@ contract FactoryTest is TestBase {
     MockERC20 internal base;
     MockERC20 internal alt;
 
-    address internal constant FEE_TO_SETTER = address(0x100);
     address internal constant PAIR_ADMIN = address(0x200);
     address internal constant COLLECTOR = address(0x300);
     address internal constant OTHER = address(0x400);
@@ -20,21 +19,18 @@ contract FactoryTest is TestBase {
         quote = new MockERC20("Quote", "QT", 18);
         base = new MockERC20("Base", "BS", 18);
         alt = new MockERC20("Alt", "ALT", 18);
-        factory = new UniswapV2Factory(FEE_TO_SETTER, PAIR_ADMIN);
+        factory = new UniswapV2Factory(PAIR_ADMIN);
 
-        vm.prank(FEE_TO_SETTER);
+        vm.prank(PAIR_ADMIN);
         factory.setQuoteToken(address(quote), true);
 
-        vm.prank(FEE_TO_SETTER);
+        vm.prank(PAIR_ADMIN);
         factory.setBaseTokenSupported(address(base), true);
     }
 
     function test_constructor_zeroAddress_revert() public {
         expectRevertMsg("ZERO_ADDRESS");
-        new UniswapV2Factory(address(0), PAIR_ADMIN);
-
-        expectRevertMsg("ZERO_ADDRESS");
-        new UniswapV2Factory(FEE_TO_SETTER, address(0));
+        new UniswapV2Factory(address(0));
     }
 
     function test_createPair_onlyPairAdmin() public {
@@ -44,7 +40,7 @@ contract FactoryTest is TestBase {
     }
 
     function test_createPair_bothQuote_revert() public {
-        vm.prank(FEE_TO_SETTER);
+        vm.prank(PAIR_ADMIN);
         factory.setQuoteToken(address(alt), true);
 
         vm.prank(PAIR_ADMIN);
@@ -84,14 +80,26 @@ contract FactoryTest is TestBase {
     }
 
     function test_setQuoteToken_zeroAddr_revert() public {
-        vm.prank(FEE_TO_SETTER);
+        vm.prank(PAIR_ADMIN);
         expectRevertMsg("ZERO_ADDRESS");
         factory.setQuoteToken(address(0), true);
     }
 
-    function test_setBaseTokenSupported_forbidden() public {
+    function test_setBaseTokenSupported_nonPairAdmin_revert() public {
         vm.prank(OTHER);
         expectRevertMsg("FORBIDDEN");
         factory.setBaseTokenSupported(address(base), true);
+    }
+
+    function test_setFeeTo_onlyPairAdmin_revert() public {
+        vm.prank(OTHER);
+        expectRevertMsg("UniswapV2: FORBIDDEN");
+        factory.setFeeTo(address(0xabc));
+    }
+
+    function test_setFeeTo_pairAdmin_success() public {
+        vm.prank(PAIR_ADMIN);
+        factory.setFeeTo(address(0xabc));
+        assertEq(factory.feeTo(), address(0xabc), "feeTo not updated");
     }
 }

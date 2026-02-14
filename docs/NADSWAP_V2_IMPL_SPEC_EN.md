@@ -482,16 +482,15 @@ mapping(address => bool) public isPair;
 address public pairAdmin;
 
 /// @notice pairAdmin is fixed at deployment (immutable governance choice in this spec).
-constructor(address _feeToSetter, address _pairAdmin) public {
-    require(_feeToSetter != address(0) && _pairAdmin != address(0), 'ZERO_ADDRESS');
-    feeToSetter = _feeToSetter;
+constructor(address _pairAdmin) public {
+    require(_pairAdmin != address(0), 'ZERO_ADDRESS');
     pairAdmin = _pairAdmin;
 }
 
 /// @notice Quote whitelist registration. Only non-rebasing, non-FOT tokens allowed.
 /// @dev Rebasing/FOT tokens break the vault accounting invariant (raw=reserve+vault).
 function setQuoteToken(address token, bool enabled) external {
-    require(msg.sender == feeToSetter, 'FORBIDDEN');
+    require(msg.sender == pairAdmin, 'FORBIDDEN');
     require(token != address(0), 'ZERO_ADDRESS');
     isQuoteToken[token] = enabled;
 }
@@ -499,9 +498,15 @@ function setQuoteToken(address token, bool enabled) external {
 /// @notice Base token support allowlist for Router enforcement.
 /// @dev FOT/rebasing Base tokens must be disabled.
 function setBaseTokenSupported(address token, bool enabled) external {
-    require(msg.sender == feeToSetter, 'FORBIDDEN');
+    require(msg.sender == pairAdmin, 'FORBIDDEN');
     require(token != address(0), 'ZERO_ADDRESS');
     isBaseTokenSupported[token] = enabled;
+}
+
+/// @notice feeTo receiver update (V2 semantics preserved, admin unified to pairAdmin).
+function setFeeTo(address _feeTo) external {
+    require(msg.sender == pairAdmin, 'UniswapV2: FORBIDDEN');
+    feeTo = _feeTo;
 }
 
 /// @dev Pair integrity check — verifies pair was created by this Factory via mapping (no external calls)
@@ -856,10 +861,12 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 | `test_createPair_duplicate_revert` | 🆕 Duplicate pair creation reverts |
 | `test_factory_invalidPair_revert` | Factory admin functions with external pair address revert |
 | `test_setQuoteToken_zeroAddr_revert` | 🆕 setQuoteToken with address(0) → ZERO_ADDRESS revert |
-| `test_setQuoteToken_nonFeeToSetter_revert` | 🆕 non-feeToSetter caller on setQuoteToken → FORBIDDEN revert |
+| `test_setQuoteToken_nonPairAdmin_revert` | 🆕 non-pairAdmin caller on setQuoteToken → FORBIDDEN revert |
 | `test_setBaseTokenSupported_zeroAddr_revert` | 🆕 setBaseTokenSupported with address(0) → ZERO_ADDRESS revert |
-| `test_setBaseTokenSupported_forbidden` | 🆕 non-feeToSetter caller → FORBIDDEN revert |
-| `test_constructor_zeroAddress_revert` | 🆕 constructor with zero `feeToSetter` or `pairAdmin` → ZERO_ADDRESS revert |
+| `test_setBaseTokenSupported_nonPairAdmin_revert` | 🆕 non-pairAdmin caller → FORBIDDEN revert |
+| `test_setFeeTo_onlyPairAdmin_revert` | 🆕 non-pairAdmin caller on setFeeTo → UniswapV2: FORBIDDEN revert |
+| `test_setFeeTo_pairAdmin_success` | 🆕 pairAdmin can update feeTo successfully |
+| `test_constructor_zeroAddress_revert` | 🆕 constructor with zero `pairAdmin` → ZERO_ADDRESS revert |
 | `test_initialize_reentryBlocked` | Second initialize call reverts |
 | `test_initialize_zeroCollector` | feeCollector=0 reverts |
 | `test_initialize_invalidQuote` | 🆕 quoteToken not matching token0 or token1 → INVALID_QUOTE revert |
@@ -947,7 +954,7 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 
 ## 17. Deployment Flow
 
-1. Deploy Factory(`feeToSetter`, `pairAdmin`) / Pair / Router
+1. Deploy Factory(`pairAdmin`) / Pair / Router
 2. `pairAdmin` is fixed at deployment (immutable in this spec)
 3. Set Quote whitelist (`setQuoteToken`) and Base support allowlist (`setBaseTokenSupported`)
 4. **`createPair(tokenA, tokenB, buyTax, sellTax, collector)`** — creation and tax set simultaneously

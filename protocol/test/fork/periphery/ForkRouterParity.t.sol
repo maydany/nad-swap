@@ -62,7 +62,7 @@ contract ForkRouterParityTest is ForkFixture {
     function testFork_router_multihop_taxPerHop() public onlyFork {
         // Create second pair for multihop: quote <-> mid
         MockERC20 mid = new MockERC20("Mid", "MID", 18);
-        vm.prank(FEE_TO_SETTER);
+        vm.prank(PAIR_ADMIN);
         factory.setBaseTokenSupported(address(mid), true);
         vm.prank(PAIR_ADMIN);
         address pair2Addr = factory.createPair(monadQuoteToken, address(mid), 700, 200, COLLECTOR);

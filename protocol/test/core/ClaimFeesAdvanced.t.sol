@@ -79,11 +79,11 @@ contract ClaimFeesAdvancedTest is PairFixture {
     function test_safeTransfer_nonStandard() public {
         MockNonStandardERC20 q = new MockNonStandardERC20("USDT-Like", "USDTL", 18);
         MockERC20 b = new MockERC20("Base", "BASE", 18);
-        UniswapV2Factory f = new UniswapV2Factory(FEE_TO_SETTER, PAIR_ADMIN);
+        UniswapV2Factory f = new UniswapV2Factory(PAIR_ADMIN);
 
-        vm.prank(FEE_TO_SETTER);
+        vm.prank(PAIR_ADMIN);
         f.setQuoteToken(address(q), true);
-        vm.prank(FEE_TO_SETTER);
+        vm.prank(PAIR_ADMIN);
         f.setBaseTokenSupported(address(b), true);
         vm.prank(PAIR_ADMIN);
         address pairAddr = f.createPair(address(q), address(b), 300, 500, COLLECTOR);

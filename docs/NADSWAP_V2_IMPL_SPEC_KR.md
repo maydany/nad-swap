@@ -482,16 +482,15 @@ mapping(address => bool) public isPair;
 address public pairAdmin;
 
 /// @notice pairAdmin은 배포 시 고정됨 (이 명세의 거버넌스 선택)
-constructor(address _feeToSetter, address _pairAdmin) public {
-    require(_feeToSetter != address(0) && _pairAdmin != address(0), 'ZERO_ADDRESS');
-    feeToSetter = _feeToSetter;
+constructor(address _pairAdmin) public {
+    require(_pairAdmin != address(0), 'ZERO_ADDRESS');
     pairAdmin = _pairAdmin;
 }
 
 /// @notice Quote 화이트리스트 등록. 리베이싱/FOT 토큰은 허용하지 않음.
 /// @dev 리베이싱/FOT는 vault 회계 불변식(raw=reserve+vault)을 깨뜨림.
 function setQuoteToken(address token, bool enabled) external {
-    require(msg.sender == feeToSetter, 'FORBIDDEN');
+    require(msg.sender == pairAdmin, 'FORBIDDEN');
     require(token != address(0), 'ZERO_ADDRESS');
     isQuoteToken[token] = enabled;
 }
@@ -499,9 +498,15 @@ function setQuoteToken(address token, bool enabled) external {
 /// @notice Router 강제를 위한 Base 토큰 지원 allowlist.
 /// @dev FOT/리베이싱 Base 토큰은 비활성화해야 함.
 function setBaseTokenSupported(address token, bool enabled) external {
-    require(msg.sender == feeToSetter, 'FORBIDDEN');
+    require(msg.sender == pairAdmin, 'FORBIDDEN');
     require(token != address(0), 'ZERO_ADDRESS');
     isBaseTokenSupported[token] = enabled;
+}
+
+/// @notice feeTo 수령자 변경 (V2 semantics 유지, 관리자만 pairAdmin으로 통합)
+function setFeeTo(address _feeTo) external {
+    require(msg.sender == pairAdmin, 'UniswapV2: FORBIDDEN');
+    feeTo = _feeTo;
 }
 
 /// @dev Pair 무결성 확인 — 매핑으로 이 Factory 생성 여부 검증(외부 호출 없음)
@@ -856,10 +861,12 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 | `test_createPair_duplicate_revert` | 🆕 중복 페어 생성 revert |
 | `test_factory_invalidPair_revert` | 외부 pair 주소 대상 Factory admin 함수 호출 revert |
 | `test_setQuoteToken_zeroAddr_revert` | 🆕 address(0)로 setQuoteToken → ZERO_ADDRESS revert |
-| `test_setQuoteToken_nonFeeToSetter_revert` | 🆕 non-feeToSetter가 setQuoteToken 호출 → FORBIDDEN revert |
+| `test_setQuoteToken_nonPairAdmin_revert` | 🆕 non-pairAdmin가 setQuoteToken 호출 → FORBIDDEN revert |
 | `test_setBaseTokenSupported_zeroAddr_revert` | 🆕 address(0)로 setBaseTokenSupported → ZERO_ADDRESS revert |
-| `test_setBaseTokenSupported_forbidden` | 🆕 non-feeToSetter 호출 → FORBIDDEN revert |
-| `test_constructor_zeroAddress_revert` | 🆕 생성자 `feeToSetter` 또는 `pairAdmin`이 0이면 ZERO_ADDRESS revert |
+| `test_setBaseTokenSupported_nonPairAdmin_revert` | 🆕 non-pairAdmin 호출 → FORBIDDEN revert |
+| `test_setFeeTo_onlyPairAdmin_revert` | 🆕 non-pairAdmin가 setFeeTo 호출 → UniswapV2: FORBIDDEN revert |
+| `test_setFeeTo_pairAdmin_success` | 🆕 pairAdmin이 feeTo를 정상 갱신 가능 |
+| `test_constructor_zeroAddress_revert` | 🆕 생성자 `pairAdmin`이 0이면 ZERO_ADDRESS revert |
 | `test_initialize_reentryBlocked` | initialize 2회 호출 시 revert |
 | `test_initialize_zeroCollector` | feeCollector=0이면 revert |
 | `test_initialize_invalidQuote` | 🆕 quoteToken이 token0/token1과 불일치 → INVALID_QUOTE revert |
@@ -947,7 +954,7 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 
 ## 17. 배포 플로우
 
-1. Factory(`feeToSetter`, `pairAdmin`) / Pair / Router 배포
+1. Factory(`pairAdmin`) / Pair / Router 배포
 2. `pairAdmin`은 배포 시 고정(이 명세에서는 immutable)
 3. Quote 화이트리스트(`setQuoteToken`)와 Base 지원 allowlist(`setBaseTokenSupported`) 설정
 4. **`createPair(tokenA, tokenB, buyTax, sellTax, collector)`** — 생성과 세금 설정을 동시에 수행

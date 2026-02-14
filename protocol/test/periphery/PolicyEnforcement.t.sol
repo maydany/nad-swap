@@ -14,7 +14,7 @@ contract PolicyEnforcementTest is PairFixture {
         uint256 amountIn = 1000 ether;
         _mintToken(quoteTokenAddr, TRADER, amountIn);
         _approveRouter(quoteTokenAddr, TRADER, uint256(-1));
-        vm.prank(FEE_TO_SETTER);
+        vm.prank(PAIR_ADMIN);
         factory.setQuoteToken(quoteTokenAddr, false);
 
         address[] memory p = _path(quoteTokenAddr, baseTokenAddr);
@@ -27,12 +27,12 @@ contract PolicyEnforcementTest is PairFixture {
         MockERC20 q = new MockERC20("Quote3", "Q3", 18);
         MockFeeOnTransferERC20 b = new MockFeeOnTransferERC20("FOT-Base", "FOTB", 18, 100);
         MockWETH w = new MockWETH();
-        UniswapV2Factory f = new UniswapV2Factory(FEE_TO_SETTER, PAIR_ADMIN);
+        UniswapV2Factory f = new UniswapV2Factory(PAIR_ADMIN);
         UniswapV2Router02 r = new UniswapV2Router02(address(f), address(w));
 
-        vm.prank(FEE_TO_SETTER);
+        vm.prank(PAIR_ADMIN);
         f.setQuoteToken(address(q), true);
-        vm.prank(FEE_TO_SETTER);
+        vm.prank(PAIR_ADMIN);
         f.setBaseTokenSupported(address(b), true);
         vm.prank(PAIR_ADMIN);
         address pairAddr = f.createPair(address(q), address(b), 300, 500, COLLECTOR);
@@ -47,7 +47,7 @@ contract PolicyEnforcementTest is PairFixture {
         vm.prank(LP);
         p.mint(LP);
 
-        vm.prank(FEE_TO_SETTER);
+        vm.prank(PAIR_ADMIN);
         f.setBaseTokenSupported(address(b), false);
 
         q.mint(TRADER, 1000 ether);
@@ -65,11 +65,11 @@ contract PolicyEnforcementTest is PairFixture {
     function test_quoteToken_fot_vaultDrift() public {
         MockFeeOnTransferERC20 q = new MockFeeOnTransferERC20("FOT-Quote", "FOTQ", 18, 100);
         MockERC20 b = new MockERC20("Base4", "B4", 18);
-        UniswapV2Factory f = new UniswapV2Factory(FEE_TO_SETTER, PAIR_ADMIN);
+        UniswapV2Factory f = new UniswapV2Factory(PAIR_ADMIN);
 
-        vm.prank(FEE_TO_SETTER);
+        vm.prank(PAIR_ADMIN);
         f.setQuoteToken(address(q), true);
-        vm.prank(FEE_TO_SETTER);
+        vm.prank(PAIR_ADMIN);
         f.setBaseTokenSupported(address(b), true);
         vm.prank(PAIR_ADMIN);
         address pairAddr = f.createPair(address(q), address(b), 300, 500, COLLECTOR);

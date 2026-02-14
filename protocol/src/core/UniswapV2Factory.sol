@@ -6,7 +6,6 @@ import "./UniswapV2Pair.sol";
 
 contract UniswapV2Factory is IUniswapV2Factory {
     address public feeTo;
-    address public feeToSetter;
     address public pairAdmin;
 
     mapping(address => mapping(address => address)) public getPair;
@@ -21,9 +20,8 @@ contract UniswapV2Factory is IUniswapV2Factory {
         _;
     }
 
-    constructor(address _feeToSetter, address _pairAdmin) public {
-        require(_feeToSetter != address(0) && _pairAdmin != address(0), "ZERO_ADDRESS");
-        feeToSetter = _feeToSetter;
+    constructor(address _pairAdmin) public {
+        require(_pairAdmin != address(0), "ZERO_ADDRESS");
         pairAdmin = _pairAdmin;
     }
 
@@ -82,24 +80,19 @@ contract UniswapV2Factory is IUniswapV2Factory {
     }
 
     function setQuoteToken(address token, bool enabled) external {
-        require(msg.sender == feeToSetter, "FORBIDDEN");
+        require(msg.sender == pairAdmin, "FORBIDDEN");
         require(token != address(0), "ZERO_ADDRESS");
         isQuoteToken[token] = enabled;
     }
 
     function setBaseTokenSupported(address token, bool enabled) external {
-        require(msg.sender == feeToSetter, "FORBIDDEN");
+        require(msg.sender == pairAdmin, "FORBIDDEN");
         require(token != address(0), "ZERO_ADDRESS");
         isBaseTokenSupported[token] = enabled;
     }
 
     function setFeeTo(address _feeTo) external {
-        require(msg.sender == feeToSetter, "UniswapV2: FORBIDDEN");
+        require(msg.sender == pairAdmin, "UniswapV2: FORBIDDEN");
         feeTo = _feeTo;
-    }
-
-    function setFeeToSetter(address _feeToSetter) external {
-        require(msg.sender == feeToSetter, "UniswapV2: FORBIDDEN");
-        feeToSetter = _feeToSetter;
     }
 }

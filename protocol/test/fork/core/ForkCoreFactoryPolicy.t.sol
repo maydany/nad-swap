@@ -41,13 +41,13 @@ contract ForkCoreFactoryPolicyTest is ForkFixture {
         assertEq(pair.feeCollector(), OTHER, "collector mismatch");
     }
 
-    function testFork_factory_setQuoteToken_forbidden() public onlyFork {
+    function testFork_factory_setQuoteToken_nonPairAdmin_revert() public onlyFork {
         vm.prank(OTHER);
         expectRevertMsg("FORBIDDEN");
         factory.setQuoteToken(monadQuoteToken, false);
     }
 
-    function testFork_factory_setBaseTokenSupported_forbidden() public onlyFork {
+    function testFork_factory_setBaseTokenSupported_nonPairAdmin_revert() public onlyFork {
         vm.prank(OTHER);
         expectRevertMsg("FORBIDDEN");
         factory.setBaseTokenSupported(monadBaseToken, false);

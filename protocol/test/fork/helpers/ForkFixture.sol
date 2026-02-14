@@ -12,7 +12,6 @@ import "../../helpers/MockWETH.sol";
 contract ForkFixture is TestBase {
     uint256 internal constant BPS = 10_000;
 
-    address internal constant FEE_TO_SETTER = address(0x100);
     address internal constant PAIR_ADMIN = address(0x200);
     address internal constant COLLECTOR = address(0x300);
     address internal constant LP = address(0x111);
@@ -58,12 +57,12 @@ contract ForkFixture is TestBase {
         monadQuoteToken = address(quote);
         monadBaseToken = address(base);
 
-        factory = new UniswapV2Factory(FEE_TO_SETTER, PAIR_ADMIN);
+        factory = new UniswapV2Factory(PAIR_ADMIN);
         router = new UniswapV2Router02(address(factory), monadWnative);
 
-        vm.prank(FEE_TO_SETTER);
+        vm.prank(PAIR_ADMIN);
         factory.setQuoteToken(monadQuoteToken, true);
-        vm.prank(FEE_TO_SETTER);
+        vm.prank(PAIR_ADMIN);
         factory.setBaseTokenSupported(monadBaseToken, true);
 
         vm.prank(PAIR_ADMIN);
@@ -208,12 +207,12 @@ contract ForkFixture is TestBase {
     }
 
     function _setQuoteDisabled() internal {
-        vm.prank(FEE_TO_SETTER);
+        vm.prank(PAIR_ADMIN);
         factory.setQuoteToken(monadQuoteToken, false);
     }
 
     function _setBaseDisabled() internal {
-        vm.prank(FEE_TO_SETTER);
+        vm.prank(PAIR_ADMIN);
         factory.setBaseTokenSupported(monadBaseToken, false);
     }
 }

@@ -24,7 +24,7 @@ contract FactoryAdminExtTest is PairFixture {
     }
 
     function test_createPair_frontRunBlocked() public {
-        vm.prank(FEE_TO_SETTER);
+        vm.prank(PAIR_ADMIN);
         factory.setBaseTokenSupported(address(alt), true);
 
         vm.prank(OTHER);
@@ -38,14 +38,14 @@ contract FactoryAdminExtTest is PairFixture {
         factory.setTaxConfig(address(0xdead), 100, 100, COLLECTOR);
     }
 
-    function test_setQuoteToken_nonFeeToSetter_revert() public {
+    function test_setQuoteToken_nonPairAdmin_revert() public {
         vm.prank(OTHER);
         expectRevertMsg("FORBIDDEN");
         factory.setQuoteToken(address(alt), true);
     }
 
     function test_setBaseTokenSupported_zeroAddr_revert() public {
-        vm.prank(FEE_TO_SETTER);
+        vm.prank(PAIR_ADMIN);
         expectRevertMsg("ZERO_ADDRESS");
         factory.setBaseTokenSupported(address(0), true);
     }
@@ -93,7 +93,7 @@ contract FactoryAdminExtTest is PairFixture {
     }
 
     function test_atomicInit_noTaxFreeWindow() public {
-        vm.prank(FEE_TO_SETTER);
+        vm.prank(PAIR_ADMIN);
         factory.setBaseTokenSupported(address(alt), true);
 
         vm.prank(PAIR_ADMIN);
@@ -130,12 +130,19 @@ contract FactoryAdminExtTest is PairFixture {
 
     function test_pairAdmin_immutable() public {
         address beforeAdmin = factory.pairAdmin();
-        vm.prank(FEE_TO_SETTER);
-        factory.setFeeToSetter(OTHER);
+        vm.prank(PAIR_ADMIN);
+        factory.setFeeTo(OTHER);
         assertEq(factory.pairAdmin(), beforeAdmin, "pairAdmin changed unexpectedly");
 
         (bool success,) = address(factory).call(abi.encodeWithSignature("setPairAdmin(address)", OTHER));
         assertTrue(!success, "setPairAdmin path should not exist");
+
+        (bool successSetFeeToSetter,) =
+            address(factory).call(abi.encodeWithSignature("setFeeToSetter(address)", OTHER));
+        assertTrue(!successSetFeeToSetter, "setFeeToSetter path should not exist");
+
+        (bool successFeeToSetterGetter,) = address(factory).call(abi.encodeWithSignature("feeToSetter()"));
+        assertTrue(!successFeeToSetterGetter, "feeToSetter getter should not exist");
     }
 
     function test_setTaxConfig_alwaysMutable() public {

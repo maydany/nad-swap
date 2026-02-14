@@ -162,10 +162,10 @@ contract PairLifecycleTest is PairFixture {
     function test_firstDeposit_minimumLiquidity() public {
         MockERC20 q = new MockERC20("Quote2", "Q2", 18);
         MockERC20 b = new MockERC20("Base2", "B2", 18);
-        UniswapV2Factory f = new UniswapV2Factory(FEE_TO_SETTER, PAIR_ADMIN);
-        vm.prank(FEE_TO_SETTER);
+        UniswapV2Factory f = new UniswapV2Factory(PAIR_ADMIN);
+        vm.prank(PAIR_ADMIN);
         f.setQuoteToken(address(q), true);
-        vm.prank(FEE_TO_SETTER);
+        vm.prank(PAIR_ADMIN);
         f.setBaseTokenSupported(address(b), true);
 
         vm.prank(PAIR_ADMIN);

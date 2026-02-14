@@ -46,13 +46,16 @@ requirements:
     statement: "Factory prevents duplicate pair creation."
   - id: FACT-006
     section: "10. Factory"
-    statement: "Factory constructor rejects zero feeToSetter/pairAdmin."
+    statement: "Factory constructor rejects zero pairAdmin."
   - id: FACT-007
     section: "10. Factory"
     statement: "setQuoteToken rejects zero token address."
   - id: FACT-008
     section: "10. Factory"
-    statement: "setBaseTokenSupported is feeToSetter-only."
+    statement: "setBaseTokenSupported is pairAdmin-only."
+  - id: FACT-009
+    section: "10. Factory"
+    statement: "setFeeTo is pairAdmin-only."
   - id: LIB-001
     section: "11. Library"
     statement: "LP fee math uses 998/1000 in getAmountOut/getAmountIn."

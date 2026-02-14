@@ -7,6 +7,15 @@
 - New signature:
   - `createPair(address tokenA, address tokenB, uint16 buyTaxBps, uint16 sellTaxBps, address feeCollector)`
 - Access control: `createPair` is `pairAdmin`-only.
+- Constructor changed:
+  - `constructor(address pairAdmin)`
+- Removed factory admin API:
+  - `feeToSetter()`
+  - `setFeeToSetter(address)`
+- Access control changed:
+  - `setQuoteToken(address,bool)` is `pairAdmin`-only
+  - `setBaseTokenSupported(address,bool)` is `pairAdmin`-only
+  - `setFeeTo(address)` is `pairAdmin`-only
 
 ### Added getters / methods
 - `pairAdmin() -> address`

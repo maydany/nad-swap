@@ -94,7 +94,7 @@ contract RouterQuoteParityTest is PairFixture {
 
     function test_library_multihop_taxPerHop() public {
         MockERC20 mid = new MockERC20("Mid", "MID", 18);
-        vm.prank(FEE_TO_SETTER);
+        vm.prank(PAIR_ADMIN);
         factory.setBaseTokenSupported(address(mid), true);
         vm.prank(PAIR_ADMIN);
         address pair2Addr = factory.createPair(quoteTokenAddr, address(mid), 700, 200, COLLECTOR);

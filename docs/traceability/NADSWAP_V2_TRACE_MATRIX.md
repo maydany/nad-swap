@@ -19,7 +19,8 @@
 | FACT-005 | 10. duplicate pair | `protocol/src/core/UniswapV2Factory.sol` | `test_createPair_duplicate_revert` | `FOUNDRY_OFFLINE=true forge test --match-test test_createPair_duplicate_revert` | Implemented |
 | FACT-006 | 10. constructor guard | `protocol/src/core/UniswapV2Factory.sol` | `test_constructor_zeroAddress_revert` | `FOUNDRY_OFFLINE=true forge test --match-test test_constructor_zeroAddress_revert` | Implemented |
 | FACT-007 | 10. setQuoteToken guard | `protocol/src/core/UniswapV2Factory.sol` | `test_setQuoteToken_zeroAddr_revert` | `FOUNDRY_OFFLINE=true forge test --match-test test_setQuoteToken_zeroAddr_revert` | Implemented |
-| FACT-008 | 10. setBaseTokenSupported access | `protocol/src/core/UniswapV2Factory.sol` | `test_setBaseTokenSupported_forbidden` | `FOUNDRY_OFFLINE=true forge test --match-test test_setBaseTokenSupported_forbidden` | Implemented |
+| FACT-008 | 10. setBaseTokenSupported access | `protocol/src/core/UniswapV2Factory.sol` | `test_setBaseTokenSupported_nonPairAdmin_revert` | `FOUNDRY_OFFLINE=true forge test --match-test test_setBaseTokenSupported_nonPairAdmin_revert` | Implemented |
+| FACT-009 | 10. setFeeTo access | `protocol/src/core/UniswapV2Factory.sol` | `test_setFeeTo_onlyPairAdmin_revert,test_setFeeTo_pairAdmin_success` | `FOUNDRY_OFFLINE=true forge test --match-contract FactoryTest` | Implemented |
 | LIB-001 | 11. 998/1000 | `protocol/src/periphery/libraries/UniswapV2Library.sol` | `test_library_lpFee_998` | `FOUNDRY_OFFLINE=true forge test --match-test test_library_lpFee_998` | Implemented |
 | LIB-002 | 11. pairFor mapping lookup | `protocol/src/periphery/libraries/UniswapV2Library.sol` | `test_pairFor_usesFactoryGetPair` | `FOUNDRY_OFFLINE=true forge test --match-test test_pairFor_usesFactoryGetPair` | Implemented |
 | LIB-003 | 11. sell exact-in safe margin | `protocol/src/periphery/libraries/UniswapV2Library.sol` | `test_sellExactIn_safeMargin_avoidsLiquidityEdge` | `FOUNDRY_OFFLINE=true forge test --match-test test_sellExactIn_safeMargin_avoidsLiquidityEdge` | Implemented |
@@ -38,8 +39,8 @@
 | SEC-003 | 16. static analysis gate | `scripts/gates/check_slither_gate.py` | `N/A` | `python3 scripts/gates/check_slither_gate.py` | Implemented |
 ## Spec Section 16 Test Coverage
 
-- Coverage target: `85` spec `test_*` names + `5` spec `invariant_*` names
-- Current status: `90/90` mapped
+- Coverage target: `87` spec `test_*` names + `5` spec `invariant_*` names
+- Current status: `92/92` mapped
 
 | Test Name | Code File | Verification Command | Status |
 |---|---|---|---|
@@ -99,9 +100,11 @@
 | `test_createPair_duplicate_revert` | `protocol/test/core/Factory.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_createPair_duplicate_revert` | Implemented |
 | `test_factory_invalidPair_revert` | `protocol/test/core/FactoryAdminExt.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_factory_invalidPair_revert` | Implemented |
 | `test_setQuoteToken_zeroAddr_revert` | `protocol/test/core/Factory.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_setQuoteToken_zeroAddr_revert` | Implemented |
-| `test_setQuoteToken_nonFeeToSetter_revert` | `protocol/test/core/FactoryAdminExt.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_setQuoteToken_nonFeeToSetter_revert` | Implemented |
+| `test_setQuoteToken_nonPairAdmin_revert` | `protocol/test/core/FactoryAdminExt.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_setQuoteToken_nonPairAdmin_revert` | Implemented |
 | `test_setBaseTokenSupported_zeroAddr_revert` | `protocol/test/core/FactoryAdminExt.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_setBaseTokenSupported_zeroAddr_revert` | Implemented |
-| `test_setBaseTokenSupported_forbidden` | `protocol/test/core/Factory.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_setBaseTokenSupported_forbidden` | Implemented |
+| `test_setBaseTokenSupported_nonPairAdmin_revert` | `protocol/test/core/Factory.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_setBaseTokenSupported_nonPairAdmin_revert` | Implemented |
+| `test_setFeeTo_onlyPairAdmin_revert` | `protocol/test/core/Factory.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_setFeeTo_onlyPairAdmin_revert` | Implemented |
+| `test_setFeeTo_pairAdmin_success` | `protocol/test/core/Factory.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_setFeeTo_pairAdmin_success` | Implemented |
 | `test_constructor_zeroAddress_revert` | `protocol/test/core/Factory.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_constructor_zeroAddress_revert` | Implemented |
 | `test_initialize_reentryBlocked` | `protocol/test/core/FactoryAdminExt.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_initialize_reentryBlocked` | Implemented |
 | `test_initialize_zeroCollector` | `protocol/test/core/FactoryAdminExt.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_initialize_zeroCollector` | Implemented |

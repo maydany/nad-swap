@@ -10,7 +10,6 @@ import "../../src/periphery/UniswapV2Router02.sol";
 import "./handlers/PairHandler.t.sol";
 
 contract StatefulPairInvariantTest is TestBase {
-    address internal constant FEE_TO_SETTER = address(0x100);
     address internal constant PAIR_ADMIN = address(0x200);
     address internal constant COLLECTOR = address(0x300);
     address internal constant LP = address(0x111);
@@ -28,12 +27,12 @@ contract StatefulPairInvariantTest is TestBase {
         base = new MockERC20("Base", "BS", 18);
         weth = new MockWETH();
 
-        factory = new UniswapV2Factory(FEE_TO_SETTER, PAIR_ADMIN);
+        factory = new UniswapV2Factory(PAIR_ADMIN);
         router = new UniswapV2Router02(address(factory), address(weth));
 
-        vm.prank(FEE_TO_SETTER);
+        vm.prank(PAIR_ADMIN);
         factory.setQuoteToken(address(quote), true);
-        vm.prank(FEE_TO_SETTER);
+        vm.prank(PAIR_ADMIN);
         factory.setBaseTokenSupported(address(base), true);
 
         vm.prank(PAIR_ADMIN);
