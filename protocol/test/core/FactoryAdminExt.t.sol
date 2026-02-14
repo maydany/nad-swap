@@ -70,7 +70,7 @@ contract FactoryAdminExtTest is PairFixture {
         p.initialize(address(quote), address(base), address(quote), 100, 100, COLLECTOR);
     }
 
-    function test_initialize_zeroCollector() public {
+    function test_initialize_zeroTaxCollector() public {
         UniswapV2Pair p = new UniswapV2Pair();
         expectRevertMsg("ZERO_COLLECTOR");
         p.initialize(address(quote), address(base), address(quote), 100, 100, address(0));
@@ -149,13 +149,13 @@ contract FactoryAdminExtTest is PairFixture {
         factory.setTaxConfig(address(pair), 100, 200, address(0xabc));
         assertEq(uint256(pair.buyTaxBps()), 100, "buy tax not updated #1");
         assertEq(uint256(pair.sellTaxBps()), 200, "sell tax not updated #1");
-        assertEq(pair.taxCollector(), address(0xabc), "collector not updated #1");
+        assertEq(pair.taxCollector(), address(0xabc), "taxCollector not updated #1");
 
         vm.prank(PAIR_ADMIN);
         factory.setTaxConfig(address(pair), 300, 400, address(0xdef));
         assertEq(uint256(pair.buyTaxBps()), 300, "buy tax not updated #2");
         assertEq(uint256(pair.sellTaxBps()), 400, "sell tax not updated #2");
-        assertEq(pair.taxCollector(), address(0xdef), "collector not updated #2");
+        assertEq(pair.taxCollector(), address(0xdef), "taxCollector not updated #2");
     }
 
     function test_setTaxConfig_nonFactory_revert() public {
@@ -169,7 +169,7 @@ contract FactoryAdminExtTest is PairFixture {
         factory.setTaxConfig(address(pair), 0, 10_000, COLLECTOR);
     }
 
-    function test_setTaxConfig_zeroCollector() public {
+    function test_setTaxConfig_zeroTaxCollector() public {
         vm.prank(PAIR_ADMIN);
         expectRevertMsg("ZERO_COLLECTOR");
         factory.setTaxConfig(address(pair), 10, 10, address(0));

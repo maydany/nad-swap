@@ -4,7 +4,7 @@ requirements:
     statement: "Pair initialize is factory-only, one-time, quote validation and tax boundary enforced."
   - id: PAIR-002
     section: "9. setTaxConfig"
-    statement: "Tax config enforces max tax and non-zero collector."
+    statement: "Tax config enforces max tax and non-zero taxCollector."
   - id: PAIR-003
     section: "6. swap"
     statement: "swap rejects dual-sided outputs with SINGLE_SIDE_ONLY."
@@ -22,10 +22,10 @@ requirements:
     statement: "swap requires non-zero effective input and reverts INSUFFICIENT_INPUT otherwise."
   - id: PAIR-008
     section: "8. claimQuoteTax"
-    statement: "claimQuoteTax is collector-only and rejects invalid recipients."
+    statement: "claimQuoteTax is taxCollector-only and rejects invalid recipients."
   - id: PAIR-009
     section: "8. claimQuoteTax"
-    statement: "claimQuoteTax resets vault and transfers claimed quote fees."
+    statement: "claimQuoteTax resets vault and transfers claimed quote tax."
   - id: PAIR-010
     section: "8. claimQuoteTax"
     statement: "claimQuoteTax re-syncs reserves to raw balances after vault reset; quote-side dust may be absorbed into reserves."

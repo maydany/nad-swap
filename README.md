@@ -102,8 +102,6 @@ ABI 변경 상세: [NADSWAP_V2_ABI_DIFF.md](docs/abi/NADSWAP_V2_ABI_DIFF.md)
 **V2의 `feeToSetter`와의 차이:** V2에서는 `feeToSetter`가 `feeTo` 주소만 관리합니다. NadSwap에서는 `feeToSetter` 역할을 제거하고, 모든 관리 권한을 `pairAdmin` 하나로 통합했습니다. pair 생성·세율·Quote 화이트리스트·`feeTo` 설정을 단일 관리자가 담당하여 권한 모델을 단순화합니다.
 
 > **용어 정리 — tax vs fee:** 이 문서에서는 거래세를 **tax**로 통일합니다. tax 관련 코드 식별자는 `accumulatedQuoteTax`, `taxCollector`, `claimQuoteTax`로 명확히 분리합니다. LP 수수료는 K-invariant 수학에 내장되어 있고, tax는 tax vault에 별도 적립됩니다.
->
-> **프리릴리즈 ABI 변경 공지:** 초기버전 정리 과정에서 tax 관련 selector를 하드브레이크로 변경했습니다. 구 selector(`feeCollector()`, `accumulatedQuoteFees()`, `claimQuoteFees(address)`)는 더 이상 지원하지 않습니다.
 
 ---
 

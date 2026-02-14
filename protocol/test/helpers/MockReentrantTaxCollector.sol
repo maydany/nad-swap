@@ -3,7 +3,7 @@ pragma solidity =0.5.16;
 import "../../src/core/interfaces/INadSwapV2Callee.sol";
 import "../../src/core/interfaces/INadSwapV2Pair.sol";
 
-contract MockReentrantCollector is IUniswapV2Callee {
+contract MockReentrantTaxCollector is IUniswapV2Callee {
     address public pair;
     address public repayToken;
     uint256 public repayAmount;

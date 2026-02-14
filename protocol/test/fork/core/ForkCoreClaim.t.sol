@@ -1,15 +1,15 @@
 pragma solidity =0.5.16;
 
 import "../helpers/ForkFixture.sol";
-import "../../helpers/MockReentrantCollector.sol";
+import "../../helpers/MockReentrantTaxCollector.sol";
 
 contract ForkCoreClaimTest is ForkFixture {
-    MockReentrantCollector internal reentrantCollector;
+    MockReentrantTaxCollector internal reentrantCollector;
 
     function setUp() public {
         _setUpFork();
         if (forkEnabled) {
-            reentrantCollector = new MockReentrantCollector();
+            reentrantCollector = new MockReentrantTaxCollector();
         }
     }
 
@@ -21,7 +21,7 @@ contract ForkCoreClaimTest is ForkFixture {
         _buy(rawIn, out, TRADER);
     }
 
-    function testFork_claim_collectorOnly() public onlyFork {
+    function testFork_claim_taxCollectorOnly() public onlyFork {
         _accrueVault();
         vm.prank(TRADER);
         expectRevertMsg("FORBIDDEN");

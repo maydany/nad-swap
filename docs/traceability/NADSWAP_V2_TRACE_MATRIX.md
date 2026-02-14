@@ -3,13 +3,13 @@
 | ID | Spec | Code | Tests | Verification Command | Status |
 |---|---|---|---|---|---|
 | PAIR-001 | 4. initialize | `protocol/src/core/NadSwapV2Pair.sol` | `test_initialize_nonFactory_revert,test_initialize_reentryBlocked,test_initialize_invalidQuote,test_initialize_taxTooHigh_revert` | `FOUNDRY_OFFLINE=true forge test --match-contract FactoryAdminExtTest` | Implemented |
-| PAIR-002 | 9. setTaxConfig | `protocol/src/core/NadSwapV2Pair.sol` | `test_setTaxConfig_maxTax_revert,test_setTaxConfig_zeroCollector,test_setTaxConfig_nonFactory_revert` | `FOUNDRY_OFFLINE=true forge test --match-contract FactoryAdminExtTest` | Implemented |
+| PAIR-002 | 9. setTaxConfig | `protocol/src/core/NadSwapV2Pair.sol` | `test_setTaxConfig_maxTax_revert,test_setTaxConfig_zeroTaxCollector,test_setTaxConfig_nonFactory_revert` | `FOUNDRY_OFFLINE=true forge test --match-contract FactoryAdminExtTest` | Implemented |
 | PAIR-003 | 6. swap single-side | `protocol/src/core/NadSwapV2Pair.sol` | `test_singleSideOnly_revert` | `FOUNDRY_OFFLINE=true forge test --match-test test_singleSideOnly_revert` | Implemented |
 | PAIR-004 | 6. swap invalid to | `protocol/src/core/NadSwapV2Pair.sol` | `test_swap_invalidTo_revert` | `FOUNDRY_OFFLINE=true forge test --match-test test_swap_invalidTo_revert` | Implemented |
 | PAIR-005 | 6. sell reverse ceil | `protocol/src/core/NadSwapV2Pair.sol` | `test_sell_reverseMath_ceilGross` | `FOUNDRY_OFFLINE=true forge test --match-test test_sell_reverseMath_ceilGross` | Implemented |
 | PAIR-006 | 6. buy pre-deduction | `protocol/src/core/NadSwapV2Pair.sol` | `test_buy_preDeduction_taxIn` | `FOUNDRY_OFFLINE=true forge test --match-test test_buy_preDeduction_taxIn` | Implemented |
 | PAIR-007 | 6. non-zero input | `protocol/src/core/NadSwapV2Pair.sol` | `test_swap_zeroInput_revert` | `FOUNDRY_OFFLINE=true forge test --match-test test_swap_zeroInput_revert` | Implemented |
-| PAIR-008 | 8. claim access + recipient | `protocol/src/core/NadSwapV2Pair.sol` | `test_claim_nonCollector_revert,test_claim_zeroAddress_revert` | `FOUNDRY_OFFLINE=true forge test --match-contract PairSwapTest` | Implemented |
+| PAIR-008 | 8. claim access + recipient | `protocol/src/core/NadSwapV2Pair.sol` | `test_claim_nonTaxCollector_revert,test_claim_zeroAddress_revert` | `FOUNDRY_OFFLINE=true forge test --match-contract PairSwapTest` | Implemented |
 | PAIR-009 | 8. claim vault reset | `protocol/src/core/NadSwapV2Pair.sol` | `test_claim_vaultReset_reserveSync` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_vaultReset_reserveSync` | Implemented |
 | PAIR-010 | 8. claim reserve resync + dust semantics | `protocol/src/core/NadSwapV2Pair.sol` | `test_claim_vaultReset_reserveSync,test_sync_afterClaim` | `FOUNDRY_OFFLINE=true forge test --match-contract PairLifecycleTest` | Implemented |
 | FACT-001 | 10. createPair access control | `protocol/src/core/NadSwapV2Factory.sol` | `test_createPair_onlyPairAdmin` | `FOUNDRY_OFFLINE=true forge test --match-test test_createPair_onlyPairAdmin` | Implemented |
@@ -80,14 +80,14 @@
 | `test_burn_vaultDrift_revert` | `protocol/test/core/PairLifecycle.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_burn_vaultDrift_revert` | Implemented |
 | `test_sync_vaultDrift_revert` | `protocol/test/core/PairLifecycle.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_sync_vaultDrift_revert` | Implemented |
 | `test_claim_vaultReset_reserveSync` | `protocol/test/core/PairSwap.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_vaultReset_reserveSync` | Implemented |
-| `test_claim_selfTransfer_revert` | `protocol/test/core/ClaimFeesAdvanced.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_selfTransfer_revert` | Implemented |
+| `test_claim_selfTransfer_revert` | `protocol/test/core/ClaimTaxAdvanced.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_selfTransfer_revert` | Implemented |
 | `test_claim_zeroAddress_revert` | `protocol/test/core/PairSwap.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_zeroAddress_revert` | Implemented |
 | `test_claim_noTax_revert` | `protocol/test/core/PairSwap.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_noTax_revert` | Implemented |
-| `test_claim_nonCollector_revert` | `protocol/test/core/PairSwap.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_nonCollector_revert` | Implemented |
-| `test_claim_reentrancy_blocked` | `protocol/test/core/ClaimFeesAdvanced.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_reentrancy_blocked` | Implemented |
-| `test_claim_vaultDrift_revert` | `protocol/test/core/ClaimFeesAdvanced.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_vaultDrift_revert` | Implemented |
+| `test_claim_nonTaxCollector_revert` | `protocol/test/core/PairSwap.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_nonTaxCollector_revert` | Implemented |
+| `test_claim_reentrancy_blocked` | `protocol/test/core/ClaimTaxAdvanced.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_reentrancy_blocked` | Implemented |
+| `test_claim_vaultDrift_revert` | `protocol/test/core/ClaimTaxAdvanced.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_vaultDrift_revert` | Implemented |
 | `test_setTaxConfig_alwaysMutable` | `protocol/test/core/FactoryAdminExt.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_setTaxConfig_alwaysMutable` | Implemented |
-| `test_setTaxConfig_zeroCollector` | `protocol/test/core/FactoryAdminExt.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_setTaxConfig_zeroCollector` | Implemented |
+| `test_setTaxConfig_zeroTaxCollector` | `protocol/test/core/FactoryAdminExt.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_setTaxConfig_zeroTaxCollector` | Implemented |
 | `test_setTaxConfig_maxTax_revert` | `protocol/test/core/Factory.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_setTaxConfig_maxTax_revert` | Implemented |
 | `test_setTaxConfig_sellTax100pct_revert` | `protocol/test/core/FactoryAdminExt.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_setTaxConfig_sellTax100pct_revert` | Implemented |
 | `test_setTaxConfig_nonFactory_revert` | `protocol/test/core/FactoryAdminExt.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_setTaxConfig_nonFactory_revert` | Implemented |
@@ -107,7 +107,7 @@
 | `test_setFeeTo_pairAdmin_success` | `protocol/test/core/Factory.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_setFeeTo_pairAdmin_success` | Implemented |
 | `test_constructor_zeroAddress_revert` | `protocol/test/core/Factory.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_constructor_zeroAddress_revert` | Implemented |
 | `test_initialize_reentryBlocked` | `protocol/test/core/FactoryAdminExt.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_initialize_reentryBlocked` | Implemented |
-| `test_initialize_zeroCollector` | `protocol/test/core/FactoryAdminExt.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_initialize_zeroCollector` | Implemented |
+| `test_initialize_zeroTaxCollector` | `protocol/test/core/FactoryAdminExt.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_initialize_zeroTaxCollector` | Implemented |
 | `test_initialize_invalidQuote` | `protocol/test/core/FactoryAdminExt.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_initialize_invalidQuote` | Implemented |
 | `test_initialize_taxTooHigh_revert` | `protocol/test/core/FactoryAdminExt.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_initialize_taxTooHigh_revert` | Implemented |
 | `test_initialize_sellTax100pct_revert` | `protocol/test/core/FactoryAdminExt.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_initialize_sellTax100pct_revert` | Implemented |
@@ -128,9 +128,9 @@
 | `test_quoteToken_notSupported` | `protocol/test/periphery/PolicyEnforcement.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_quoteToken_notSupported` | Implemented |
 | `test_baseToken_policy_unrestricted` | `protocol/test/periphery/PolicyEnforcement.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_baseToken_policy_unrestricted` | Implemented |
 | `test_router_supportingFOT_notSupported` | `protocol/test/periphery/RouterLibrary.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_router_supportingFOT_notSupported` | Implemented |
-| `test_safeTransfer_nonStandard` | `protocol/test/core/ClaimFeesAdvanced.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_safeTransfer_nonStandard` | Implemented |
+| `test_safeTransfer_nonStandard` | `protocol/test/core/ClaimTaxAdvanced.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_safeTransfer_nonStandard` | Implemented |
 | `test_firstDeposit_minimumLiquidity` | `protocol/test/core/PairLifecycle.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_firstDeposit_minimumLiquidity` | Implemented |
-| `test_claim_CEI_order` | `protocol/test/core/ClaimFeesAdvanced.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_CEI_order` | Implemented |
+| `test_claim_CEI_order` | `protocol/test/core/ClaimTaxAdvanced.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_CEI_order` | Implemented |
 | `invariant_raw_quote_eq_reserve_plus_vault_or_dust` | `protocol/test/invariant/StatefulPairInvariant.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-path "test/invariant/**" --match-test invariant_raw_quote_eq_reserve_plus_vault_or_dust` | Implemented |
 | `invariant_vault_monotonic_except_claim` | `protocol/test/invariant/StatefulPairInvariant.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-path "test/invariant/**" --match-test invariant_vault_monotonic_except_claim` | Implemented |
 | `invariant_totalSupply_implies_positive_reserves` | `protocol/test/invariant/StatefulPairInvariant.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-path "test/invariant/**" --match-test invariant_totalSupply_implies_positive_reserves` | Implemented |

@@ -38,7 +38,7 @@ contract ForkCoreFactoryPolicyTest is ForkFixture {
         factory.setTaxConfig(address(pair), 100, 200, OTHER);
         assertEq(uint256(pair.buyTaxBps()), 100, "buy tax mismatch");
         assertEq(uint256(pair.sellTaxBps()), 200, "sell tax mismatch");
-        assertEq(pair.taxCollector(), OTHER, "collector mismatch");
+        assertEq(pair.taxCollector(), OTHER, "taxCollector mismatch");
     }
 
     function testFork_factory_setQuoteToken_nonPairAdmin_revert() public onlyFork {

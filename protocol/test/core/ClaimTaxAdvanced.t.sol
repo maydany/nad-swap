@@ -1,15 +1,15 @@
 pragma solidity =0.5.16;
 
 import "./../helpers/PairFixture.sol";
-import "./../helpers/MockReentrantCollector.sol";
+import "./../helpers/MockReentrantTaxCollector.sol";
 import "./../helpers/MockNonStandardERC20.sol";
 
-contract ClaimFeesAdvancedTest is PairFixture {
-    MockReentrantCollector internal reentrantCollector;
+contract ClaimTaxAdvancedTest is PairFixture {
+    MockReentrantTaxCollector internal reentrantCollector;
 
     function setUp() public {
         _setUpPair(300, 500);
-        reentrantCollector = new MockReentrantCollector();
+        reentrantCollector = new MockReentrantTaxCollector();
     }
 
     function _accrueVault() internal returns (uint256 accrued) {

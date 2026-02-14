@@ -21,8 +21,8 @@ Scope: `draft_1` excluded
 ## Gate Results
 <!-- GENERATED:START -->
 - Metrics source: `docs/reports/NADSWAP_V2_VERIFICATION_METRICS.json`
-- Generated at: `2026-02-14T20:05:09.241498+00:00`
-- Git SHA: `de4cdaba4a1b8fc94d6c46145eef8e954d280352`
+- Generated at: `2026-02-14T20:15:07.091333+00:00`
+- Git SHA: `51f063a48bb958568bc68781229040d84691d2e4`
 - Baseline source: `docs/reports/NADSWAP_V2_VERIFICATION_BASELINE.json`
 - Foundry tests (non-fork strict): **PASS** (`104/104`)
 - Foundry tests (fork suites): **PASS** (`47/47`)

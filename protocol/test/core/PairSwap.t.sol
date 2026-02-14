@@ -155,7 +155,7 @@ contract PairSwapTest is TestBase {
         pair.swap(0, 1 ether, TRADER, new bytes(0));
     }
 
-    function test_claim_nonCollector_revert() public {
+    function test_claim_nonTaxCollector_revert() public {
         vm.prank(TRADER);
         expectRevertMsg("FORBIDDEN");
         pair.claimQuoteTax(FEE_RECIPIENT);

@@ -128,6 +128,22 @@ def existing_tests():
     return found
 
 
+def parse_code_paths(cell: str):
+    if not cell or cell == "N/A":
+        return []
+    return [part.strip() for part in cell.split(",") if part.strip()]
+
+
+def verify_matrix_code_paths(row_label: str, cell: str):
+    code_paths = parse_code_paths(cell)
+    if not code_paths:
+        fail(f"Trace matrix code path missing for {row_label}")
+    for code_path in code_paths:
+        target = ROOT / code_path
+        if not target.exists():
+            fail(f"Trace matrix code path not found for {row_label}: {code_path}")
+
+
 def main():
     if not REQ_PATH.exists() or not MATRIX_PATH.exists() or not SPEC_PATH.exists():
         fail("Traceability input files are missing")
@@ -153,6 +169,7 @@ def main():
 
     for rid in req_ids:
         row = rows[rid]
+        verify_matrix_code_paths(rid, row["code"])
         if not row["cmd"] or row["cmd"] == "N/A":
             fail(f"Missing verification command for {rid}")
 
@@ -192,6 +209,7 @@ def main():
         row = coverage_rows[name]
         if not row["code"] or row["code"] == "N/A":
             fail(f"Coverage row missing code file for {name}")
+        verify_matrix_code_paths(name, row["code"])
         if not row["cmd"] or row["cmd"] == "N/A":
             fail(f"Coverage row missing verification command for {name}")
         if name not in row["cmd"]:

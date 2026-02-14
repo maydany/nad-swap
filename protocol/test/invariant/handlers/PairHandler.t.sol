@@ -188,11 +188,11 @@ contract PairHandler is TestBase {
 
         uint16 buyTax = uint16(seed % 2001);
         uint16 sellTax = uint16((seed >> 16) % 2001);
-        address collector = _recipient(seed, 0xE5);
+        address nextTaxCollector = _recipient(seed, 0xE5);
 
         vm.prank(pairAdmin);
-        factory.setTaxConfig(address(pair), buyTax, sellTax, collector);
-        taxCollector = collector;
+        factory.setTaxConfig(address(pair), buyTax, sellTax, nextTaxCollector);
+        taxCollector = nextTaxCollector;
 
         _postActionVaultCheck();
     }

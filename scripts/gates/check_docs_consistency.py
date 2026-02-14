@@ -11,6 +11,8 @@ ROOT = Path(__file__).resolve().parents[2]
 METRICS_PATH = ROOT / "docs" / "reports" / "NADSWAP_V2_VERIFICATION_METRICS.json"
 REQUIREMENTS_PATH = ROOT / "docs" / "traceability" / "NADSWAP_V2_REQUIREMENTS.yaml"
 SPEC_PATH = ROOT / "docs" / "NADSWAP_V2_IMPL_SPEC_EN.md"
+SPEC_KR_PATH = ROOT / "docs" / "NADSWAP_V2_IMPL_SPEC_KR.md"
+TRACE_MATRIX_PATH = ROOT / "docs" / "traceability" / "NADSWAP_V2_TRACE_MATRIX.md"
 MIGRATION_PATH = ROOT / "docs" / "reports" / "NADSWAP_V2_MIGRATION_SIGNOFF.md"
 FORK_DOC_PATH = ROOT / "docs" / "testing" / "FORK_TESTING_MONAD.md"
 RENDER_SCRIPT = ROOT / "scripts" / "reports" / "render_verification_reports.py"
@@ -30,6 +32,13 @@ REQUIRED_METRIC_KEYS = [
     "spec_invariant_count",
     "math_consistency_total",
     "migration_items_total",
+]
+
+TAX_TERMINOLOGY_DOCS = [SPEC_PATH, SPEC_KR_PATH, REQUIREMENTS_PATH, TRACE_MATRIX_PATH]
+FORBIDDEN_TAX_PATTERNS = [
+    (re.compile(r"\bcollector\b"), "standalone `collector`"),
+    (re.compile(r"claimed quote fees"), "`claimed quote fees`"),
+    (re.compile(r"ClaimFeesAdvanced"), "`ClaimFeesAdvanced`"),
 ]
 
 
@@ -143,10 +152,22 @@ def verify_generated_blocks_up_to_date():
         fail(f"Report GENERATED blocks out of sync\n{output}")
 
 
+def verify_tax_terminology_doc():
+    for path in TAX_TERMINOLOGY_DOCS:
+        text = path.read_text()
+        for pattern, label in FORBIDDEN_TAX_PATTERNS:
+            match = pattern.search(text)
+            if not match:
+                continue
+            line = text.count("\n", 0, match.start()) + 1
+            fail(f"Tax terminology drift in {path}: found {label} at line {line}")
+
+
 def main():
     metrics = load_metrics()
     verify_metrics_against_source(metrics)
     verify_claim_semantics_doc()
+    verify_tax_terminology_doc()
     verify_fork_doc_modes()
     verify_generated_blocks_up_to_date()
     print("[PASS] Docs consistency gate passed.")

@@ -42,7 +42,7 @@ contract PairFixture is TestBase {
         address baseToken,
         uint16 buyTaxBps,
         uint16 sellTaxBps,
-        address collector
+        address taxCollector
     ) internal {
         quoteTokenAddr = quoteToken;
         baseTokenAddr = baseToken;
@@ -55,7 +55,7 @@ contract PairFixture is TestBase {
         factory.setQuoteToken(quoteTokenAddr, true);
 
         vm.prank(PAIR_ADMIN);
-        address pairAddr = factory.createPair(quoteTokenAddr, baseTokenAddr, buyTaxBps, sellTaxBps, collector);
+        address pairAddr = factory.createPair(quoteTokenAddr, baseTokenAddr, buyTaxBps, sellTaxBps, taxCollector);
         pair = UniswapV2Pair(pairAddr);
 
         _mintToken(quoteTokenAddr, LP, INITIAL_LIQUIDITY * 10);
