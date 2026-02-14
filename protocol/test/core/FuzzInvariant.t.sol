@@ -14,7 +14,7 @@ contract FuzzInvariantTest is TestBase {
     MockERC20 internal base;
 
     address internal constant FEE_TO_SETTER = address(0x100);
-    address internal constant TAX_ADMIN = address(0x200);
+    address internal constant PAIR_ADMIN = address(0x200);
     address internal constant COLLECTOR = address(0x300);
     address internal constant LP = address(0x111);
     address internal constant TRADER = address(0x222);
@@ -23,13 +23,13 @@ contract FuzzInvariantTest is TestBase {
         quote = new MockERC20("Quote", "QT", 18);
         base = new MockERC20("Base", "BS", 18);
 
-        factory = new UniswapV2Factory(FEE_TO_SETTER, TAX_ADMIN);
+        factory = new UniswapV2Factory(FEE_TO_SETTER, PAIR_ADMIN);
         vm.prank(FEE_TO_SETTER);
         factory.setQuoteToken(address(quote), true);
         vm.prank(FEE_TO_SETTER);
         factory.setBaseTokenSupported(address(base), true);
 
-        vm.prank(TAX_ADMIN);
+        vm.prank(PAIR_ADMIN);
         address pairAddr = factory.createPair(address(quote), address(base), 300, 500, COLLECTOR);
         pair = UniswapV2Pair(pairAddr);
 
@@ -139,7 +139,7 @@ contract FuzzInvariantTest is TestBase {
     function testFuzz_sellTax_boundary_rounding(uint16 sellTaxBps, uint96 netQuoteOutSeed) public {
         vm.assume(sellTaxBps <= 2000);
         uint16 buyTax = pair.buyTaxBps();
-        vm.prank(TAX_ADMIN);
+        vm.prank(PAIR_ADMIN);
         factory.setTaxConfig(address(pair), buyTax, sellTaxBps, COLLECTOR);
 
         (uint256 rq, uint256 rb) = _reservesQuoteBase();

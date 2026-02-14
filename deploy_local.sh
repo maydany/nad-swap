@@ -11,7 +11,11 @@ DEPLOY_DIR="${ROOT}/envs"
 ENV_FILE="${DEPLOY_DIR}/local.env"
 
 # ── Anvil default account #0 ────────────────────────────
+[[ -f "${ENV_FILE}" ]] || { echo "[FAIL] Missing env file: ${ENV_FILE}" >&2; exit 1; }
 source "${ENV_FILE}"
+
+[[ -n "${DEPLOYER_PK:-}" ]] || { echo "[FAIL] DEPLOYER_PK is missing in ${ENV_FILE}" >&2; exit 1; }
+[[ -n "${DEPLOYER_ADDR:-}" ]] || { echo "[FAIL] DEPLOYER_ADDR is missing in ${ENV_FILE}" >&2; exit 1; }
 
 RPC_URL="http://127.0.0.1:8545"
 

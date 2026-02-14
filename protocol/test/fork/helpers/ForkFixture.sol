@@ -13,7 +13,7 @@ contract ForkFixture is TestBase {
     uint256 internal constant BPS = 10_000;
 
     address internal constant FEE_TO_SETTER = address(0x100);
-    address internal constant TAX_ADMIN = address(0x200);
+    address internal constant PAIR_ADMIN = address(0x200);
     address internal constant COLLECTOR = address(0x300);
     address internal constant LP = address(0x111);
     address internal constant TRADER = address(0x222);
@@ -58,7 +58,7 @@ contract ForkFixture is TestBase {
         monadQuoteToken = address(quote);
         monadBaseToken = address(base);
 
-        factory = new UniswapV2Factory(FEE_TO_SETTER, TAX_ADMIN);
+        factory = new UniswapV2Factory(FEE_TO_SETTER, PAIR_ADMIN);
         router = new UniswapV2Router02(address(factory), monadWnative);
 
         vm.prank(FEE_TO_SETTER);
@@ -66,7 +66,7 @@ contract ForkFixture is TestBase {
         vm.prank(FEE_TO_SETTER);
         factory.setBaseTokenSupported(monadBaseToken, true);
 
-        vm.prank(TAX_ADMIN);
+        vm.prank(PAIR_ADMIN);
         address pairAddr = factory.createPair(monadQuoteToken, monadBaseToken, 300, 500, COLLECTOR);
         pair = UniswapV2Pair(pairAddr);
 

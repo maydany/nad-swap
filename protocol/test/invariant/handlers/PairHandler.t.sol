@@ -17,7 +17,7 @@ contract PairHandler is TestBase {
     address public baseToken;
     address public lp;
     address public feeCollector;
-    address public taxAdmin;
+    address public pairAdmin;
 
     uint256 public actionCount;
     uint256 public maxRouterQuoteExecDiff;
@@ -34,7 +34,7 @@ contract PairHandler is TestBase {
         address _baseToken,
         address _lp,
         address _feeCollector,
-        address _taxAdmin
+        address _pairAdmin
     ) public {
         factory = UniswapV2Factory(_factory);
         pair = UniswapV2Pair(_pair);
@@ -43,7 +43,7 @@ contract PairHandler is TestBase {
         baseToken = _baseToken;
         lp = _lp;
         feeCollector = _feeCollector;
-        taxAdmin = _taxAdmin;
+        pairAdmin = _pairAdmin;
         lastVault = pair.accumulatedQuoteFees();
     }
 
@@ -190,7 +190,7 @@ contract PairHandler is TestBase {
         uint16 sellTax = uint16((seed >> 16) % 2001);
         address collector = _recipient(seed, 0xE5);
 
-        vm.prank(taxAdmin);
+        vm.prank(pairAdmin);
         factory.setTaxConfig(address(pair), buyTax, sellTax, collector);
         feeCollector = collector;
 

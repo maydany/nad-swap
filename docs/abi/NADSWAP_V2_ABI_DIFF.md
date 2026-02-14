@@ -6,10 +6,10 @@
 - `createPair(address,address)` removed.
 - New signature:
   - `createPair(address tokenA, address tokenB, uint16 buyTaxBps, uint16 sellTaxBps, address feeCollector)`
-- Access control: `createPair` is `taxAdmin`-only.
+- Access control: `createPair` is `pairAdmin`-only.
 
 ### Added getters / methods
-- `taxAdmin() -> address`
+- `pairAdmin() -> address`
 - `isQuoteToken(address) -> bool`
 - `isBaseTokenSupported(address) -> bool`
 - `isPair(address) -> bool`

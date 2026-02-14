@@ -64,7 +64,7 @@ contract ForkRouterParityTest is ForkFixture {
         MockERC20 mid = new MockERC20("Mid", "MID", 18);
         vm.prank(FEE_TO_SETTER);
         factory.setBaseTokenSupported(address(mid), true);
-        vm.prank(TAX_ADMIN);
+        vm.prank(PAIR_ADMIN);
         address pair2Addr = factory.createPair(monadQuoteToken, address(mid), 700, 200, COLLECTOR);
         UniswapV2Pair pair2 = UniswapV2Pair(pair2Addr);
 
@@ -118,7 +118,7 @@ contract ForkRouterParityTest is ForkFixture {
         address[] memory p = _path(monadQuoteToken, monadBaseToken);
         uint256[] memory beforeQuote = router.getAmountsOut(inAmount, p);
         uint16 currentSellTax = pair.sellTaxBps();
-        vm.prank(TAX_ADMIN);
+        vm.prank(PAIR_ADMIN);
         factory.setTaxConfig(address(pair), 2_000, currentSellTax, COLLECTOR);
         _fundQuote(TRADER, inAmount);
         _approveRouter(monadQuoteToken, TRADER, uint256(-1));

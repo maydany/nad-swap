@@ -18,6 +18,16 @@ FORK_FUZZ_RUNS="${MONAD_FORK_FUZZ_RUNS:-}"
 VERBOSITY="-vv"
 RUN_ALL=0
 
+require_option_value() {
+  local option="$1"
+  local value="${2-}"
+  if [[ -z "${value}" || "${value}" == -* ]]; then
+    echo "[FAIL] ${option} requires a value." >&2
+    usage
+    exit 1
+  fi
+}
+
 usage() {
   cat <<'EOF'
 Usage: ./scripts/runners/run_fork_tests.sh [options]
@@ -41,14 +51,17 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --rpc)
+      require_option_value "--rpc" "${2-}"
       RPC_URL="$2"
       shift 2
       ;;
     --chain-id)
+      require_option_value "--chain-id" "${2-}"
       CHAIN_ID="$2"
       shift 2
       ;;
     --block)
+      require_option_value "--block" "${2-}"
       FORK_BLOCK="$2"
       shift 2
       ;;
@@ -57,6 +70,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --fuzz-runs)
+      require_option_value "--fuzz-runs" "${2-}"
       FORK_FUZZ_RUNS="$2"
       shift 2
       ;;

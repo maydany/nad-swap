@@ -12,7 +12,7 @@
 | PAIR-008 | 8. claim access + recipient | `protocol/src/core/UniswapV2Pair.sol` | `test_claim_nonCollector_revert,test_claim_zeroAddress_revert` | `FOUNDRY_OFFLINE=true forge test --match-contract PairSwapTest` | Implemented |
 | PAIR-009 | 8. claim vault reset | `protocol/src/core/UniswapV2Pair.sol` | `test_claim_vaultReset_reserveSync` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_vaultReset_reserveSync` | Implemented |
 | PAIR-010 | 8. claim reserve resync + dust semantics | `protocol/src/core/UniswapV2Pair.sol` | `test_claim_vaultReset_reserveSync,test_sync_afterClaim` | `FOUNDRY_OFFLINE=true forge test --match-contract PairLifecycleTest` | Implemented |
-| FACT-001 | 10. createPair access control | `protocol/src/core/UniswapV2Factory.sol` | `test_createPair_onlyTaxAdmin` | `FOUNDRY_OFFLINE=true forge test --match-test test_createPair_onlyTaxAdmin` | Implemented |
+| FACT-001 | 10. createPair access control | `protocol/src/core/UniswapV2Factory.sol` | `test_createPair_onlyPairAdmin` | `FOUNDRY_OFFLINE=true forge test --match-test test_createPair_onlyPairAdmin` | Implemented |
 | FACT-002 | 10. BOTH_QUOTE | `protocol/src/core/UniswapV2Factory.sol` | `test_createPair_bothQuote_revert` | `FOUNDRY_OFFLINE=true forge test --match-test test_createPair_bothQuote_revert` | Implemented |
 | FACT-003 | 10. QUOTE_REQUIRED | `protocol/src/core/UniswapV2Factory.sol` | `test_createPair_noQuote_revert` | `FOUNDRY_OFFLINE=true forge test --match-test test_createPair_noQuote_revert` | Implemented |
 | FACT-004 | 10. BASE_NOT_SUPPORTED | `protocol/src/core/UniswapV2Factory.sol` | `test_createPair_baseUnsupported_revert` | `FOUNDRY_OFFLINE=true forge test --match-test test_createPair_baseUnsupported_revert` | Implemented |
@@ -91,7 +91,7 @@
 | `test_setTaxConfig_sellTax100pct_revert` | `protocol/test/core/FactoryAdminExt.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_setTaxConfig_sellTax100pct_revert` | Implemented |
 | `test_setTaxConfig_nonFactory_revert` | `protocol/test/core/FactoryAdminExt.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_setTaxConfig_nonFactory_revert` | Implemented |
 | `test_taxChange_raceCond_slippage` | `protocol/test/periphery/RouterQuoteParity.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_taxChange_raceCond_slippage` | Implemented |
-| `test_createPair_onlyTaxAdmin` | `protocol/test/core/Factory.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_createPair_onlyTaxAdmin` | Implemented |
+| `test_createPair_onlyPairAdmin` | `protocol/test/core/Factory.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_createPair_onlyPairAdmin` | Implemented |
 | `test_createPair_frontRunBlocked` | `protocol/test/core/FactoryAdminExt.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_createPair_frontRunBlocked` | Implemented |
 | `test_createPair_bothQuote_revert` | `protocol/test/core/Factory.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_createPair_bothQuote_revert` | Implemented |
 | `test_createPair_noQuote_revert` | `protocol/test/core/Factory.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_createPair_noQuote_revert` | Implemented |
@@ -109,7 +109,7 @@
 | `test_initialize_taxTooHigh_revert` | `protocol/test/core/FactoryAdminExt.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_initialize_taxTooHigh_revert` | Implemented |
 | `test_initialize_sellTax100pct_revert` | `protocol/test/core/FactoryAdminExt.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_initialize_sellTax100pct_revert` | Implemented |
 | `test_atomicInit_noTaxFreeWindow` | `protocol/test/core/FactoryAdminExt.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_atomicInit_noTaxFreeWindow` | Implemented |
-| `test_taxAdmin_immutable` | `protocol/test/core/FactoryAdminExt.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_taxAdmin_immutable` | Implemented |
+| `test_pairAdmin_immutable` | `protocol/test/core/FactoryAdminExt.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_pairAdmin_immutable` | Implemented |
 | `test_routerQuote_matchesExecution` | `protocol/test/periphery/RouterQuoteParity.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_routerQuote_matchesExecution` | Implemented |
 | `test_getAmountsIn_ceilRounding` | `protocol/test/periphery/RouterQuoteParity.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_getAmountsIn_ceilRounding` | Implemented |
 | `test_rounding_boundary_1wei` | `protocol/test/periphery/RouterQuoteParity.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_rounding_boundary_1wei` | Implemented |

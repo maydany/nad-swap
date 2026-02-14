@@ -7,7 +7,7 @@ interface IUniswapV2Factory {
 
     function feeToSetter() external view returns (address);
 
-    function taxAdmin() external view returns (address);
+    function pairAdmin() external view returns (address);
 
     function getPair(address tokenA, address tokenB) external view returns (address pair);
 

@@ -7,7 +7,7 @@ import "./UniswapV2Pair.sol";
 contract UniswapV2Factory is IUniswapV2Factory {
     address public feeTo;
     address public feeToSetter;
-    address public taxAdmin;
+    address public pairAdmin;
 
     mapping(address => mapping(address => address)) public getPair;
     address[] public allPairs;
@@ -21,10 +21,10 @@ contract UniswapV2Factory is IUniswapV2Factory {
         _;
     }
 
-    constructor(address _feeToSetter, address _taxAdmin) public {
-        require(_feeToSetter != address(0) && _taxAdmin != address(0), "ZERO_ADDRESS");
+    constructor(address _feeToSetter, address _pairAdmin) public {
+        require(_feeToSetter != address(0) && _pairAdmin != address(0), "ZERO_ADDRESS");
         feeToSetter = _feeToSetter;
-        taxAdmin = _taxAdmin;
+        pairAdmin = _pairAdmin;
     }
 
     function allPairsLength() external view returns (uint256) {
@@ -38,7 +38,7 @@ contract UniswapV2Factory is IUniswapV2Factory {
         uint16 sellTaxBps,
         address feeCollector
     ) external returns (address pair) {
-        require(msg.sender == taxAdmin, "FORBIDDEN");
+        require(msg.sender == pairAdmin, "FORBIDDEN");
         require(tokenA != tokenB, "UniswapV2: IDENTICAL_ADDRESSES");
         (address token0, address token1) =
             tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
@@ -77,7 +77,7 @@ contract UniswapV2Factory is IUniswapV2Factory {
         external
         onlyValidPair(pair)
     {
-        require(msg.sender == taxAdmin, "FORBIDDEN");
+        require(msg.sender == pairAdmin, "FORBIDDEN");
         IUniswapV2Pair(pair).setTaxConfig(buyTaxBps, sellTaxBps, feeCollector);
     }
 

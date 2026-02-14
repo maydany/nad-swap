@@ -13,7 +13,7 @@ contract PairFixture is TestBase {
     uint256 internal constant INITIAL_LIQUIDITY = 1_000_000 ether;
 
     address internal constant FEE_TO_SETTER = address(0x100);
-    address internal constant TAX_ADMIN = address(0x200);
+    address internal constant PAIR_ADMIN = address(0x200);
     address internal constant COLLECTOR = address(0x300);
     address internal constant LP = address(0x111);
     address internal constant TRADER = address(0x222);
@@ -49,7 +49,7 @@ contract PairFixture is TestBase {
         baseTokenAddr = baseToken;
 
         weth = new MockWETH();
-        factory = new UniswapV2Factory(FEE_TO_SETTER, TAX_ADMIN);
+        factory = new UniswapV2Factory(FEE_TO_SETTER, PAIR_ADMIN);
         router = new UniswapV2Router02(address(factory), address(weth));
 
         vm.prank(FEE_TO_SETTER);
@@ -57,7 +57,7 @@ contract PairFixture is TestBase {
         vm.prank(FEE_TO_SETTER);
         factory.setBaseTokenSupported(baseTokenAddr, true);
 
-        vm.prank(TAX_ADMIN);
+        vm.prank(PAIR_ADMIN);
         address pairAddr = factory.createPair(quoteTokenAddr, baseTokenAddr, buyTaxBps, sellTaxBps, collector);
         pair = UniswapV2Pair(pairAddr);
 

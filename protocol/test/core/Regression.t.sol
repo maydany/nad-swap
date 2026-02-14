@@ -16,7 +16,7 @@ contract RegressionTest is TestBase {
     MockWETH internal weth;
 
     address internal constant FEE_TO_SETTER = address(0x100);
-    address internal constant TAX_ADMIN = address(0x200);
+    address internal constant PAIR_ADMIN = address(0x200);
     address internal constant COLLECTOR = address(0x300);
     address internal constant LP = address(0x111);
     address internal constant LP2 = address(0x112);
@@ -27,14 +27,14 @@ contract RegressionTest is TestBase {
         base = new MockERC20("Base", "BS", 18);
         weth = new MockWETH();
 
-        factory = new UniswapV2Factory(FEE_TO_SETTER, TAX_ADMIN);
+        factory = new UniswapV2Factory(FEE_TO_SETTER, PAIR_ADMIN);
         router = new UniswapV2Router02(address(factory), address(weth));
         vm.prank(FEE_TO_SETTER);
         factory.setQuoteToken(address(quote), true);
         vm.prank(FEE_TO_SETTER);
         factory.setBaseTokenSupported(address(base), true);
 
-        vm.prank(TAX_ADMIN);
+        vm.prank(PAIR_ADMIN);
         address pairAddr = factory.createPair(address(quote), address(base), 0, 0, COLLECTOR);
         pair = UniswapV2Pair(pairAddr);
 

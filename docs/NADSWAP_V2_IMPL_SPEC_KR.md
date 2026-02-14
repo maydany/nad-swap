@@ -78,12 +78,12 @@ rawBaseBalance  = reserveBase                          (+ dust)
 | `UniswapV2Pair.sol` | **높음** | vault, effective balance, 12단계 swap, 세금 설정, claim |
 | `IUniswapV2Pair.sol` | 중간 | tax/quote 조회, set, claim 인터페이스 추가 |
 | `IUniswapV2Factory.sol` | 중간 | Router 가드를 위한 base 지원 getter 추가 (`isBaseTokenSupported`) |
-| `UniswapV2Factory.sol` | 중간 | quote 화이트리스트 + base allowlist, **taxAdmin 전용 pair 생성**, pair 초기화 |
+| `UniswapV2Factory.sol` | 중간 | quote 화이트리스트 + base allowlist, **pairAdmin 전용 pair 생성**, pair 초기화 |
 | `UniswapV2Library.sol` | 낮음 | `997→998`, tax-aware getAmounts |
 | `UniswapV2Router02.sol` | 낮음 | 시그니처 유지, **자동 pair 생성 제거**, Library 호출 패치, 토큰 지원 가드, **FOT 지원 swap 변형은 항상 `FOT_NOT_SUPPORTED`로 revert** |
 
 > [!WARNING]
-> **Factory ABI 비호환**: `createPair`는 시그니처가 바뀐 `taxAdmin` 전용입니다. Router의 `_addLiquidity` 자동 생성 경로도 제거되었습니다. 기존 V2 툴링과 호환되지 않습니다.
+> **Factory ABI 비호환**: `createPair`는 시그니처가 바뀐 `pairAdmin` 전용입니다. Router의 `_addLiquidity` 자동 생성 경로도 제거되었습니다. 기존 V2 툴링과 호환되지 않습니다.
 
 ---
 
@@ -174,7 +174,7 @@ function initialize(
 | 함수 | 호출자 | 비고 |
 |----------|--------|-------|
 | `initialize(...)` | `factory` (createPair 내부) | **1회만 허용**, `initialized` 플래그로 재호출 방지 |
-| `setTaxConfig(buy, sell, collector)` | `factory` (taxAdmin 경유) | 언제든 변경 가능 |
+| `setTaxConfig(buy, sell, collector)` | `factory` (pairAdmin 경유) | 언제든 변경 가능 |
 | `claimQuoteFees(to)` | `feeCollector` | `lock` modifier 적용 |
 
 ---
@@ -451,7 +451,7 @@ function claimQuoteFees(address to) external lock {
 ## 9. 세금 설정(Tax Config)
 
 ```solidity
-/// @notice 세율 + collector 설정. taxAdmin은 언제든 변경 가능.
+/// @notice 세율 + collector 설정. pairAdmin은 언제든 변경 가능.
 function setTaxConfig(uint16 _buyTaxBps, uint16 _sellTaxBps, address _collector) external {
     require(msg.sender == factory, 'FORBIDDEN');
     require(_buyTaxBps <= MAX_TAX_BPS && _sellTaxBps <= MAX_TAX_BPS, 'TAX_TOO_HIGH');
@@ -469,7 +469,7 @@ function setTaxConfig(uint16 _buyTaxBps, uint16 _sellTaxBps, address _collector)
 ## 10. Factory 변경
 
 > [!IMPORTANT]
-> **`createPair`는 `taxAdmin` 전용**입니다. 무허가 생성을 막아 pair 선점(front-running)을 방지하고, 세금 설정을 원자적으로 초기화해 무세금 거래 구간을 차단합니다.
+> **`createPair`는 `pairAdmin` 전용**입니다. 무허가 생성을 막아 pair 선점(front-running)을 방지하고, 세금 설정을 원자적으로 초기화해 무세금 거래 구간을 차단합니다.
 
 > [!WARNING]
 > **Factory ABI 비호환**: 원래 `createPair(address,address)` 시그니처를 보존하지 않습니다. Router의 `_addLiquidity` 자동 생성 경로도 제거됩니다.
@@ -479,13 +479,13 @@ function setTaxConfig(uint16 _buyTaxBps, uint16 _sellTaxBps, address _collector)
 mapping(address => bool) public isQuoteToken;
 mapping(address => bool) public isBaseTokenSupported;
 mapping(address => bool) public isPair;
-address public taxAdmin;
+address public pairAdmin;
 
-/// @notice taxAdmin은 배포 시 고정됨 (이 명세의 거버넌스 선택)
-constructor(address _feeToSetter, address _taxAdmin) public {
-    require(_feeToSetter != address(0) && _taxAdmin != address(0), 'ZERO_ADDRESS');
+/// @notice pairAdmin은 배포 시 고정됨 (이 명세의 거버넌스 선택)
+constructor(address _feeToSetter, address _pairAdmin) public {
+    require(_feeToSetter != address(0) && _pairAdmin != address(0), 'ZERO_ADDRESS');
     feeToSetter = _feeToSetter;
-    taxAdmin = _taxAdmin;
+    pairAdmin = _pairAdmin;
 }
 
 /// @notice Quote 화이트리스트 등록. 리베이싱/FOT 토큰은 허용하지 않음.
@@ -510,7 +510,7 @@ modifier onlyValidPair(address pair) {
     _;
 }
 
-/// @notice taxAdmin 전용 — Pair 생성 + Tax 원자적 초기화
+/// @notice pairAdmin 전용 — Pair 생성 + Tax 원자적 초기화
 /// @dev 무허가 생성이 아님. pair 선점 + 무세금 구간 방지.
 function createPair(
     address tokenA,
@@ -519,7 +519,7 @@ function createPair(
     uint16 sellTaxBps,
     address feeCollector
 ) external returns (address pair) {
-    require(msg.sender == taxAdmin, 'FORBIDDEN');  // ← access control
+    require(msg.sender == pairAdmin, 'FORBIDDEN');  // ← access control
     // ... 기존 정렬 & 검증 ...
     
     // Quote-Quote 페어 금지
@@ -543,9 +543,9 @@ function createPair(
     // ... mapping storage ...
 }
 
-// Tax 설정 변경 (taxAdmin 경유, pair 무결성 검증)
+// Tax 설정 변경 (pairAdmin 경유, pair 무결성 검증)
 function setTaxConfig(address pair, uint16 buy, uint16 sell, address collector) external onlyValidPair(pair) {
-    require(msg.sender == taxAdmin, 'FORBIDDEN');
+    require(msg.sender == pairAdmin, 'FORBIDDEN');
     IUniswapV2Pair(pair).setTaxConfig(buy, sell, collector);
 }
 ```
@@ -560,7 +560,7 @@ function setTaxConfig(address pair, uint16 buy, uint16 sell, address collector) 
 +require(IUniswapV2Factory(factory).getPair(tokenA, tokenB) != address(0), 'PAIR_NOT_CREATED');
 ```
 
-> Router는 pair를 자동 생성하지 않습니다. `taxAdmin`이 먼저 `createPair`로 생성해야 합니다.
+> Router는 pair를 자동 생성하지 않습니다. `pairAdmin`이 먼저 `createPair`로 생성해야 합니다.
 
 ### Router FOT 정책
 
@@ -713,14 +713,14 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 | 6 | claim 재진입 | `lock` modifier | |
 | 7 | 단일측 출력 | `require(one side == 0)` | 동작 비호환성 문서화 |
 | 8 | 세금 상한 | `MAX_TAX_BPS`, `sellTax < BPS` | |
-| 9 | 즉시 세금 변경 | taxAdmin이 언제든 setTaxConfig 호출 가능 | |
+| 9 | 즉시 세금 변경 | pairAdmin이 언제든 setTaxConfig 호출 가능 | |
 | 10 | 회계 불변식 | `raw = reserve + vault + dust` | pair 토큰이 지원 정책(비리베이싱/비FOT)을 만족할 때 유지 |
 | 11 | 샌드위치 보호 | Router `amountOutMin` 유지 | |
 | 12 | 직접 호출 방어 | 코어 내장 세금으로 자동 방어 | |
 | 13 | 무세금 구간 방지 | createPair 시 세금 원자적 초기화 | |
 | 14 | Swap 이벤트 회계 일치 | effIn(newVault 반영) emitted | |
 | 15 | setTaxConfig 통합 관리 | 세율 + collector를 단일 함수로 관리 | |
-| 16 | Pair 선점 방지 | createPair는 taxAdmin 전용 | |
+| 16 | Pair 선점 방지 | createPair는 pairAdmin 전용 | |
 | 17 | Vault 오버플로우 보호 | `require(nv <= type(uint96).max)` | uint96 안전성 확인 |
 | 18 | Initialize 재호출 방지 | `initialized` 플래그 + 입력 검증 | |
 | 19 | Router 자동 생성 제거 | pair 없으면 `_addLiquidity` revert | |
@@ -765,9 +765,9 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 | Q5 | 멀티홉 = 페어별 독립 과세 | 코어 독립성 유지. 대부분 1-hop 거래. 추가 로직 불필요 |
 | Q6 | LP 수수료 = 0.2% 고정 | `997→998`만 변경. 페어별 가변 수수료 불필요 |
 | Q7 | LP 수수료 정밀도 = 1000 | V2 원형 K 불변식 구조 유지. 최소 수정 원칙 |
-| Q8 | 동결 없음 | taxAdmin이 세율/collector를 언제든 변경 가능. 운영 유연성 우선 |
+| Q8 | 동결 없음 | pairAdmin이 세율/collector를 언제든 변경 가능. 운영 유연성 우선 |
 | Q9 | 듀얼 출력 거부 | SINGLE_SIDE_ONLY 강제. 플래시 스왑 듀얼 출력 패턴 미지원(비호환성 문서화) |
-| Q10 | taxAdmin은 배포 후 불변 | 이 명세에는 `setTaxAdmin` 없음. 관리자 역할은 배포 시 설정으로 고정 |
+| Q10 | pairAdmin은 배포 후 불변 | 이 명세에는 `setPairAdmin` 없음. 관리자 역할은 배포 시 설정으로 고정 |
 | Q11 | Router sell exact-in은 1 wei 안전 마진 사용 | gross 유동성 경계 근처 실행 성공률 향상. 사용자 quote는 최대 1 wei 보수적일 수 있음 |
 | Q12 | claim은 quote dust를 reserve에 흡수할 수 있음 | claim 이후 `_update(raw0,raw1,...)`의 회계 의미를 수용/문서화 |
 | Q13 | K 곱셈 오버플로우는 정보성 하드닝으로 취급 | 명시 가드 또는 토큰 공급 정책 문서화 선택 가능. 기본 설계 정합성에는 필수 아님. 현재 구현은 명시 가드 사용 |
@@ -837,7 +837,7 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 
 | 테스트 | 검증 |
 |------|------|
-| `test_setTaxConfig_alwaysMutable` | taxAdmin이 세율을 언제든 변경 가능 |
+| `test_setTaxConfig_alwaysMutable` | pairAdmin이 세율을 언제든 변경 가능 |
 | `test_setTaxConfig_zeroCollector` | collector=0으로 setTaxConfig 호출 시 revert |
 | `test_setTaxConfig_maxTax_revert` | 🆕 buyTax/sellTax > MAX_TAX_BPS(2000) → TAX_TOO_HIGH revert |
 | `test_setTaxConfig_sellTax100pct_revert` | 🆕 sellTax = BPS(10000) → TAX_TOO_HIGH revert(최대세 가드 우선) |
@@ -848,7 +848,7 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 
 | 테스트 | 검증 |
 |------|------|
-| `test_createPair_onlyTaxAdmin` | 비인가 호출자 revert |
+| `test_createPair_onlyPairAdmin` | 비인가 호출자 revert |
 | `test_createPair_frontRunBlocked` | 다른 주소의 선점 시도 revert |
 | `test_createPair_bothQuote_revert` | 🆕 Quote-Quote 페어 생성 → BOTH_QUOTE revert |
 | `test_createPair_noQuote_revert` | 🆕 두 토큰 모두 Quote 아님 → QUOTE_REQUIRED revert |
@@ -859,14 +859,14 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 | `test_setQuoteToken_nonFeeToSetter_revert` | 🆕 non-feeToSetter가 setQuoteToken 호출 → FORBIDDEN revert |
 | `test_setBaseTokenSupported_zeroAddr_revert` | 🆕 address(0)로 setBaseTokenSupported → ZERO_ADDRESS revert |
 | `test_setBaseTokenSupported_forbidden` | 🆕 non-feeToSetter 호출 → FORBIDDEN revert |
-| `test_constructor_zeroAddress_revert` | 🆕 생성자 `feeToSetter` 또는 `taxAdmin`이 0이면 ZERO_ADDRESS revert |
+| `test_constructor_zeroAddress_revert` | 🆕 생성자 `feeToSetter` 또는 `pairAdmin`이 0이면 ZERO_ADDRESS revert |
 | `test_initialize_reentryBlocked` | initialize 2회 호출 시 revert |
 | `test_initialize_zeroCollector` | feeCollector=0이면 revert |
 | `test_initialize_invalidQuote` | 🆕 quoteToken이 token0/token1과 불일치 → INVALID_QUOTE revert |
 | `test_initialize_taxTooHigh_revert` | 🆕 initialize 시 buyTax/sellTax > MAX_TAX_BPS(2000) → TAX_TOO_HIGH revert |
 | `test_initialize_sellTax100pct_revert` | 🆕 initialize 시 sellTax = BPS(10000) → TAX_TOO_HIGH revert(최대세 가드 우선) |
 | `test_atomicInit_noTaxFreeWindow` | `createPair` + 세금 원자 초기화로 첫 swap부터 과세 |
-| `test_taxAdmin_immutable` | 🆕 taxAdmin 역할은 불변(이 명세엔 이전 경로 없음) |
+| `test_pairAdmin_immutable` | 🆕 pairAdmin 역할은 불변(이 명세엔 이전 경로 없음) |
 
 ### Unit — Library / Router Quoting (§11)
 
@@ -947,8 +947,8 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 
 ## 17. 배포 플로우
 
-1. Factory(`feeToSetter`, `taxAdmin`) / Pair / Router 배포
-2. `taxAdmin`은 배포 시 고정(이 명세에서는 immutable)
+1. Factory(`feeToSetter`, `pairAdmin`) / Pair / Router 배포
+2. `pairAdmin`은 배포 시 고정(이 명세에서는 immutable)
 3. Quote 화이트리스트(`setQuoteToken`)와 Base 지원 allowlist(`setBaseTokenSupported`) 설정
 4. **`createPair(tokenA, tokenB, buyTax, sellTax, collector)`** — 생성과 세금 설정을 동시에 수행
 5. 모니터링 후 필요 시 `setTaxConfig`로 세율/collector 즉시 변경
@@ -973,7 +973,7 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 
 | # | 항목 | V2 원본 | NadSwap | 영향 |
 |---|------|---------|---------|------|
-| 1 | Pair 생성 | 무허가 `createPair(A,B)` | **taxAdmin 전용**, 시그니처 변경 | SDK/프론트엔드의 자동 생성 로직 제거 필요 |
+| 1 | Pair 생성 | 무허가 `createPair(A,B)` | **pairAdmin 전용**, 시그니처 변경 | SDK/프론트엔드의 자동 생성 로직 제거 필요 |
 | 2 | Router 자동 생성 | `_addLiquidity`가 없으면 생성 | **pair 없으면 revert** | LP 추가 전 pair 존재 확인 필수 |
 | 3 | 듀얼 출력 | 허용(플래시 스왑) | **SINGLE_SIDE_ONLY revert** | 플래시 스왑 듀얼 출력 패턴 사용 불가 |
 | 4 | LP 수수료 | 0.3% (`997/1000`) | **0.2%** (`998/1000`) | quote 공식 변경 |

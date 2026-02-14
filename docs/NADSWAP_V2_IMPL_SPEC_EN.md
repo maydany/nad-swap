@@ -78,12 +78,12 @@ rawBaseBalance  = reserveBase                          (+ dust)
 | `UniswapV2Pair.sol` | **High** | vault, effective balance, 12-step swap, tax config, claim |
 | `IUniswapV2Pair.sol` | Medium | tax/quote query, set, claim interface additions |
 | `IUniswapV2Factory.sol` | Medium | base support getter addition (`isBaseTokenSupported`) for Router guard |
-| `UniswapV2Factory.sol` | Medium | quote whitelist + base allowlist, **taxAdmin-only pair creation**, pair init |
+| `UniswapV2Factory.sol` | Medium | quote whitelist + base allowlist, **pairAdmin-only pair creation**, pair init |
 | `UniswapV2Library.sol` | Low | `997→998`, tax-aware getAmounts |
 | `UniswapV2Router02.sol` | Low | signature preserved, **auto pair creation removed**, Library call patches, token support guard, **FOT-supporting swap variants always revert `FOT_NOT_SUPPORTED`** |
 
 > [!WARNING]
-> **Factory ABI Incompatible**: `createPair` is `taxAdmin`-only with a changed signature. Router's `_addLiquidity` auto-creation path is also removed. Not compatible with existing V2 tooling.
+> **Factory ABI Incompatible**: `createPair` is `pairAdmin`-only with a changed signature. Router's `_addLiquidity` auto-creation path is also removed. Not compatible with existing V2 tooling.
 
 ---
 
@@ -174,7 +174,7 @@ function initialize(
 | Function | Caller | Notes |
 |----------|--------|-------|
 | `initialize(...)` | `factory` (inside createPair) | **Once only**, re-call prevented by `initialized` flag |
-| `setTaxConfig(buy, sell, collector)` | `factory` (via taxAdmin) | Mutable at any time |
+| `setTaxConfig(buy, sell, collector)` | `factory` (via pairAdmin) | Mutable at any time |
 | `claimQuoteFees(to)` | `feeCollector` | `lock` modifier applied |
 
 ---
@@ -451,7 +451,7 @@ function claimQuoteFees(address to) external lock {
 ## 9. Tax Config
 
 ```solidity
-/// @notice Set tax rates + collector. taxAdmin can change at any time.
+/// @notice Set tax rates + collector. pairAdmin can change at any time.
 function setTaxConfig(uint16 _buyTaxBps, uint16 _sellTaxBps, address _collector) external {
     require(msg.sender == factory, 'FORBIDDEN');
     require(_buyTaxBps <= MAX_TAX_BPS && _sellTaxBps <= MAX_TAX_BPS, 'TAX_TOO_HIGH');
@@ -469,7 +469,7 @@ function setTaxConfig(uint16 _buyTaxBps, uint16 _sellTaxBps, address _collector)
 ## 10. Factory Changes
 
 > [!IMPORTANT]
-> **`createPair` is `taxAdmin`-only.** Prevents pair front-running attacks by blocking permissionless creation, and atomically initializes tax config to prevent a tax-free trading window.
+> **`createPair` is `pairAdmin`-only.** Prevents pair front-running attacks by blocking permissionless creation, and atomically initializes tax config to prevent a tax-free trading window.
 
 > [!WARNING]
 > **Factory ABI Incompatible**: The original `createPair(address,address)` signature is not preserved. Router's `_addLiquidity` auto-creation path is also removed.
@@ -479,13 +479,13 @@ function setTaxConfig(uint16 _buyTaxBps, uint16 _sellTaxBps, address _collector)
 mapping(address => bool) public isQuoteToken;
 mapping(address => bool) public isBaseTokenSupported;
 mapping(address => bool) public isPair;
-address public taxAdmin;
+address public pairAdmin;
 
-/// @notice taxAdmin is fixed at deployment (immutable governance choice in this spec).
-constructor(address _feeToSetter, address _taxAdmin) public {
-    require(_feeToSetter != address(0) && _taxAdmin != address(0), 'ZERO_ADDRESS');
+/// @notice pairAdmin is fixed at deployment (immutable governance choice in this spec).
+constructor(address _feeToSetter, address _pairAdmin) public {
+    require(_feeToSetter != address(0) && _pairAdmin != address(0), 'ZERO_ADDRESS');
     feeToSetter = _feeToSetter;
-    taxAdmin = _taxAdmin;
+    pairAdmin = _pairAdmin;
 }
 
 /// @notice Quote whitelist registration. Only non-rebasing, non-FOT tokens allowed.
@@ -510,7 +510,7 @@ modifier onlyValidPair(address pair) {
     _;
 }
 
-/// @notice taxAdmin only — Pair creation + Tax atomic initialization
+/// @notice pairAdmin only — Pair creation + Tax atomic initialization
 /// @dev Not permissionless. Prevents pair front-running + tax-free window.
 function createPair(
     address tokenA,
@@ -519,7 +519,7 @@ function createPair(
     uint16 sellTaxBps,
     address feeCollector
 ) external returns (address pair) {
-    require(msg.sender == taxAdmin, 'FORBIDDEN');  // ← access control
+    require(msg.sender == pairAdmin, 'FORBIDDEN');  // ← access control
     // ... existing sort & validation ...
     
     // Disallow Quote-Quote pairs
@@ -543,9 +543,9 @@ function createPair(
     // ... mapping storage ...
 }
 
-// Tax config update (via taxAdmin, pair integrity validated)
+// Tax config update (via pairAdmin, pair integrity validated)
 function setTaxConfig(address pair, uint16 buy, uint16 sell, address collector) external onlyValidPair(pair) {
-    require(msg.sender == taxAdmin, 'FORBIDDEN');
+    require(msg.sender == pairAdmin, 'FORBIDDEN');
     IUniswapV2Pair(pair).setTaxConfig(buy, sell, collector);
 }
 ```
@@ -560,7 +560,7 @@ function setTaxConfig(address pair, uint16 buy, uint16 sell, address collector) 
 +require(IUniswapV2Factory(factory).getPair(tokenA, tokenB) != address(0), 'PAIR_NOT_CREATED');
 ```
 
-> Router does not auto-create pairs. The `taxAdmin` must create them via `createPair` first.
+> Router does not auto-create pairs. The `pairAdmin` must create them via `createPair` first.
 
 ### Router FOT Policy
 
@@ -713,14 +713,14 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 | 6 | claim reentrancy | `lock` modifier | |
 | 7 | Single-side output | `require(one side == 0)` | behavioral incompatibility documented |
 | 8 | Tax cap | `MAX_TAX_BPS`, `sellTax < BPS` | |
-| 9 | Instant tax changes | taxAdmin can call setTaxConfig at any time | |
+| 9 | Instant tax changes | pairAdmin can call setTaxConfig at any time | |
 | 10 | Accounting invariant | `raw = reserve + vault + dust` | maintained when pair tokens satisfy support policy (non-rebasing/non-FOT) |
 | 11 | Sandwich protection | Router `amountOutMin` preserved | |
 | 12 | Direct call defense | core-embedded tax → automatic defense | |
 | 13 | Tax-free window prevention | atomic tax init in createPair | |
 | 14 | Swap event accounting match | effIn (newVault-reflected) emitted | |
 | 15 | Unified setTaxConfig mgmt | rates + collector managed in single function | |
-| 16 | Pair front-run prevention | createPair is taxAdmin-only | |
+| 16 | Pair front-run prevention | createPair is pairAdmin-only | |
 | 17 | Vault overflow protection | `require(nv <= type(uint96).max)` | uint96 safety verified |
 | 18 | Initialize re-call prevention | `initialized` flag + input validation | |
 | 19 | Router auto-creation removed | `_addLiquidity` reverts if pair doesn't exist | |
@@ -765,9 +765,9 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 | Q5 | Multi-hop = independent per-pair tax | Core independence maintained. Most trades are 1-hop. Zero additional logic |
 | Q6 | LP fee = fixed 0.2% | Only `997→998` change. Per-pair variable not needed |
 | Q7 | LP fee precision = 1000 | V2 original K-invariant structure preserved. Minimal modification principle |
-| Q8 | No freeze | taxAdmin can change rates/collector at any time. Operational flexibility prioritized |
+| Q8 | No freeze | pairAdmin can change rates/collector at any time. Operational flexibility prioritized |
 | Q9 | Dual-output rejected | SINGLE_SIDE_ONLY enforced. Flash swap dual-output pattern not supported (behavioral incompatibility documented) |
-| Q10 | taxAdmin is immutable after deployment | No `setTaxAdmin` function in this spec; admin role is fixed by deployment-time configuration |
+| Q10 | pairAdmin is immutable after deployment | No `setPairAdmin` function in this spec; admin role is fixed by deployment-time configuration |
 | Q11 | Router sell exact-in uses 1-wei safety margin | Improves executable-path success rate near gross liquidity edges; user quote can be up to 1 wei conservative |
 | Q12 | claim may absorb quote dust into reserves | Accepted and documented accounting semantics of `_update(raw0,raw1,...)` after claim |
 | Q13 | K multiply overflow treated as informational hardening | Optional explicit guard or token-supply policy documentation; not required for base design correctness. Current implementation uses the explicit guard |
@@ -837,7 +837,7 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 
 | Test | Verification |
 |------|-------------|
-| `test_setTaxConfig_alwaysMutable` | taxAdmin can change rates at any time |
+| `test_setTaxConfig_alwaysMutable` | pairAdmin can change rates at any time |
 | `test_setTaxConfig_zeroCollector` | setTaxConfig with collector=0 reverts |
 | `test_setTaxConfig_maxTax_revert` | 🆕 buyTax or sellTax > MAX_TAX_BPS(2000) → TAX_TOO_HIGH revert |
 | `test_setTaxConfig_sellTax100pct_revert` | 🆕 sellTax = BPS(10000) → TAX_TOO_HIGH revert (max-tax guard precedence) |
@@ -848,7 +848,7 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 
 | Test | Verification |
 |------|-------------|
-| `test_createPair_onlyTaxAdmin` | Non-authorized caller reverts |
+| `test_createPair_onlyPairAdmin` | Non-authorized caller reverts |
 | `test_createPair_frontRunBlocked` | Different address front-run attempt reverts |
 | `test_createPair_bothQuote_revert` | 🆕 Quote-Quote pair creation → BOTH_QUOTE revert |
 | `test_createPair_noQuote_revert` | 🆕 Neither token is Quote → QUOTE_REQUIRED revert |
@@ -859,14 +859,14 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 | `test_setQuoteToken_nonFeeToSetter_revert` | 🆕 non-feeToSetter caller on setQuoteToken → FORBIDDEN revert |
 | `test_setBaseTokenSupported_zeroAddr_revert` | 🆕 setBaseTokenSupported with address(0) → ZERO_ADDRESS revert |
 | `test_setBaseTokenSupported_forbidden` | 🆕 non-feeToSetter caller → FORBIDDEN revert |
-| `test_constructor_zeroAddress_revert` | 🆕 constructor with zero `feeToSetter` or `taxAdmin` → ZERO_ADDRESS revert |
+| `test_constructor_zeroAddress_revert` | 🆕 constructor with zero `feeToSetter` or `pairAdmin` → ZERO_ADDRESS revert |
 | `test_initialize_reentryBlocked` | Second initialize call reverts |
 | `test_initialize_zeroCollector` | feeCollector=0 reverts |
 | `test_initialize_invalidQuote` | 🆕 quoteToken not matching token0 or token1 → INVALID_QUOTE revert |
 | `test_initialize_taxTooHigh_revert` | 🆕 initialize with buyTax or sellTax > MAX_TAX_BPS(2000) → TAX_TOO_HIGH revert |
 | `test_initialize_sellTax100pct_revert` | 🆕 initialize with sellTax = BPS(10000) → TAX_TOO_HIGH revert (max-tax guard precedence) |
 | `test_atomicInit_noTaxFreeWindow` | `createPair` + tax atomic → taxed from first swap |
-| `test_taxAdmin_immutable` | 🆕 taxAdmin role is immutable (no transfer path in this spec) |
+| `test_pairAdmin_immutable` | 🆕 pairAdmin role is immutable (no transfer path in this spec) |
 
 ### Unit — Library / Router Quoting (§11)
 
@@ -947,8 +947,8 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 
 ## 17. Deployment Flow
 
-1. Deploy Factory(`feeToSetter`, `taxAdmin`) / Pair / Router
-2. `taxAdmin` is fixed at deployment (immutable in this spec)
+1. Deploy Factory(`feeToSetter`, `pairAdmin`) / Pair / Router
+2. `pairAdmin` is fixed at deployment (immutable in this spec)
 3. Set Quote whitelist (`setQuoteToken`) and Base support allowlist (`setBaseTokenSupported`)
 4. **`createPair(tokenA, tokenB, buyTax, sellTax, collector)`** — creation and tax set simultaneously
 5. Monitor → change rates/collector instantly via `setTaxConfig` as needed
@@ -973,7 +973,7 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 
 | # | Item | V2 Original | NadSwap | Impact |
 |---|------|-------------|---------|--------|
-| 1 | Pair creation | Permissionless `createPair(A,B)` | **taxAdmin-only**, signature changed | Remove auto-creation logic from SDK/frontend |
+| 1 | Pair creation | Permissionless `createPair(A,B)` | **pairAdmin-only**, signature changed | Remove auto-creation logic from SDK/frontend |
 | 2 | Router auto-creation | `_addLiquidity` creates if missing | **Reverts if pair doesn't exist** | Must verify pair existence before LP add |
 | 3 | Dual-output | Allowed (flash swap) | **SINGLE_SIDE_ONLY revert** | Flash swap dual-output pattern unusable |
 | 4 | LP fee | 0.3% (`997/1000`) | **0.2%** (`998/1000`) | Quote formula change |

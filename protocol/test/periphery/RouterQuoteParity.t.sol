@@ -96,7 +96,7 @@ contract RouterQuoteParityTest is PairFixture {
         MockERC20 mid = new MockERC20("Mid", "MID", 18);
         vm.prank(FEE_TO_SETTER);
         factory.setBaseTokenSupported(address(mid), true);
-        vm.prank(TAX_ADMIN);
+        vm.prank(PAIR_ADMIN);
         address pair2Addr = factory.createPair(quoteTokenAddr, address(mid), 700, 200, COLLECTOR);
         UniswapV2Pair pair2 = UniswapV2Pair(pair2Addr);
 
@@ -178,7 +178,7 @@ contract RouterQuoteParityTest is PairFixture {
         uint256[] memory beforeQuote = router.getAmountsOut(amountIn, p);
 
         uint16 sellTax = pair.sellTaxBps();
-        vm.prank(TAX_ADMIN);
+        vm.prank(PAIR_ADMIN);
         factory.setTaxConfig(address(pair), 2_000, sellTax, COLLECTOR);
 
         _mintToken(quoteTokenAddr, TRADER, amountIn);

@@ -33,7 +33,7 @@ contract FactoryAdminExtTest is PairFixture {
     }
 
     function test_factory_invalidPair_revert() public {
-        vm.prank(TAX_ADMIN);
+        vm.prank(PAIR_ADMIN);
         expectRevertMsg("INVALID_PAIR");
         factory.setTaxConfig(address(0xdead), 100, 100, COLLECTOR);
     }
@@ -96,7 +96,7 @@ contract FactoryAdminExtTest is PairFixture {
         vm.prank(FEE_TO_SETTER);
         factory.setBaseTokenSupported(address(alt), true);
 
-        vm.prank(TAX_ADMIN);
+        vm.prank(PAIR_ADMIN);
         address pairAddr = factory.createPair(quoteTokenAddr, address(alt), 300, 500, COLLECTOR);
         UniswapV2Pair p = UniswapV2Pair(pairAddr);
 
@@ -128,24 +128,24 @@ contract FactoryAdminExtTest is PairFixture {
         assertGt(p.accumulatedQuoteFees(), 0, "first swap was tax-free");
     }
 
-    function test_taxAdmin_immutable() public {
-        address beforeAdmin = factory.taxAdmin();
+    function test_pairAdmin_immutable() public {
+        address beforeAdmin = factory.pairAdmin();
         vm.prank(FEE_TO_SETTER);
         factory.setFeeToSetter(OTHER);
-        assertEq(factory.taxAdmin(), beforeAdmin, "taxAdmin changed unexpectedly");
+        assertEq(factory.pairAdmin(), beforeAdmin, "pairAdmin changed unexpectedly");
 
-        (bool success,) = address(factory).call(abi.encodeWithSignature("setTaxAdmin(address)", OTHER));
-        assertTrue(!success, "setTaxAdmin path should not exist");
+        (bool success,) = address(factory).call(abi.encodeWithSignature("setPairAdmin(address)", OTHER));
+        assertTrue(!success, "setPairAdmin path should not exist");
     }
 
     function test_setTaxConfig_alwaysMutable() public {
-        vm.prank(TAX_ADMIN);
+        vm.prank(PAIR_ADMIN);
         factory.setTaxConfig(address(pair), 100, 200, address(0xabc));
         assertEq(uint256(pair.buyTaxBps()), 100, "buy tax not updated #1");
         assertEq(uint256(pair.sellTaxBps()), 200, "sell tax not updated #1");
         assertEq(pair.feeCollector(), address(0xabc), "collector not updated #1");
 
-        vm.prank(TAX_ADMIN);
+        vm.prank(PAIR_ADMIN);
         factory.setTaxConfig(address(pair), 300, 400, address(0xdef));
         assertEq(uint256(pair.buyTaxBps()), 300, "buy tax not updated #2");
         assertEq(uint256(pair.sellTaxBps()), 400, "sell tax not updated #2");
@@ -158,13 +158,13 @@ contract FactoryAdminExtTest is PairFixture {
     }
 
     function test_setTaxConfig_sellTax100pct_revert() public {
-        vm.prank(TAX_ADMIN);
+        vm.prank(PAIR_ADMIN);
         expectRevertMsg("TAX_TOO_HIGH");
         factory.setTaxConfig(address(pair), 0, 10_000, COLLECTOR);
     }
 
     function test_setTaxConfig_zeroCollector() public {
-        vm.prank(TAX_ADMIN);
+        vm.prank(PAIR_ADMIN);
         expectRevertMsg("ZERO_COLLECTOR");
         factory.setTaxConfig(address(pair), 10, 10, address(0));
     }

@@ -31,7 +31,7 @@ requirements:
     statement: "claimQuoteFees re-syncs reserves to raw balances after vault reset; quote-side dust may be absorbed into reserves."
   - id: FACT-001
     section: "10. Factory"
-    statement: "createPair is taxAdmin-only."
+    statement: "createPair is pairAdmin-only."
   - id: FACT-002
     section: "10. Factory"
     statement: "Factory rejects quote-quote pairs with BOTH_QUOTE."
@@ -46,7 +46,7 @@ requirements:
     statement: "Factory prevents duplicate pair creation."
   - id: FACT-006
     section: "10. Factory"
-    statement: "Factory constructor rejects zero feeToSetter/taxAdmin."
+    statement: "Factory constructor rejects zero feeToSetter/pairAdmin."
   - id: FACT-007
     section: "10. Factory"
     statement: "setQuoteToken rejects zero token address."

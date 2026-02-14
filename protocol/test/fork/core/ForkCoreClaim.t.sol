@@ -62,7 +62,7 @@ contract ForkCoreClaimTest is ForkFixture {
         _accrueVault();
         uint16 bt = pair.buyTaxBps();
         uint16 st = pair.sellTaxBps();
-        vm.prank(TAX_ADMIN);
+        vm.prank(PAIR_ADMIN);
         factory.setTaxConfig(address(pair), bt, st, address(reentrantCollector));
 
         uint256 netQuoteOut = 1 ether;

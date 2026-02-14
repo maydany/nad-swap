@@ -9,6 +9,16 @@ SKIP_UPSTREAM=0
 SKIP_FORK=0
 ONLY=""
 
+require_option_value() {
+  local option="$1"
+  local value="${2-}"
+  if [[ -z "${value}" || "${value}" == -* ]]; then
+    echo "[FAIL] ${option} requires a value." >&2
+    usage
+    exit 1
+  fi
+}
+
 usage() {
   cat <<'EOF'
 Usage: ./run_all_tests.sh [options]
@@ -58,6 +68,7 @@ log_fail() {
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --only)
+      require_option_value "--only" "${2-}"
       ONLY="$2"
       shift 2
       ;;
@@ -103,15 +114,25 @@ GATE_ARGS=()
 
 run_gates() {
   log "STRICT GATE + NIGHTLY INVARIANT"
-  log_step "Running: scripts/runners/run_local_gates.sh ${GATE_ARGS[*]:-}"
-  "${RUNNERS}/run_local_gates.sh" "${GATE_ARGS[@]:-}"
+  if [[ "${#GATE_ARGS[@]}" -gt 0 ]]; then
+    log_step "Running: scripts/runners/run_local_gates.sh ${GATE_ARGS[*]}"
+  else
+    log_step "Running: scripts/runners/run_local_gates.sh"
+  fi
+  if ! "${RUNNERS}/run_local_gates.sh" "${GATE_ARGS[@]}"; then
+    log_fail "Strict gate + nightly invariant failed"
+    return 1
+  fi
   log_pass "Strict gate + nightly invariant completed"
 }
 
 run_fork() {
   log "FORK TEST SUITE (Monad)"
   log_step "Running: scripts/runners/run_fork_tests.sh"
-  "${RUNNERS}/run_fork_tests.sh"
+  if ! "${RUNNERS}/run_fork_tests.sh"; then
+    log_fail "Fork test suite failed"
+    return 1
+  fi
   log_pass "Fork test suite completed"
 }
 

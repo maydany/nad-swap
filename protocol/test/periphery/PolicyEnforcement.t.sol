@@ -27,14 +27,14 @@ contract PolicyEnforcementTest is PairFixture {
         MockERC20 q = new MockERC20("Quote3", "Q3", 18);
         MockFeeOnTransferERC20 b = new MockFeeOnTransferERC20("FOT-Base", "FOTB", 18, 100);
         MockWETH w = new MockWETH();
-        UniswapV2Factory f = new UniswapV2Factory(FEE_TO_SETTER, TAX_ADMIN);
+        UniswapV2Factory f = new UniswapV2Factory(FEE_TO_SETTER, PAIR_ADMIN);
         UniswapV2Router02 r = new UniswapV2Router02(address(f), address(w));
 
         vm.prank(FEE_TO_SETTER);
         f.setQuoteToken(address(q), true);
         vm.prank(FEE_TO_SETTER);
         f.setBaseTokenSupported(address(b), true);
-        vm.prank(TAX_ADMIN);
+        vm.prank(PAIR_ADMIN);
         address pairAddr = f.createPair(address(q), address(b), 300, 500, COLLECTOR);
         UniswapV2Pair p = UniswapV2Pair(pairAddr);
 
@@ -65,13 +65,13 @@ contract PolicyEnforcementTest is PairFixture {
     function test_quoteToken_fot_vaultDrift() public {
         MockFeeOnTransferERC20 q = new MockFeeOnTransferERC20("FOT-Quote", "FOTQ", 18, 100);
         MockERC20 b = new MockERC20("Base4", "B4", 18);
-        UniswapV2Factory f = new UniswapV2Factory(FEE_TO_SETTER, TAX_ADMIN);
+        UniswapV2Factory f = new UniswapV2Factory(FEE_TO_SETTER, PAIR_ADMIN);
 
         vm.prank(FEE_TO_SETTER);
         f.setQuoteToken(address(q), true);
         vm.prank(FEE_TO_SETTER);
         f.setBaseTokenSupported(address(b), true);
-        vm.prank(TAX_ADMIN);
+        vm.prank(PAIR_ADMIN);
         address pairAddr = f.createPair(address(q), address(b), 300, 500, COLLECTOR);
         UniswapV2Pair p = UniswapV2Pair(pairAddr);
 

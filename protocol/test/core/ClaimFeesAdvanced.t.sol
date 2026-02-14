@@ -39,7 +39,7 @@ contract ClaimFeesAdvancedTest is PairFixture {
 
         uint16 buyTax = pair.buyTaxBps();
         uint16 sellTax = pair.sellTaxBps();
-        vm.prank(TAX_ADMIN);
+        vm.prank(PAIR_ADMIN);
         factory.setTaxConfig(address(pair), buyTax, sellTax, address(reentrantCollector));
 
         uint256 netQuoteOut = 10 ether;
@@ -79,13 +79,13 @@ contract ClaimFeesAdvancedTest is PairFixture {
     function test_safeTransfer_nonStandard() public {
         MockNonStandardERC20 q = new MockNonStandardERC20("USDT-Like", "USDTL", 18);
         MockERC20 b = new MockERC20("Base", "BASE", 18);
-        UniswapV2Factory f = new UniswapV2Factory(FEE_TO_SETTER, TAX_ADMIN);
+        UniswapV2Factory f = new UniswapV2Factory(FEE_TO_SETTER, PAIR_ADMIN);
 
         vm.prank(FEE_TO_SETTER);
         f.setQuoteToken(address(q), true);
         vm.prank(FEE_TO_SETTER);
         f.setBaseTokenSupported(address(b), true);
-        vm.prank(TAX_ADMIN);
+        vm.prank(PAIR_ADMIN);
         address pairAddr = f.createPair(address(q), address(b), 300, 500, COLLECTOR);
         UniswapV2Pair p = UniswapV2Pair(pairAddr);
 
