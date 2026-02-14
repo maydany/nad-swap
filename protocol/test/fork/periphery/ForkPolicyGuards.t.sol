@@ -17,16 +17,6 @@ contract ForkPolicyGuardsTest is ForkFixture {
         router.swapExactTokensForTokens(2 ether, 0, p, TRADER, block.timestamp + 1);
     }
 
-    function testFork_policy_baseDisabled_revert() public onlyFork {
-        _setBaseDisabled();
-        _fundQuote(TRADER, 2 ether);
-        _approveRouter(monadQuoteToken, TRADER, uint256(-1));
-        address[] memory p = _path(monadQuoteToken, monadBaseToken);
-        vm.prank(TRADER);
-        expectRevertMsg("BASE_NOT_SUPPORTED");
-        router.swapExactTokensForTokens(2 ether, 0, p, TRADER, block.timestamp + 1);
-    }
-
     function testFork_policy_fotSupportingEntrypoints_revert() public onlyFork {
         address[] memory p = _path(monadQuoteToken, monadBaseToken);
         expectRevertMsg("FOT_NOT_SUPPORTED");

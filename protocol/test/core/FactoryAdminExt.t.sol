@@ -24,9 +24,6 @@ contract FactoryAdminExtTest is PairFixture {
     }
 
     function test_createPair_frontRunBlocked() public {
-        vm.prank(PAIR_ADMIN);
-        factory.setBaseTokenSupported(address(alt), true);
-
         vm.prank(OTHER);
         expectRevertMsg("FORBIDDEN");
         factory.createPair(quoteTokenAddr, address(alt), 300, 500, COLLECTOR);
@@ -44,10 +41,15 @@ contract FactoryAdminExtTest is PairFixture {
         factory.setQuoteToken(address(alt), true);
     }
 
-    function test_setBaseTokenSupported_zeroAddr_revert() public {
-        vm.prank(PAIR_ADMIN);
-        expectRevertMsg("ZERO_ADDRESS");
-        factory.setBaseTokenSupported(address(0), true);
+    function test_baseAllowlistApi_setter_removed() public {
+        (bool success,) =
+            address(factory).call(abi.encodeWithSignature("setBaseTokenSupported(address,bool)", address(alt), true));
+        assertTrue(!success, "setBaseTokenSupported path should not exist");
+    }
+
+    function test_baseAllowlistApi_getter_removed() public {
+        (bool success,) = address(factory).call(abi.encodeWithSignature("isBaseTokenSupported(address)", address(alt)));
+        assertTrue(!success, "isBaseTokenSupported path should not exist");
     }
 
     function test_initialize_reentryBlocked() public {
@@ -93,9 +95,6 @@ contract FactoryAdminExtTest is PairFixture {
     }
 
     function test_atomicInit_noTaxFreeWindow() public {
-        vm.prank(PAIR_ADMIN);
-        factory.setBaseTokenSupported(address(alt), true);
-
         vm.prank(PAIR_ADMIN);
         address pairAddr = factory.createPair(quoteTokenAddr, address(alt), 300, 500, COLLECTOR);
         UniswapV2Pair p = UniswapV2Pair(pairAddr);

@@ -32,8 +32,6 @@ contract StatefulPairInvariantTest is TestBase {
 
         vm.prank(PAIR_ADMIN);
         factory.setQuoteToken(address(quote), true);
-        vm.prank(PAIR_ADMIN);
-        factory.setBaseTokenSupported(address(base), true);
 
         vm.prank(PAIR_ADMIN);
         address pairAddr = factory.createPair(address(quote), address(base), 300, 500, COLLECTOR);

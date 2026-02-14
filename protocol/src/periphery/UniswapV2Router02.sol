@@ -25,11 +25,9 @@ contract UniswapV2Router02 is IUniswapV2Router02 {
         assert(msg.sender == WETH);
     }
 
-    function _requireSupportedPairTokens(address pair, address tokenIn, address tokenOut) internal view {
+    function _requireSupportedPairTokens(address pair) internal view {
         address qt = IUniswapV2Pair(pair).quoteToken();
-        address bt = tokenIn == qt ? tokenOut : tokenIn;
         require(IUniswapV2Factory(factory).isQuoteToken(qt), "QUOTE_NOT_SUPPORTED");
-        require(IUniswapV2Factory(factory).isBaseTokenSupported(bt), "BASE_NOT_SUPPORTED");
     }
 
     function _addLiquidity(
@@ -42,7 +40,7 @@ contract UniswapV2Router02 is IUniswapV2Router02 {
     ) internal view returns (uint256 amountA, uint256 amountB) {
         address pair = IUniswapV2Factory(factory).getPair(tokenA, tokenB);
         require(pair != address(0), "PAIR_NOT_CREATED");
-        _requireSupportedPairTokens(pair, tokenA, tokenB);
+        _requireSupportedPairTokens(pair);
 
         (uint256 reserveA, uint256 reserveB) = UniswapV2Library.getReserves(factory, tokenA, tokenB);
         if (reserveA == 0 && reserveB == 0) {
@@ -199,7 +197,7 @@ contract UniswapV2Router02 is IUniswapV2Router02 {
         for (uint256 i = 0; i < path.length - 1; i++) {
             (address input, address output) = (path[i], path[i + 1]);
             address pair = UniswapV2Library.pairFor(factory, input, output);
-            _requireSupportedPairTokens(pair, input, output);
+            _requireSupportedPairTokens(pair);
             (address token0,) = UniswapV2Library.sortTokens(input, output);
             uint256 amountOut = amounts[i + 1];
             (uint256 amount0Out, uint256 amount1Out) =

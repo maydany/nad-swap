@@ -2,7 +2,7 @@
 
 | # | Item | Status | Notes |
 |---|---|---|---|
-| 1 | Factory admin model unified to pairAdmin (createPair expanded args, feeToSetter API removed) | Confirmed | Integrators must stop using `feeToSetter()/setFeeToSetter()` and legacy `createPair(address,address)`. |
+| 1 | Factory admin model unified to pairAdmin (createPair expanded args, feeToSetter/base-allowlist APIs removed) | Confirmed | Integrators must stop using `feeToSetter()/setFeeToSetter()`, `isBaseTokenSupported()/setBaseTokenSupported()`, and legacy `createPair(address,address)`; base policy is quote-only enforcement. |
 | 2 | Router addLiquidity no auto-create | Confirmed | Pair must exist prior to add-liquidity flow. |
 | 3 | Dual-output swap unsupported | Confirmed | Flash flows expecting dual-out must be refactored. |
 | 4 | LP fee changed to 0.2% | Confirmed | Quote engines updated to `998/1000`. |

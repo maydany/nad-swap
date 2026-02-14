@@ -44,8 +44,6 @@ contract RouterLibraryTest is TestBase {
 
         vm.prank(PAIR_ADMIN);
         factory.setQuoteToken(address(quote), true);
-        vm.prank(PAIR_ADMIN);
-        factory.setBaseTokenSupported(address(base), true);
 
         vm.prank(PAIR_ADMIN);
         address pairAddr = factory.createPair(address(quote), address(base), 300, 500, COLLECTOR);
@@ -78,8 +76,6 @@ contract RouterLibraryTest is TestBase {
 
         vm.prank(PAIR_ADMIN);
         factory.setQuoteToken(address(x), true);
-        vm.prank(PAIR_ADMIN);
-        factory.setBaseTokenSupported(address(y), true);
 
         x.mint(address(this), 1000 ether);
         y.mint(address(this), 1000 ether);

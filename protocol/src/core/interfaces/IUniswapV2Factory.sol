@@ -15,8 +15,6 @@ interface IUniswapV2Factory {
 
     function isQuoteToken(address token) external view returns (bool);
 
-    function isBaseTokenSupported(address token) external view returns (bool);
-
     function isPair(address pair) external view returns (bool);
 
     function createPair(
@@ -30,8 +28,6 @@ interface IUniswapV2Factory {
     function setFeeTo(address) external;
 
     function setQuoteToken(address token, bool enabled) external;
-
-    function setBaseTokenSupported(address token, bool enabled) external;
 
     function setTaxConfig(address pair, uint16 buyTaxBps, uint16 sellTaxBps, address feeCollector) external;
 }

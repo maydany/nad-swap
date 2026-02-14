@@ -12,18 +12,20 @@
 - Removed factory admin API:
   - `feeToSetter()`
   - `setFeeToSetter(address)`
+- Removed base allowlist API:
+  - `isBaseTokenSupported(address)`
+  - `setBaseTokenSupported(address,bool)`
 - Access control changed:
   - `setQuoteToken(address,bool)` is `pairAdmin`-only
-  - `setBaseTokenSupported(address,bool)` is `pairAdmin`-only
   - `setFeeTo(address)` is `pairAdmin`-only
+- Behavioral policy change:
+  - `BASE_NOT_SUPPORTED` guard path removed from Factory `createPair` and Router support guard.
 
 ### Added getters / methods
 - `pairAdmin() -> address`
 - `isQuoteToken(address) -> bool`
-- `isBaseTokenSupported(address) -> bool`
 - `isPair(address) -> bool`
 - `setQuoteToken(address,bool)`
-- `setBaseTokenSupported(address,bool)`
 - `setTaxConfig(address pair,uint16 buyTaxBps,uint16 sellTaxBps,address feeCollector)`
 
 ## Pair

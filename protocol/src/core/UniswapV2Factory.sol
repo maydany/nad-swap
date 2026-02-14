@@ -12,7 +12,6 @@ contract UniswapV2Factory is IUniswapV2Factory {
     address[] public allPairs;
 
     mapping(address => bool) public isQuoteToken;
-    mapping(address => bool) public isBaseTokenSupported;
     mapping(address => bool) public isPair;
 
     modifier onlyValidPair(address pair) {
@@ -54,9 +53,6 @@ contract UniswapV2Factory is IUniswapV2Factory {
             revert("QUOTE_REQUIRED");
         }
 
-        address bt = qt == token0 ? token1 : token0;
-        require(isBaseTokenSupported[bt], "BASE_NOT_SUPPORTED");
-
         bytes memory bytecode = type(UniswapV2Pair).creationCode;
         bytes32 salt = keccak256(abi.encodePacked(token0, token1));
         assembly {
@@ -83,12 +79,6 @@ contract UniswapV2Factory is IUniswapV2Factory {
         require(msg.sender == pairAdmin, "FORBIDDEN");
         require(token != address(0), "ZERO_ADDRESS");
         isQuoteToken[token] = enabled;
-    }
-
-    function setBaseTokenSupported(address token, bool enabled) external {
-        require(msg.sender == pairAdmin, "FORBIDDEN");
-        require(token != address(0), "ZERO_ADDRESS");
-        isBaseTokenSupported[token] = enabled;
     }
 
     function setFeeTo(address _feeTo) external {

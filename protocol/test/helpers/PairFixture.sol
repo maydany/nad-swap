@@ -53,8 +53,6 @@ contract PairFixture is TestBase {
 
         vm.prank(PAIR_ADMIN);
         factory.setQuoteToken(quoteTokenAddr, true);
-        vm.prank(PAIR_ADMIN);
-        factory.setBaseTokenSupported(baseTokenAddr, true);
 
         vm.prank(PAIR_ADMIN);
         address pairAddr = factory.createPair(quoteTokenAddr, baseTokenAddr, buyTaxBps, sellTaxBps, collector);

@@ -66,8 +66,8 @@ rawBaseBalance  = reserveBase                          (+ dust)
 
 > [!IMPORTANT]
 > This invariant only holds when the Quote token is **non-rebasing and non-fee-on-transfer**.
-> NadSwap treats **Base and Quote FOT/rebasing tokens as unsupported** in Router flows.
-> Enforcement split: Quote support is Factory whitelist (`isQuoteToken`), Base support is Factory-managed allowlist + Router guard.
+> NadSwap enforces Router policy on **Quote support only**.
+> Base token support is not allowlist-enforced in Factory/Router under this spec revision.
 
 ---
 
@@ -77,8 +77,8 @@ rawBaseBalance  = reserveBase                          (+ dust)
 |------|-------|-------------|
 | `UniswapV2Pair.sol` | **High** | vault, effective balance, 12-step swap, tax config, claim |
 | `IUniswapV2Pair.sol` | Medium | tax/quote query, set, claim interface additions |
-| `IUniswapV2Factory.sol` | Medium | base support getter addition (`isBaseTokenSupported`) for Router guard |
-| `UniswapV2Factory.sol` | Medium | quote whitelist + base allowlist, **pairAdmin-only pair creation**, pair init |
+| `IUniswapV2Factory.sol` | Medium | quote support getter (`isQuoteToken`) retained; base allowlist API removed |
+| `UniswapV2Factory.sol` | Medium | quote whitelist, **pairAdmin-only pair creation**, pair init (base allowlist removed) |
 | `UniswapV2Library.sol` | Low | `997→998`, tax-aware getAmounts |
 | `UniswapV2Router02.sol` | Low | signature preserved, **auto pair creation removed**, Library call patches, token support guard, **FOT-supporting swap variants always revert `FOT_NOT_SUPPORTED`** |
 
@@ -477,7 +477,6 @@ function setTaxConfig(uint16 _buyTaxBps, uint16 _sellTaxBps, address _collector)
 ```solidity
 // ── Added State ──
 mapping(address => bool) public isQuoteToken;
-mapping(address => bool) public isBaseTokenSupported;
 mapping(address => bool) public isPair;
 address public pairAdmin;
 
@@ -493,14 +492,6 @@ function setQuoteToken(address token, bool enabled) external {
     require(msg.sender == pairAdmin, 'FORBIDDEN');
     require(token != address(0), 'ZERO_ADDRESS');
     isQuoteToken[token] = enabled;
-}
-
-/// @notice Base token support allowlist for Router enforcement.
-/// @dev FOT/rebasing Base tokens must be disabled.
-function setBaseTokenSupported(address token, bool enabled) external {
-    require(msg.sender == pairAdmin, 'FORBIDDEN');
-    require(token != address(0), 'ZERO_ADDRESS');
-    isBaseTokenSupported[token] = enabled;
 }
 
 /// @notice feeTo receiver update (V2 semantics preserved, admin unified to pairAdmin).
@@ -536,10 +527,6 @@ function createPair(
     else if (isQuoteToken[token1]) qt = token1;
     else revert('QUOTE_REQUIRED');
 
-    // Enforce Base policy at creation time (not Router-only)
-    address bt = (qt == token0) ? token1 : token0;
-    require(isBaseTokenSupported[bt], 'BASE_NOT_SUPPORTED');
-
     // ... CREATE2 ...
     
     // Atomic initialization: tokens + Quote + Tax simultaneously
@@ -570,18 +557,16 @@ function setTaxConfig(address pair, uint16 buy, uint16 sell, address collector) 
 ### Router FOT Policy
 
 > [!WARNING]
-> NadSwap does **not** support Base/Quote fee-on-transfer (FOT) or rebasing tokens in Router paths.
+> NadSwap does **not** support Quote fee-on-transfer (FOT) or rebasing tokens in Router paths.
 > Router external signatures are preserved.  
 > `swapExactTokensForTokensSupportingFeeOnTransferTokens`-style functions MUST hard-revert with `FOT_NOT_SUPPORTED`.
 > This prevents Net/Gross mismatch under Quote-only tax math.
 
 **Router support guard (required on swap/add-liquidity paths):**
 ```solidity
-function _requireSupportedPairTokens(address pair, address tokenIn, address tokenOut) internal view {
+function _requireSupportedPairTokens(address pair) internal view {
     address qt = IUniswapV2Pair(pair).quoteToken();
-    address bt = tokenIn == qt ? tokenOut : tokenIn;
     require(IUniswapV2Factory(factory).isQuoteToken(qt), 'QUOTE_NOT_SUPPORTED');
-    require(IUniswapV2Factory(factory).isBaseTokenSupported(bt), 'BASE_NOT_SUPPORTED');
 }
 ```
 
@@ -736,12 +721,12 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 | 24 | 🆕 CEI-order safety | claim: vault=0(E) → transfer(I) → _update (post-interaction state sync) | Safe under `lock`; vault reset precedes external call |
 | 25 | 🆕 claimQuoteFees incentive design | feeCollector calls directly (own asset recovery) | No third-party incentive needed |
 | 26 | 🆕 ERC20 return value check | `_safeTransfer` internal `require(success)` | Handles tokens that don’t return bool |
-| 27 | 🆕 Base/Quote FOT unsupported enforcement | Router guard enforces Base/Quote policy; FOT-style variants always revert `FOT_NOT_SUPPORTED` | Prevents Net/Gross mismatch in tax math |
+| 27 | 🆕 Quote FOT unsupported enforcement | Router guard enforces Quote policy; FOT-style variants always revert `FOT_NOT_SUPPORTED` | Prevents Net/Gross mismatch in tax math |
 | 28 | 🆕 No INIT_CODE_HASH dependency in routing | `pairFor` uses `factory.getPair` | Eliminates create2 hash drift risk |
 | 29 | 🆕 Quote out always taxed by sellTax | `quoteOut > 0` applies sellTax (including `baseIn == 0`) | Prevents bypass interpretation on same-token quote flash(out/in) |
 | 30 | 🆕 Vault drift liveness guard | `require(rawQuote >= vault, 'VAULT_DRIFT')` before quote-side subtraction | Prevents silent underflow-style liveness loss across lifecycle paths |
 | 31 | 🆕 Swap target hardening | `require(to != token0 && to != token1, 'INVALID_TO')` | Restores V2-compatible safety behavior |
-| 32 | 🆕 Base policy enforced at pair creation | `createPair` requires `isBaseTokenSupported[base]` | Prevents unsupported base token pairs due to operator error |
+| 32 | 🆕 Base allowlist removed | Factory/Router no longer enforce base allowlist | Base token policy is non-enforced at protocol level; quote policy remains enforced |
 | 33 | 🆕 Sell exact-in safe quote margin | Router quote uses `grossOut-1` before sell-tax deduction | Reduces liquidity-edge execution reverts (max 1 wei user-side conservatism) |
 | 34 | 🆕 claim dust behavior documented | claim `_update(raw0,raw1,...)` may absorb quote dust into reserves | Operational/accounting semantics are explicit to integrators |
 | 35 | 🆕 K multiply overflow treatment | Optional guard (`adj0 == 0 || adj1 <= max/adj0`) or token policy documentation | Classified as informational hardening, not core exploit path. Current implementation adopts the explicit guard |
@@ -857,13 +842,13 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 | `test_createPair_frontRunBlocked` | Different address front-run attempt reverts |
 | `test_createPair_bothQuote_revert` | 🆕 Quote-Quote pair creation → BOTH_QUOTE revert |
 | `test_createPair_noQuote_revert` | 🆕 Neither token is Quote → QUOTE_REQUIRED revert |
-| `test_createPair_baseUnsupported_revert` | 🆕 Base token not in allowlist → BASE_NOT_SUPPORTED revert |
+| `test_createPair_unlistedBase_success` | 🆕 Base token without allowlist registration can still be paired when quote condition is satisfied |
 | `test_createPair_duplicate_revert` | 🆕 Duplicate pair creation reverts |
 | `test_factory_invalidPair_revert` | Factory admin functions with external pair address revert |
 | `test_setQuoteToken_zeroAddr_revert` | 🆕 setQuoteToken with address(0) → ZERO_ADDRESS revert |
 | `test_setQuoteToken_nonPairAdmin_revert` | 🆕 non-pairAdmin caller on setQuoteToken → FORBIDDEN revert |
-| `test_setBaseTokenSupported_zeroAddr_revert` | 🆕 setBaseTokenSupported with address(0) → ZERO_ADDRESS revert |
-| `test_setBaseTokenSupported_nonPairAdmin_revert` | 🆕 non-pairAdmin caller → FORBIDDEN revert |
+| `test_baseAllowlistApi_setter_removed` | 🆕 low-level `setBaseTokenSupported(address,bool)` call fails (selector removed) |
+| `test_baseAllowlistApi_getter_removed` | 🆕 low-level `isBaseTokenSupported(address)` call fails (selector removed) |
 | `test_setFeeTo_onlyPairAdmin_revert` | 🆕 non-pairAdmin caller on setFeeTo → UniswapV2: FORBIDDEN revert |
 | `test_setFeeTo_pairAdmin_success` | 🆕 pairAdmin can update feeTo successfully |
 | `test_constructor_zeroAddress_revert` | 🆕 constructor with zero `pairAdmin` → ZERO_ADDRESS revert |
@@ -904,7 +889,7 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 |------|-------------|
 | `test_quoteToken_fot_vaultDrift` | FOT/rebasing token as Quote causes vault accounting drift; prevented by quote whitelist |
 | `test_quoteToken_notSupported` | 🆕 Quote token disabled in factory policy path reverts via Router guard (`QUOTE_NOT_SUPPORTED`) |
-| `test_baseToken_fot_unsupported` | 🆕 Base FOT/rebasing token path reverts via Router support guard (`BASE_NOT_SUPPORTED`) |
+| `test_baseToken_policy_unrestricted` | 🆕 Base token path is not allowlist-blocked in Router when quote token policy is satisfied |
 | `test_router_supportingFOT_notSupported` | 🆕 FOT-supporting swap variants keep ABI but always revert with `FOT_NOT_SUPPORTED` |
 
 ### Unit — SafeERC20 / First-Depositor (§13 #22-26)
@@ -956,7 +941,7 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 
 1. Deploy Factory(`pairAdmin`) / Pair / Router
 2. `pairAdmin` is fixed at deployment (immutable in this spec)
-3. Set Quote whitelist (`setQuoteToken`) and Base support allowlist (`setBaseTokenSupported`)
+3. Set Quote whitelist (`setQuoteToken`) (Base allowlist API removed)
 4. **`createPair(tokenA, tokenB, buyTax, sellTax, collector)`** — creation and tax set simultaneously
 5. Monitor → change rates/collector instantly via `setTaxConfig` as needed
 6. Periodically execute `claimQuoteFees`

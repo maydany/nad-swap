@@ -20,11 +20,11 @@ contract ForkCoreFactoryPolicyTest is ForkFixture {
         factory.createPair(monadBaseToken, monadWnative, 300, 500, COLLECTOR);
     }
 
-    function testFork_factory_baseUnsupported_revert() public onlyFork {
+    function testFork_factory_unlistedBase_success() public onlyFork {
         MockERC20 unsupported = new MockERC20("Unsupported", "UNS", 18);
         vm.prank(PAIR_ADMIN);
-        expectRevertMsg("BASE_NOT_SUPPORTED");
-        factory.createPair(monadQuoteToken, address(unsupported), 300, 500, COLLECTOR);
+        address pairAddr = factory.createPair(monadQuoteToken, address(unsupported), 300, 500, COLLECTOR);
+        assertTrue(pairAddr != address(0), "pair should be created without base allowlist");
     }
 
     function testFork_factory_duplicate_revert() public onlyFork {
@@ -47,9 +47,15 @@ contract ForkCoreFactoryPolicyTest is ForkFixture {
         factory.setQuoteToken(monadQuoteToken, false);
     }
 
-    function testFork_factory_setBaseTokenSupported_nonPairAdmin_revert() public onlyFork {
-        vm.prank(OTHER);
-        expectRevertMsg("FORBIDDEN");
-        factory.setBaseTokenSupported(monadBaseToken, false);
+    function testFork_factory_baseAllowlistSetter_removed() public onlyFork {
+        (bool success,) = address(factory).call(
+            abi.encodeWithSignature("setBaseTokenSupported(address,bool)", monadBaseToken, false)
+        );
+        assertTrue(!success, "setBaseTokenSupported path should not exist");
+    }
+
+    function testFork_factory_baseAllowlistGetter_removed() public onlyFork {
+        (bool success,) = address(factory).call(abi.encodeWithSignature("isBaseTokenSupported(address)", monadBaseToken));
+        assertTrue(!success, "isBaseTokenSupported path should not exist");
     }
 }

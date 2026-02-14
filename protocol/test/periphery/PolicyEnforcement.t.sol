@@ -23,17 +23,15 @@ contract PolicyEnforcementTest is PairFixture {
         router.swapExactTokensForTokens(amountIn, 0, p, TRADER, block.timestamp + 1);
     }
 
-    function test_baseToken_fot_unsupported() public {
+    function test_baseToken_policy_unrestricted() public {
         MockERC20 q = new MockERC20("Quote3", "Q3", 18);
-        MockFeeOnTransferERC20 b = new MockFeeOnTransferERC20("FOT-Base", "FOTB", 18, 100);
+        MockERC20 b = new MockERC20("Base3", "B3", 18);
         MockWETH w = new MockWETH();
         UniswapV2Factory f = new UniswapV2Factory(PAIR_ADMIN);
         UniswapV2Router02 r = new UniswapV2Router02(address(f), address(w));
 
         vm.prank(PAIR_ADMIN);
         f.setQuoteToken(address(q), true);
-        vm.prank(PAIR_ADMIN);
-        f.setBaseTokenSupported(address(b), true);
         vm.prank(PAIR_ADMIN);
         address pairAddr = f.createPair(address(q), address(b), 300, 500, COLLECTOR);
         UniswapV2Pair p = UniswapV2Pair(pairAddr);
@@ -47,9 +45,6 @@ contract PolicyEnforcementTest is PairFixture {
         vm.prank(LP);
         p.mint(LP);
 
-        vm.prank(PAIR_ADMIN);
-        f.setBaseTokenSupported(address(b), false);
-
         q.mint(TRADER, 1000 ether);
         vm.prank(TRADER);
         q.approve(address(r), uint256(-1));
@@ -57,9 +52,11 @@ contract PolicyEnforcementTest is PairFixture {
         address[] memory path = new address[](2);
         path[0] = address(q);
         path[1] = address(b);
+        uint256 baseBefore = b.balanceOf(TRADER);
         vm.prank(TRADER);
-        expectRevertMsg("BASE_NOT_SUPPORTED");
         r.swapExactTokensForTokens(1000 ether, 0, path, TRADER, block.timestamp + 1);
+        uint256 baseAfter = b.balanceOf(TRADER);
+        assertGt(baseAfter - baseBefore, 0, "base token path unexpectedly blocked");
     }
 
     function test_quoteToken_fot_vaultDrift() public {
@@ -69,8 +66,6 @@ contract PolicyEnforcementTest is PairFixture {
 
         vm.prank(PAIR_ADMIN);
         f.setQuoteToken(address(q), true);
-        vm.prank(PAIR_ADMIN);
-        f.setBaseTokenSupported(address(b), true);
         vm.prank(PAIR_ADMIN);
         address pairAddr = f.createPair(address(q), address(b), 300, 500, COLLECTOR);
         UniswapV2Pair p = UniswapV2Pair(pairAddr);

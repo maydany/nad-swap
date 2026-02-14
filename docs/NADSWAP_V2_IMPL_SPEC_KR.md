@@ -66,8 +66,8 @@ rawBaseBalance  = reserveBase                          (+ dust)
 
 > [!IMPORTANT]
 > 이 불변식은 Quote 토큰이 **리베이싱/수수료전가(FOT)가 아닐 때만** 성립합니다.
-> NadSwap은 Router 경로에서 **Base/Quote FOT·리베이싱 토큰을 미지원**으로 취급합니다.
-> 강제 분리: Quote 지원은 Factory 화이트리스트(`isQuoteToken`), Base 지원은 Factory allowlist + Router 가드로 보장합니다.
+> NadSwap은 Router 경로에서 **Quote 정책만 강제**합니다.
+> 본 명세 리비전에서는 Base 지원 allowlist를 Factory/Router에서 강제하지 않습니다.
 
 ---
 
@@ -77,8 +77,8 @@ rawBaseBalance  = reserveBase                          (+ dust)
 |------|------|-----------|
 | `UniswapV2Pair.sol` | **높음** | vault, effective balance, 12단계 swap, 세금 설정, claim |
 | `IUniswapV2Pair.sol` | 중간 | tax/quote 조회, set, claim 인터페이스 추가 |
-| `IUniswapV2Factory.sol` | 중간 | Router 가드를 위한 base 지원 getter 추가 (`isBaseTokenSupported`) |
-| `UniswapV2Factory.sol` | 중간 | quote 화이트리스트 + base allowlist, **pairAdmin 전용 pair 생성**, pair 초기화 |
+| `IUniswapV2Factory.sol` | 중간 | quote 지원 getter(`isQuoteToken`) 유지, base allowlist API 제거 |
+| `UniswapV2Factory.sol` | 중간 | quote 화이트리스트, **pairAdmin 전용 pair 생성**, pair 초기화 (base allowlist 제거) |
 | `UniswapV2Library.sol` | 낮음 | `997→998`, tax-aware getAmounts |
 | `UniswapV2Router02.sol` | 낮음 | 시그니처 유지, **자동 pair 생성 제거**, Library 호출 패치, 토큰 지원 가드, **FOT 지원 swap 변형은 항상 `FOT_NOT_SUPPORTED`로 revert** |
 
@@ -477,7 +477,6 @@ function setTaxConfig(uint16 _buyTaxBps, uint16 _sellTaxBps, address _collector)
 ```solidity
 // ── Added State ──
 mapping(address => bool) public isQuoteToken;
-mapping(address => bool) public isBaseTokenSupported;
 mapping(address => bool) public isPair;
 address public pairAdmin;
 
@@ -493,14 +492,6 @@ function setQuoteToken(address token, bool enabled) external {
     require(msg.sender == pairAdmin, 'FORBIDDEN');
     require(token != address(0), 'ZERO_ADDRESS');
     isQuoteToken[token] = enabled;
-}
-
-/// @notice Router 강제를 위한 Base 토큰 지원 allowlist.
-/// @dev FOT/리베이싱 Base 토큰은 비활성화해야 함.
-function setBaseTokenSupported(address token, bool enabled) external {
-    require(msg.sender == pairAdmin, 'FORBIDDEN');
-    require(token != address(0), 'ZERO_ADDRESS');
-    isBaseTokenSupported[token] = enabled;
 }
 
 /// @notice feeTo 수령자 변경 (V2 semantics 유지, 관리자만 pairAdmin으로 통합)
@@ -536,10 +527,6 @@ function createPair(
     else if (isQuoteToken[token1]) qt = token1;
     else revert('QUOTE_REQUIRED');
 
-    // 생성 시점 Base 정책 강제 (Router 전용 아님)
-    address bt = (qt == token0) ? token1 : token0;
-    require(isBaseTokenSupported[bt], 'BASE_NOT_SUPPORTED');
-
     // ... CREATE2 ...
     
     // 원자적 초기화: tokens + Quote + Tax 동시 설정
@@ -570,18 +557,16 @@ function setTaxConfig(address pair, uint16 buy, uint16 sell, address collector) 
 ### Router FOT 정책
 
 > [!WARNING]
-> NadSwap은 Router 경로에서 Base/Quote FOT 또는 리베이싱 토큰을 **지원하지 않습니다**.
+> NadSwap은 Router 경로에서 Quote FOT 또는 리베이싱 토큰을 **지원하지 않습니다**.
 > Router 외부 시그니처는 유지됩니다.  
 > `swapExactTokensForTokensSupportingFeeOnTransferTokens` 계열 함수는 반드시 `FOT_NOT_SUPPORTED`로 hard-revert 해야 합니다.
 > 이는 Quote 전용 세금 수학에서 Net/Gross 불일치를 방지하기 위함입니다.
 
 **Router 지원 가드 (swap/add-liquidity 경로 필수):**
 ```solidity
-function _requireSupportedPairTokens(address pair, address tokenIn, address tokenOut) internal view {
+function _requireSupportedPairTokens(address pair) internal view {
     address qt = IUniswapV2Pair(pair).quoteToken();
-    address bt = tokenIn == qt ? tokenOut : tokenIn;
     require(IUniswapV2Factory(factory).isQuoteToken(qt), 'QUOTE_NOT_SUPPORTED');
-    require(IUniswapV2Factory(factory).isBaseTokenSupported(bt), 'BASE_NOT_SUPPORTED');
 }
 ```
 
@@ -736,12 +721,12 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 | 24 | 🆕 CEI 순서 안전성 | claim: vault=0(E) → transfer(I) → _update (상호작용 후 상태 동기화) | `lock` 하에서 안전, 외부 호출 전 vault 초기화 |
 | 25 | 🆕 claimQuoteFees 인센티브 설계 | feeCollector가 직접 호출(자산 회수) | 제3자 인센티브 불필요 |
 | 26 | 🆕 ERC20 반환값 검사 | `_safeTransfer` 내부 `require(success)` | bool 미반환 토큰 처리 |
-| 27 | 🆕 Base/Quote FOT 미지원 강제 | Router 가드가 Base/Quote 정책 강제, FOT 변형은 항상 `FOT_NOT_SUPPORTED` | 세금 수학의 Net/Gross 불일치 방지 |
+| 27 | 🆕 Quote FOT 미지원 강제 | Router 가드가 Quote 정책 강제, FOT 변형은 항상 `FOT_NOT_SUPPORTED` | 세금 수학의 Net/Gross 불일치 방지 |
 | 28 | 🆕 라우팅에서 INIT_CODE_HASH 비의존 | `pairFor`가 `factory.getPair` 사용 | create2 해시 드리프트 위험 제거 |
 | 29 | 🆕 quote out은 항상 sellTax 과세 | `quoteOut > 0`이면 sellTax 적용 (`baseIn == 0` 포함) | 동일 토큰 quote flash(out/in) 우회 해석 방지 |
 | 30 | 🆕 Vault drift 라이브니스 가드 | quote 측 차감 전 `require(rawQuote >= vault, 'VAULT_DRIFT')` | 전 생명주기 경로에서 무음 언더플로우성 라이브니스 손실 방지 |
 | 31 | 🆕 swap 대상 하드닝 | `require(to != token0 && to != token1, 'INVALID_TO')` | V2 호환 안전 동작 복원 |
-| 32 | 🆕 pair 생성 시 Base 정책 강제 | `createPair`가 `isBaseTokenSupported[base]` 요구 | 운영자 실수로 미지원 base 페어 생성 방지 |
+| 32 | 🆕 Base allowlist 제거 | Factory/Router가 base allowlist를 더 이상 강제하지 않음 | 프로토콜 레벨 Base 정책 비강제, Quote 정책은 유지 |
 | 33 | 🆕 sell exact-in 안전 마진 quote | Router quote는 sell 세금 공제 전 `grossOut-1` 사용 | 유동성 경계 실행 revert 감소(최대 1 wei 보수적) |
 | 34 | 🆕 claim dust 동작 문서화 | claim `_update(raw0,raw1,...)`가 quote dust를 reserve로 흡수 가능 | 통합자 대상 운영/회계 의미 명확화 |
 | 35 | 🆕 K 곱셈 오버플로우 처리 | 선택적 가드(`adj0 == 0 || adj1 <= max/adj0`) 또는 토큰 정책 문서화 | 핵심 익스플로잇 경로는 아니며 정보성 하드닝. 현재 구현은 명시 가드를 채택 |
@@ -857,13 +842,13 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 | `test_createPair_frontRunBlocked` | 다른 주소의 선점 시도 revert |
 | `test_createPair_bothQuote_revert` | 🆕 Quote-Quote 페어 생성 → BOTH_QUOTE revert |
 | `test_createPair_noQuote_revert` | 🆕 두 토큰 모두 Quote 아님 → QUOTE_REQUIRED revert |
-| `test_createPair_baseUnsupported_revert` | 🆕 Base 토큰이 allowlist 미포함 → BASE_NOT_SUPPORTED revert |
+| `test_createPair_unlistedBase_success` | 🆕 Base allowlist 등록 없이도 quote 조건 충족 시 pair 생성 성공 |
 | `test_createPair_duplicate_revert` | 🆕 중복 페어 생성 revert |
 | `test_factory_invalidPair_revert` | 외부 pair 주소 대상 Factory admin 함수 호출 revert |
 | `test_setQuoteToken_zeroAddr_revert` | 🆕 address(0)로 setQuoteToken → ZERO_ADDRESS revert |
 | `test_setQuoteToken_nonPairAdmin_revert` | 🆕 non-pairAdmin가 setQuoteToken 호출 → FORBIDDEN revert |
-| `test_setBaseTokenSupported_zeroAddr_revert` | 🆕 address(0)로 setBaseTokenSupported → ZERO_ADDRESS revert |
-| `test_setBaseTokenSupported_nonPairAdmin_revert` | 🆕 non-pairAdmin 호출 → FORBIDDEN revert |
+| `test_baseAllowlistApi_setter_removed` | 🆕 low-level `setBaseTokenSupported(address,bool)` 호출 실패(셀렉터 제거) |
+| `test_baseAllowlistApi_getter_removed` | 🆕 low-level `isBaseTokenSupported(address)` 호출 실패(셀렉터 제거) |
 | `test_setFeeTo_onlyPairAdmin_revert` | 🆕 non-pairAdmin가 setFeeTo 호출 → UniswapV2: FORBIDDEN revert |
 | `test_setFeeTo_pairAdmin_success` | 🆕 pairAdmin이 feeTo를 정상 갱신 가능 |
 | `test_constructor_zeroAddress_revert` | 🆕 생성자 `pairAdmin`이 0이면 ZERO_ADDRESS revert |
@@ -904,7 +889,7 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 |------|------|
 | `test_quoteToken_fot_vaultDrift` | Quote로 FOT/리베이싱 토큰 사용 시 vault 회계 drift 발생, quote 화이트리스트로 예방 |
 | `test_quoteToken_notSupported` | 🆕 Factory 정책에서 비활성 Quote 토큰 경로는 Router 가드로 revert (`QUOTE_NOT_SUPPORTED`) |
-| `test_baseToken_fot_unsupported` | 🆕 Base FOT/리베이싱 토큰 경로는 Router 지원 가드로 revert (`BASE_NOT_SUPPORTED`) |
+| `test_baseToken_policy_unrestricted` | 🆕 quote 정책 충족 시 Router에서 base 경로는 allowlist 정책으로 차단되지 않음 |
 | `test_router_supportingFOT_notSupported` | 🆕 FOT-supporting swap 변형은 ABI를 유지하되 항상 `FOT_NOT_SUPPORTED`로 revert |
 
 ### Unit — SafeERC20 / 최초 예치자 (§13 #22-26)
@@ -956,7 +941,7 @@ event QuoteFeesClaimed(address indexed to, uint256 amount);
 
 1. Factory(`pairAdmin`) / Pair / Router 배포
 2. `pairAdmin`은 배포 시 고정(이 명세에서는 immutable)
-3. Quote 화이트리스트(`setQuoteToken`)와 Base 지원 allowlist(`setBaseTokenSupported`) 설정
+3. Quote 화이트리스트(`setQuoteToken`) 설정 (Base allowlist API 제거)
 4. **`createPair(tokenA, tokenB, buyTax, sellTax, collector)`** — 생성과 세금 설정을 동시에 수행
 5. 모니터링 후 필요 시 `setTaxConfig`로 세율/collector 즉시 변경
 6. 주기적으로 `claimQuoteFees` 실행

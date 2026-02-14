@@ -40,7 +40,7 @@ requirements:
     statement: "Factory requires exactly one quote token with QUOTE_REQUIRED guard."
   - id: FACT-004
     section: "10. Factory"
-    statement: "Factory enforces base support allowlist at pair creation."
+    statement: "Factory does not enforce a base allowlist at pair creation once quote-token condition is satisfied."
   - id: FACT-005
     section: "10. Factory"
     statement: "Factory prevents duplicate pair creation."
@@ -52,7 +52,7 @@ requirements:
     statement: "setQuoteToken rejects zero token address."
   - id: FACT-008
     section: "10. Factory"
-    statement: "setBaseTokenSupported is pairAdmin-only."
+    statement: "Base allowlist APIs (isBaseTokenSupported/setBaseTokenSupported) are removed from Factory ABI."
   - id: FACT-009
     section: "10. Factory"
     statement: "setFeeTo is pairAdmin-only."

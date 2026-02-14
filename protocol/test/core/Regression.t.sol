@@ -30,8 +30,6 @@ contract RegressionTest is TestBase {
         router = new UniswapV2Router02(address(factory), address(weth));
         vm.prank(PAIR_ADMIN);
         factory.setQuoteToken(address(quote), true);
-        vm.prank(PAIR_ADMIN);
-        factory.setBaseTokenSupported(address(base), true);
 
         vm.prank(PAIR_ADMIN);
         address pairAddr = factory.createPair(address(quote), address(base), 0, 0, COLLECTOR);

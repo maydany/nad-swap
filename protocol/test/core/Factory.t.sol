@@ -23,9 +23,6 @@ contract FactoryTest is TestBase {
 
         vm.prank(PAIR_ADMIN);
         factory.setQuoteToken(address(quote), true);
-
-        vm.prank(PAIR_ADMIN);
-        factory.setBaseTokenSupported(address(base), true);
     }
 
     function test_constructor_zeroAddress_revert() public {
@@ -54,10 +51,10 @@ contract FactoryTest is TestBase {
         factory.createPair(address(base), address(alt), 300, 500, COLLECTOR);
     }
 
-    function test_createPair_baseUnsupported_revert() public {
+    function test_createPair_unlistedBase_success() public {
         vm.prank(PAIR_ADMIN);
-        expectRevertMsg("BASE_NOT_SUPPORTED");
-        factory.createPair(address(quote), address(alt), 300, 500, COLLECTOR);
+        address pair = factory.createPair(address(quote), address(alt), 300, 500, COLLECTOR);
+        assertTrue(pair != address(0), "pair not created");
     }
 
     function test_createPair_duplicate_revert() public {
@@ -83,12 +80,6 @@ contract FactoryTest is TestBase {
         vm.prank(PAIR_ADMIN);
         expectRevertMsg("ZERO_ADDRESS");
         factory.setQuoteToken(address(0), true);
-    }
-
-    function test_setBaseTokenSupported_nonPairAdmin_revert() public {
-        vm.prank(OTHER);
-        expectRevertMsg("FORBIDDEN");
-        factory.setBaseTokenSupported(address(base), true);
     }
 
     function test_setFeeTo_onlyPairAdmin_revert() public {

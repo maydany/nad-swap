@@ -118,8 +118,6 @@ contract ForkCoreLifecycleTest is ForkFixture {
         vm.prank(PAIR_ADMIN);
         f.setQuoteToken(monadQuoteToken, true);
         vm.prank(PAIR_ADMIN);
-        f.setBaseTokenSupported(monadBaseToken, true);
-        vm.prank(PAIR_ADMIN);
         address pairAddr = f.createPair(monadQuoteToken, monadBaseToken, 300, 500, COLLECTOR);
         UniswapV2Pair p = UniswapV2Pair(pairAddr);
         _fundQuote(LP2, 3 ether);

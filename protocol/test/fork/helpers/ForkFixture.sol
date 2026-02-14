@@ -62,8 +62,6 @@ contract ForkFixture is TestBase {
 
         vm.prank(PAIR_ADMIN);
         factory.setQuoteToken(monadQuoteToken, true);
-        vm.prank(PAIR_ADMIN);
-        factory.setBaseTokenSupported(monadBaseToken, true);
 
         vm.prank(PAIR_ADMIN);
         address pairAddr = factory.createPair(monadQuoteToken, monadBaseToken, 300, 500, COLLECTOR);
@@ -209,10 +207,5 @@ contract ForkFixture is TestBase {
     function _setQuoteDisabled() internal {
         vm.prank(PAIR_ADMIN);
         factory.setQuoteToken(monadQuoteToken, false);
-    }
-
-    function _setBaseDisabled() internal {
-        vm.prank(PAIR_ADMIN);
-        factory.setBaseTokenSupported(monadBaseToken, false);
     }
 }

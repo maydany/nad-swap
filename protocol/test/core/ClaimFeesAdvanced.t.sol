@@ -84,8 +84,6 @@ contract ClaimFeesAdvancedTest is PairFixture {
         vm.prank(PAIR_ADMIN);
         f.setQuoteToken(address(q), true);
         vm.prank(PAIR_ADMIN);
-        f.setBaseTokenSupported(address(b), true);
-        vm.prank(PAIR_ADMIN);
         address pairAddr = f.createPair(address(q), address(b), 300, 500, COLLECTOR);
         UniswapV2Pair p = UniswapV2Pair(pairAddr);
 

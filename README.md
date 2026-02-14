@@ -89,19 +89,17 @@ ABI 변경 상세: [NADSWAP_V2_ABI_DIFF.md](docs/abi/NADSWAP_V2_ABI_DIFF.md)
 
 | 역할/개념 | 소속 | 설명 |
 |-----------|------|------|
-| `pairAdmin` | Factory | pair 생성 및 세율 변경 권한자. 배포 시 고정, 이후 변경 불가 |
+| `pairAdmin` | Factory | 유일한 관리자. pair 생성, 세율 변경, Quote 화이트리스트, `feeTo` 설정 권한. 배포 시 고정, 이후 변경 불가 |
 | `feeCollector` | Pair | 누적된 세금을 수령하는 주소. pair별 설정, `pairAdmin`이 변경 가능 |
-| `feeToSetter` | Factory | V2 원본 역할 유지 + Quote/Base 화이트리스트 관리 권한 추가 |
 | Quote 토큰 | Pair | pair당 정확히 1개. 세금이 이 토큰으로만 누적됨 (예: WETH, USDT) |
-| Base 토큰 | Pair | Quote의 상대 토큰. Factory allowlist에 등록 필요 |
+| Base 토큰 | Pair | Quote의 상대 토큰. 별도 allowlist 강제 없음 |
 | Tax Vault | Pair | `accumulatedQuoteFees` — 누적 세금 잔고. ERC20 전송 없이 장부 적립 |
 
 **권한 구조:**
-- `pairAdmin` → `createPair()`, `setTaxConfig()` 호출 가능
+- `pairAdmin` → `createPair()`, `setTaxConfig()`, `setQuoteToken()`, `setFeeTo()` 호출 가능
 - `feeCollector` → `claimQuoteFees()` 호출 가능
-- `feeToSetter` → `setQuoteToken()`, `setBaseTokenSupported()`, `setFeeTo()` 호출 가능
 
-**V2의 `feeToSetter`와의 차이:** V2에서는 `feeTo` 주소만 관리하지만, NadSwap에서는 Quote/Base 토큰 화이트리스트 관리 권한도 추가로 가집니다. 세금 관련 권한(`createPair`, `setTaxConfig`)은 별도의 `pairAdmin`이 담당하여 역할이 분리되어 있습니다.
+**V2의 `feeToSetter`와의 차이:** V2에서는 `feeToSetter`가 `feeTo` 주소만 관리합니다. NadSwap에서는 `feeToSetter` 역할을 제거하고, 모든 관리 권한을 `pairAdmin` 하나로 통합했습니다. pair 생성·세율·Quote 화이트리스트·`feeTo` 설정을 단일 관리자가 담당하여 권한 모델을 단순화합니다.
 
 > **용어 정리 — tax vs fee:** 이 문서에서는 거래세를 **tax**로 통일합니다. 코드 변수명(`accumulatedQuoteFees`, `feeCollector`, `claimQuoteFees`)에 "fee"가 사용되지만, 이는 LP 수수료(0.2%)와 구분되는 **거래세(tax)**를 의미합니다. LP 수수료는 K-invariant 수학에 내장되어 있고, tax는 tax vault에 별도 적립됩니다.
 
@@ -154,34 +152,31 @@ V2에서는 Pair 계약에 있는 토큰 잔고(`rawBalance`)가 곧 LP의 reser
 
 Pair 생성과 세금 설정을 **원자적으로 초기화**해야 무세금 거래 구간(tax=0 윈도우)과 pair 선점 공격을 방지할 수 있습니다. `pairAdmin` 접근 제어는 무허가 pair 생성으로 인한 front-running을 차단합니다.
 
-#### 1-2. Constructor에 `pairAdmin` 추가
+#### 1-2. Constructor를 단일 `pairAdmin`으로 변경
 
 ```diff
  // V2
 -constructor(address _feeToSetter) public
  // NadSwap
-+constructor(address _feeToSetter, address _pairAdmin) public
++constructor(address _pairAdmin) public
 ```
 
-`pairAdmin`은 배포 시 고정되며, 이후 변경 함수(`setPairAdmin`)는 존재하지 않습니다.
+V2의 `feeToSetter` 역할을 제거하고, `pairAdmin` 하나로 모든 관리 권한을 통합했습니다. `pairAdmin`은 배포 시 고정되며, 이후 변경 함수(`setPairAdmin`)는 존재하지 않습니다.
 
-#### 1-3. Quote/Base 토큰 화이트리스트 — 새로 추가
+#### 1-3. Quote 토큰 화이트리스트 — 새로 추가
 
 NadSwap은 pair 당 **정확히 1개의 Quote 토큰**(WETH, USDT 등)을 가지며, 세금은 Quote로만 적립됩니다.
 
 | 추가된 상태 | 역할 |
 |------------|------|
-| `mapping(address => bool) isQuoteToken` | Quote 화이트리스트. `feeToSetter`가 관리 |
-| `mapping(address => bool) isBaseTokenSupported` | Base 토큰 allowlist. FOT/리베이싱 토큰 차단 |
+| `mapping(address => bool) isQuoteToken` | Quote 화이트리스트. `pairAdmin`이 관리 |
 | `mapping(address => bool) isPair` | 이 Factory가 생성한 pair 무결성 확인용 레지스트리 |
 | `address pairAdmin` | pair 생성·세율 변경 권한자 |
 
 **createPair 시 추가 검증:**
 - `BOTH_QUOTE` — 두 토큰이 모두 quote이면 revert (pair당 quote는 정확히 1개)
 - `QUOTE_REQUIRED` — 둘 중 하나는 반드시 quote여야 함
-- `BASE_NOT_SUPPORTED` — base 토큰이 allowlist에 없으면 revert
-
-세금 수학은 `rawBalance = reserve + taxVault` 회계 불변식에 의존합니다. FOT/리베이싱 토큰은 이 불변식을 깨뜨리므로 정책적으로 차단합니다.
+- Base 토큰은 별도 allowlist 없이 생성 가능(quote 조건만 강제)
 
 #### 1-4. `setTaxConfig` — 새로 추가 (Factory 경유)
 
@@ -438,13 +433,11 @@ NadSwap의 세금 수학은 `rawBalance = reserve + taxVault` 불변식에 의�
 ```solidity
 function _requireSupportedPairTokens(address pair, address tokenIn, address tokenOut) internal view {
     address qt = IUniswapV2Pair(pair).quoteToken();
-    address bt = tokenIn == qt ? tokenOut : tokenIn;
     require(IUniswapV2Factory(factory).isQuoteToken(qt), 'QUOTE_NOT_SUPPORTED');
-    require(IUniswapV2Factory(factory).isBaseTokenSupported(bt), 'BASE_NOT_SUPPORTED');
 }
 ```
 
-모든 swap/addLiquidity 경로에서 호출되어, Factory에 등록되지 않은 토큰으로의 거래를 차단합니다.
+모든 swap/addLiquidity 경로에서 호출되어, quote 미지원 pair 경로를 차단합니다.
 
 
 
@@ -494,11 +487,11 @@ nad-swap/
 
 | 항목 | 결과 |
 |------|------|
-| Foundry tests (non-fork strict) | `102/102` ✅ |
+| Foundry tests (non-fork strict) | `104/104` ✅ |
 | Foundry tests (fork suites) | `47/47` ✅ |
-| Foundry tests (non-fork all) | `107/107` ✅ |
-| Traceability requirements | `29/29` ✅ |
-| Spec named tests | `85/85` ✅ |
+| Foundry tests (non-fork all) | `109/109` ✅ |
+| Traceability requirements | `30/30` ✅ |
+| Spec named tests | `87/87` ✅ |
 | Spec named invariants | `5/5` ✅ |
 | Math consistency vectors | `1,386/1,386` ✅ |
 | Migration checklist items | `13/13` ✅ |
