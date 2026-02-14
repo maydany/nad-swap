@@ -1,0 +1,28 @@
+[profile.default]
+src = "src"
+test = "test"
+out = "out"
+libs = ["lib"]
+solc_version = "0.5.16"
+optimizer = true
+optimizer_runs = 200
+evm_version = "istanbul"
+
+[invariant]
+runs = 64
+depth = 32
+fail_on_revert = false
+
+[profile.invariant-nightly]
+
+[profile.invariant-nightly.invariant]
+runs = 512
+depth = 200
+fail_on_revert = false
+
+[fmt]
+line_length = 100
+bracket_spacing = true
+int_types = "long"
+quote_style = "double"
+number_underscore = "thousands"

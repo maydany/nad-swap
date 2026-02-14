@@ -1,0 +1,88 @@
+requirements:
+  - id: PAIR-001
+    section: "4. initialize"
+    statement: "Pair initialize is factory-only, one-time, quote validation and tax boundary enforced."
+  - id: PAIR-002
+    section: "9. setTaxConfig"
+    statement: "Tax config enforces max tax and non-zero collector."
+  - id: PAIR-003
+    section: "6. swap"
+    statement: "swap rejects dual-sided outputs with SINGLE_SIDE_ONLY."
+  - id: PAIR-004
+    section: "6. swap"
+    statement: "swap rejects to == token0 || to == token1 with INVALID_TO."
+  - id: PAIR-005
+    section: "6. Step 7"
+    statement: "sell path applies reverse-math ceil grossOut and accrues quoteTaxOut."
+  - id: PAIR-006
+    section: "6. Step 8-c"
+    statement: "buy path applies pre-deduction floor tax on quote input."
+  - id: PAIR-007
+    section: "6. Step 8-a"
+    statement: "swap requires non-zero effective input and reverts INSUFFICIENT_INPUT otherwise."
+  - id: PAIR-008
+    section: "8. claimQuoteFees"
+    statement: "claimQuoteFees is collector-only and rejects invalid recipients."
+  - id: PAIR-009
+    section: "8. claimQuoteFees"
+    statement: "claimQuoteFees resets vault and transfers claimed quote fees."
+  - id: PAIR-010
+    section: "8. claimQuoteFees"
+    statement: "claimQuoteFees re-syncs reserves to raw balances after vault reset; quote-side dust may be absorbed into reserves."
+  - id: FACT-001
+    section: "10. Factory"
+    statement: "createPair is taxAdmin-only."
+  - id: FACT-002
+    section: "10. Factory"
+    statement: "Factory rejects quote-quote pairs with BOTH_QUOTE."
+  - id: FACT-003
+    section: "10. Factory"
+    statement: "Factory requires exactly one quote token with QUOTE_REQUIRED guard."
+  - id: FACT-004
+    section: "10. Factory"
+    statement: "Factory enforces base support allowlist at pair creation."
+  - id: FACT-005
+    section: "10. Factory"
+    statement: "Factory prevents duplicate pair creation."
+  - id: FACT-006
+    section: "10. Factory"
+    statement: "Factory constructor rejects zero feeToSetter/taxAdmin."
+  - id: FACT-007
+    section: "10. Factory"
+    statement: "setQuoteToken rejects zero token address."
+  - id: FACT-008
+    section: "10. Factory"
+    statement: "setBaseTokenSupported is feeToSetter-only."
+  - id: LIB-001
+    section: "11. Library"
+    statement: "LP fee math uses 998/1000 in getAmountOut/getAmountIn."
+  - id: LIB-002
+    section: "11. pairFor"
+    statement: "pairFor resolves via factory.getPair and does not derive from INIT_CODE_HASH."
+  - id: LIB-003
+    section: "11. getAmountsOut"
+    statement: "sell exact-in quote uses grossOut-1 safe margin before sell tax deduction."
+  - id: ROUT-001
+    section: "10. Router _addLiquidity patch"
+    statement: "Router addLiquidity reverts when pair is not pre-created."
+  - id: ROUT-002
+    section: "10. Router FOT policy"
+    statement: "FOT-supporting swap/removal entrypoints always revert FOT_NOT_SUPPORTED."
+  - id: REG-001
+    section: "16. Regression"
+    statement: "When tax is zero, swap path matches V2 fee-only behavior."
+  - id: FUZ-001
+    section: "16. Fuzz"
+    statement: "buy tax floor rounding stays aligned with pair accrual across fuzzed inputs."
+  - id: INV-001
+    section: "16. Invariant"
+    statement: "rawQuote equals reserveQuote + accumulatedQuoteFees (+dust) after sync."
+  - id: SEC-001
+    section: "4. Storage layout gate"
+    statement: "V2 original fields keep slot/offset/type parity; NadSwap fields append-only."
+  - id: SEC-002
+    section: "5/6/11 math"
+    statement: "Library and Pair directional math remains consistent with bounded rounding error."
+  - id: SEC-003
+    section: "16. static analysis gate"
+    statement: "Slither static analysis runs in CI and blocks merges on medium-or-higher severity findings."

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+export MONAD_FORK_ENABLED="${MONAD_FORK_ENABLED:-1}"
+export MONAD_RPC_URL="${MONAD_RPC_URL:-https://testnet-rpc.monad.xyz}"
+export MONAD_CHAIN_ID="${MONAD_CHAIN_ID:-10143}"
+export MONAD_FORK_BLOCK="${MONAD_FORK_BLOCK:-12700000}"
+export MONAD_FORK_FUZZ_RUNS="${MONAD_FORK_FUZZ_RUNS:-64}"

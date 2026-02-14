@@ -1,0 +1,58 @@
+{
+  "generated_at": "2026-02-14T16:13:01.536029+00:00",
+  "git_sha": "UNKNOWN",
+  "tag": "",
+  "baseline_source": "docs/reports/NADSWAP_V2_VERIFICATION_BASELINE.json",
+  "non_fork_all": 107,
+  "non_fork_strict": 102,
+  "fork_suite_total": 47,
+  "requirements_count": 29,
+  "spec_test_count": 85,
+  "spec_invariant_count": 5,
+  "math_consistency_total": 1386,
+  "migration_items_total": 13,
+  "status": {
+    "non_fork_all": "PASS",
+    "non_fork_strict": "PASS",
+    "fork_suite_total": "PASS",
+    "requirements_count": "PASS",
+    "spec_test_count": "PASS",
+    "spec_invariant_count": "PASS",
+    "math_consistency_total": "PASS",
+    "migration_items_total": "PASS"
+  },
+  "details": {
+    "non_fork_all": {
+      "detail": "",
+      "source": "command"
+    },
+    "non_fork_strict": {
+      "detail": "",
+      "source": "command"
+    },
+    "fork_suite_total": {
+      "detail": "",
+      "source": "fork-logs"
+    },
+    "requirements_count": {
+      "detail": "",
+      "source": "parse"
+    },
+    "spec_test_count": {
+      "detail": "",
+      "source": "parse"
+    },
+    "spec_invariant_count": {
+      "detail": "",
+      "source": "parse"
+    },
+    "math_consistency_total": {
+      "detail": "",
+      "source": "command"
+    },
+    "migration_items_total": {
+      "detail": "",
+      "source": "parse"
+    }
+  }
+}

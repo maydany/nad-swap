@@ -1,0 +1,3 @@
+v2-core     ee547b17853e71ed4e0101ccfd52e70d5acded58
+v2-periphery 0335e8f7e1bd1e8d8329fd300aea2ef2f36dd19f
+upstream tests are reference-only snapshots; NadSwap conformance gates execute protocol/* tests only
