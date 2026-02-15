@@ -461,6 +461,10 @@ function _requireSupportedPairTokens(address pair, address tokenIn, address toke
 
 ```
 nad-swap/
+├── apps/
+│   └── nadswap/          # Vite + React 메인 dApp 프론트엔드
+├── packages/
+│   └── contracts/        # 프론트/도구 공통 ABI + 주소 타입
 ├── protocol/
 │   ├── src/              # 프로토콜 구현 (Core + Periphery)
 │   │   ├── core/         #   Factory, Pair, interfaces
@@ -540,13 +544,18 @@ nad-swap/
 ### 1) 의존성 설치
 ```bash
 ./install_all_deps.sh
+# or
+pnpm deps:all
 ```
 > Foundry, Slither, Python3, ripgrep 등 전체 도구를 자동 감지/설치합니다.  
+> `pnpm deps:all`은 위 시스템 의존성 설치 후 workspace 프론트 의존성(`pnpm install`)까지 연속 실행합니다.
 > 설치 없이 확인만: `./install_all_deps.sh --check-only`
 
 ### 2) 전체 검증 실행
 ```bash
 ./run_all_tests.sh
+# or
+pnpm test:all
 ```
 > `gates + lens + fork` 순서로 전체 검증을 실행합니다.  
 > (`run_local_gates.sh --skip-fork` → `run_lens_tests.sh` → `run_fork_tests.sh`)
@@ -572,11 +581,28 @@ nad-swap/
 ### 6) 로컬 배포/데모 (Anvil)
 ```bash
 ./deploy_local.sh
+# or
+pnpm deploy:local
 ```
 > Core(Factory/Router/Pair) 배포 후 Lens(`NadSwapLensV1_1`)까지 같은 Anvil 체인에 배포하고,  
 > 배포본 기준 Lens read-path 스모크 검증(`getPair`, `getPairsLength`, `getPairsPage`, `getPairView`)까지 자동 수행합니다.  
 > 결과는 `envs/deployed.local.env` 한 파일에 저장되며, core + lens 주소와  
 > `LENS_ADDRESS`, `LENS_FACTORY`, `LENS_ROUTER`, `LENS_CHAIN_ID`가 함께 기록됩니다.
+
+### 7) 프론트엔드 실행 (`apps/nadswap`)
+```bash
+pnpm install
+pnpm env:sync:nadswap
+pnpm dev:nadswap
+```
+> `env:sync:nadswap`는 `envs/deployed.local.env`를 읽어  
+> `apps/nadswap/.env.local`을 자동 생성합니다.
+
+원커맨드(로컬 배포 + env 동기화 + 프론트 dev 실행):
+```bash
+pnpm dev:nadswap:local
+```
+> 내부적으로 `./deploy_local.sh --detach-anvil`을 사용하므로 배포가 끝나면 Anvil은 백그라운드로 유지되고, 이어서 Vite dev 서버가 시작됩니다.
 
 ### 포크 환경 설정
 

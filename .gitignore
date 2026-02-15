@@ -28,3 +28,12 @@ envs/deployed.lens.env
 
 # Misc
 *.log
+
+# Node / Frontend
+node_modules/
+.pnpm-store/
+apps/nadswap/dist/
+apps/nadswap/.env.local
+apps/nadswap/coverage/
+apps/nadswap/.vitest/
+*.tsbuildinfo

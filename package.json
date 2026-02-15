@@ -1,0 +1,16 @@
+{
+  "name": "nadswap-monorepo",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "deps:all": "./install_all_deps.sh && pnpm install",
+    "deploy:local": "./deploy_local.sh",
+    "test:all": "./run_all_tests.sh",
+    "dev:nadswap": "pnpm --filter @nadswap/nadswap dev",
+    "dev:nadswap:local": "./deploy_local.sh --detach-anvil && pnpm env:sync:nadswap && pnpm dev:nadswap",
+    "build:nadswap": "pnpm --filter @nadswap/nadswap build",
+    "lint:nadswap": "pnpm --filter @nadswap/nadswap lint",
+    "test:nadswap": "pnpm --filter @nadswap/nadswap test",
+    "env:sync:nadswap": "bash ./scripts/frontend/sync-local-env.sh"
+  }
+}

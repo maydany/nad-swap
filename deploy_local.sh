@@ -1,9 +1,20 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────
 #  deploy_local.sh — NadSwap one-click local deployment
-#  Usage: ./deploy_local.sh
+#  Usage: ./deploy_local.sh [--detach-anvil]
 # ─────────────────────────────────────────────────────────
 set -euo pipefail
+
+DETACH_ANVIL=0
+if [[ "${1-}" == "--detach-anvil" ]]; then
+  DETACH_ANVIL=1
+  shift
+fi
+if [[ $# -gt 0 ]]; then
+  echo "[FAIL] Unknown argument: $1" >&2
+  echo "Usage: ./deploy_local.sh [--detach-anvil]" >&2
+  exit 1
+fi
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROTOCOL_DIR="${ROOT}/protocol"
@@ -105,7 +116,12 @@ fi
 
 # ── Start Anvil ──────────────────────────────────────────
 log "Starting Anvil..."
-anvil --silent &
+if [[ "${DETACH_ANVIL}" -eq 1 ]]; then
+  ANVIL_LOG="/tmp/nadswap-anvil.log"
+  nohup anvil --silent >"${ANVIL_LOG}" 2>&1 &
+else
+  anvil --silent &
+fi
 ANVIL_PID=$!
 sleep 2
 
@@ -329,6 +345,15 @@ echo "════════════════════════�
 echo "  Addresses saved to: ${LOCAL_DEPLOY_FILE}"
 echo "  Anvil running on ${RPC_URL} (PID: ${ANVIL_PID})"
 echo ""
+if [[ "${DETACH_ANVIL}" -eq 1 ]]; then
+  echo "  Detached mode enabled. Anvil keeps running in background."
+  echo "  Stop later with: kill ${ANVIL_PID}"
+  echo "  Log file: ${ANVIL_LOG}"
+  echo "═══════════════════════════════════════════════════"
+  trap - EXIT
+  exit 0
+fi
+
 echo "  Press Ctrl+C to stop Anvil."
 echo "═══════════════════════════════════════════════════"
 
