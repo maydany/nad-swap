@@ -1,10 +1,5 @@
 import type { LensPairViewState } from "./useLensPairView";
-
-const statusLabel: Record<number, string> = {
-  0: "OK",
-  1: "INVALID_PAIR",
-  2: "DEGRADED"
-};
+import { statusBadgeClass, toStatusLabel } from "./status";
 
 type LensStatusPanelProps = {
   state: LensPairViewState;
@@ -25,9 +20,9 @@ export const LensStatusPanel = ({ state }: LensStatusPanelProps) => {
         </button>
       </div>
 
-      {!state.canQuery && (
+      {!state.hasUserAddress && (
         <p className="mt-3 rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-700">
-          Connect wallet to query `getPairView` user branch.
+          Wallet is not connected. User branch values are shown as zero-address defaults.
         </p>
       )}
 
@@ -37,11 +32,17 @@ export const LensStatusPanel = ({ state }: LensStatusPanelProps) => {
 
       {state.canQuery && state.statuses && (
         <div className="mt-3 grid gap-2 text-sm sm:grid-cols-4">
-          <div className="rounded-lg border border-slate-200 px-3 py-2">s.status: {statusLabel[state.statuses.staticStatus]}</div>
-          <div className="rounded-lg border border-slate-200 px-3 py-2">d.status: {statusLabel[state.statuses.dynamicStatus]}</div>
-          <div className="rounded-lg border border-slate-200 px-3 py-2">u.status: {statusLabel[state.statuses.userStatus]}</div>
-          <div className="rounded-lg border border-slate-200 px-3 py-2 font-semibold">
-            overall: {statusLabel[state.statuses.overallStatus]}
+          <div className={`rounded-lg border px-3 py-2 ${statusBadgeClass(state.statuses.staticStatus)}`}>
+            s.status: {toStatusLabel(state.statuses.staticStatus)}
+          </div>
+          <div className={`rounded-lg border px-3 py-2 ${statusBadgeClass(state.statuses.dynamicStatus)}`}>
+            d.status: {toStatusLabel(state.statuses.dynamicStatus)}
+          </div>
+          <div className={`rounded-lg border px-3 py-2 ${statusBadgeClass(state.statuses.userStatus)}`}>
+            u.status: {toStatusLabel(state.statuses.userStatus)}
+          </div>
+          <div className={`rounded-lg border px-3 py-2 font-semibold ${statusBadgeClass(state.statuses.overallStatus)}`}>
+            overall: {toStatusLabel(state.statuses.overallStatus)}
           </div>
         </div>
       )}

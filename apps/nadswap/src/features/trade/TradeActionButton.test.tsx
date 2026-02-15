@@ -19,11 +19,13 @@ describe("TradeActionButton", () => {
         onSwitch={noop}
         onApprove={noop}
         onSwap={noop}
+        approveLabel="Approve NAD"
+        swapLabel="Swap NAD -> USDT"
       />
     );
 
     expect(screen.getByRole("button", { name: "Switch to Local Anvil" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Approve USDT" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Approve NAD" })).not.toBeInTheDocument();
   });
 
   it("shows Approve when allowance is insufficient", () => {
@@ -39,10 +41,12 @@ describe("TradeActionButton", () => {
         onSwitch={noop}
         onApprove={noop}
         onSwap={noop}
+        approveLabel="Approve NAD"
+        swapLabel="Swap NAD -> USDT"
       />
     );
 
-    expect(screen.getByRole("button", { name: "Approve USDT" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Approve NAD" })).toBeInTheDocument();
   });
 
   it("shows Swap when allowance is enough", () => {
@@ -60,10 +64,12 @@ describe("TradeActionButton", () => {
         onSwitch={noop}
         onApprove={noop}
         onSwap={onSwap}
+        approveLabel="Approve NAD"
+        swapLabel="Swap NAD -> USDT"
       />
     );
 
-    const button = screen.getByRole("button", { name: "Swap USDT -> NAD" });
+    const button = screen.getByRole("button", { name: "Swap NAD -> USDT" });
     fireEvent.click(button);
     expect(onSwap).toHaveBeenCalledTimes(1);
   });

@@ -1,6 +1,7 @@
 import { lensAbi, type AddressHex } from "@nadswap/contracts";
 import { useReadContract } from "wagmi";
 
+import { mapPairHealthView, type PairHealthViewModel } from "./pairHealthView";
 import { mapPairViewStatuses } from "./resolveLensStatus";
 import type { LensPairViewStatuses, LensStatus } from "./types";
 
@@ -14,7 +15,9 @@ type UseLensPairViewParams = {
 
 export type LensPairViewState = {
   canQuery: boolean;
+  hasUserAddress: boolean;
   statuses: LensPairViewStatuses | null;
+  viewModel: PairHealthViewModel | null;
   overallStatus: LensStatus | null;
   isFetching: boolean;
   isLoading: boolean;
@@ -23,7 +26,7 @@ export type LensPairViewState = {
 };
 
 export const useLensPairView = ({ lensAddress, pairAddress, userAddress }: UseLensPairViewParams): LensPairViewState => {
-  const canQuery = Boolean(userAddress);
+  const hasUserAddress = Boolean(userAddress);
 
   const { data, error, isFetching, isLoading, refetch } = useReadContract({
     address: lensAddress,
@@ -31,16 +34,19 @@ export const useLensPairView = ({ lensAddress, pairAddress, userAddress }: UseLe
     functionName: "getPairView",
     args: [pairAddress, userAddress ?? ZERO_ADDRESS],
     query: {
-      enabled: canQuery,
-      refetchInterval: canQuery ? 15_000 : false
+      enabled: true,
+      refetchInterval: 15_000
     }
   });
 
-  const statuses = mapPairViewStatuses(data);
+  const viewModel = mapPairHealthView(data);
+  const statuses = viewModel?.statuses ?? mapPairViewStatuses(data);
 
   return {
-    canQuery,
+    canQuery: true,
+    hasUserAddress,
     statuses,
+    viewModel,
     overallStatus: statuses?.overallStatus ?? null,
     isFetching,
     isLoading,

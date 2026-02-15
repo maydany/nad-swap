@@ -1,5 +1,7 @@
 export { erc20Abi } from "./abis/erc20";
+export { factoryAbi } from "./abis/factory";
 export { lensAbi } from "./abis/lens";
+export { pairAbi } from "./abis/pair";
 export { routerAbi } from "./abis/router";
 
 export type AddressHex = `0x${string}`;

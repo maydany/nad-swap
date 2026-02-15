@@ -31,6 +31,34 @@ describe("parseAppEnv", () => {
     if (result.ok) {
       expect(result.value.chainId).toBe(31337);
       expect(result.value.contracts.router).toBe(valid.VITE_ROUTER);
+      expect(result.value.adminAddresses).toEqual([]);
+    }
+  });
+
+  it("parses admin addresses from optional env", () => {
+    const result = parseAppEnv({
+      ...valid,
+      VITE_ADMIN_ADDRESSES: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.adminAddresses).toEqual([
+        "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      ]);
+    }
+  });
+
+  it("fails for malformed admin addresses", () => {
+    const result = parseAppEnv({
+      ...valid,
+      VITE_ADMIN_ADDRESSES: "not-an-address"
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain("Invalid VITE_ADMIN_ADDRESSES");
     }
   });
 });

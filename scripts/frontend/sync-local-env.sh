@@ -35,6 +35,10 @@ WETH="$(require_var WETH)"
 USDT="$(require_var USDT)"
 NAD="$(require_var NAD)"
 PAIR_USDT_NAD="$(require_var PAIR_USDT_NAD)"
+ADMIN_ADDR="$(get_var ADMIN_ADDR)"
+if [[ -z "${ADMIN_ADDR}" ]]; then
+  ADMIN_ADDR="$(get_var PAIR_ADMIN)"
+fi
 CHAIN_ID="$(get_var LENS_CHAIN_ID)"
 RPC_URL="$(get_var RPC_URL)"
 
@@ -53,6 +57,7 @@ VITE_WETH=${WETH}
 VITE_USDT=${USDT}
 VITE_NAD=${NAD}
 VITE_PAIR_USDT_NAD=${PAIR_USDT_NAD}
+VITE_ADMIN_ADDRESSES=${ADMIN_ADDR}
 VITE_CHAIN_ID=${CHAIN_ID}
 VITE_RPC_URL=${RPC_URL}
 ENV

@@ -11,6 +11,8 @@ type TradeActionButtonProps = {
   onSwitch: MouseEventHandler<HTMLButtonElement>;
   onApprove: MouseEventHandler<HTMLButtonElement>;
   onSwap: MouseEventHandler<HTMLButtonElement>;
+  approveLabel?: string;
+  swapLabel?: string;
 };
 
 const baseClassName = "w-full rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-60";
@@ -25,7 +27,9 @@ export const TradeActionButton = ({
   isSwapping,
   onSwitch,
   onApprove,
-  onSwap
+  onSwap,
+  approveLabel = "Approve token",
+  swapLabel = "Swap"
 }: TradeActionButtonProps) => {
   if (!isConnected) {
     return (
@@ -46,14 +50,14 @@ export const TradeActionButton = ({
   if (needsApproval) {
     return (
       <button type="button" onClick={onApprove} disabled={isApproving} className={`${baseClassName} bg-slate-900`}>
-        {isApproving ? "Approving..." : "Approve USDT"}
+        {isApproving ? "Approving..." : approveLabel}
       </button>
     );
   }
 
   return (
     <button type="button" onClick={onSwap} disabled={!canSwap || isSwapping} className={`${baseClassName} bg-cyan-700`}>
-      {isSwapping ? "Swapping..." : "Swap USDT -> NAD"}
+      {isSwapping ? "Swapping..." : swapLabel}
     </button>
   );
 };

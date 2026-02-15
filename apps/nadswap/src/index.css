@@ -10,3 +10,61 @@ body {
   margin: 0;
   min-height: 100vh;
 }
+
+#root {
+  min-height: 100vh;
+}
+
+.app-page-main {
+  padding-bottom: 5.5rem;
+}
+
+.app-mobile-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  border-top: 1px solid rgb(203 213 225);
+  background: rgb(255 255 255 / 0.95);
+  backdrop-filter: blur(10px);
+  padding: 0.75rem 0.75rem calc(0.75rem + env(safe-area-inset-bottom));
+}
+
+.nav-item {
+  border-radius: 0.75rem;
+  border: 1px solid transparent;
+  padding: 0.5rem 0.75rem;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.nav-item-idle {
+  color: rgb(71 85 105);
+}
+
+.nav-item-idle:hover {
+  background: rgb(241 245 249);
+}
+
+.nav-item-active {
+  border-color: rgb(14 116 144);
+  background: rgb(236 254 255);
+  color: rgb(14 116 144);
+}
+
+@media (min-width: 768px) {
+  .app-mobile-nav {
+    display: none;
+  }
+
+  .app-page-main {
+    padding-bottom: 1.5rem;
+  }
+}

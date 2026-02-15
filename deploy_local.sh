@@ -33,6 +33,11 @@ source "${ENV_FILE}"
 [[ -n "${DEPLOYER_ADDR:-}" ]] || { echo "[FAIL] DEPLOYER_ADDR is missing in ${ENV_FILE}" >&2; exit 1; }
 
 RPC_URL="http://127.0.0.1:8545"
+PAIR_ADMIN_ADDR="${LOCAL_ADMIN_ADDR:-${DEPLOYER_ADDR}}"
+PAIR_ADMIN_PK="${LOCAL_ADMIN_PK:-}"
+TAX_COLLECTOR_ADDR="${LOCAL_TAX_COLLECTOR_ADDR:-${PAIR_ADMIN_ADDR}}"
+ADMIN_TOKEN_FUND="${LOCAL_ADMIN_TOKEN_FUND:-10000000000000000000000}" # 10,000 tokens at 18 decimals
+ADMIN_ETH_FUND="${LOCAL_ADMIN_ETH_FUND:-100ether}"
 
 # ── Helpers ──────────────────────────────────────────────
 log()  { printf '\n\033[1;36m[%s] %s\033[0m\n' "$(date +'%H:%M:%S')" "$*"; }
@@ -62,6 +67,10 @@ require_addr() {
 
 lower() {
   echo "$1" | tr '[:upper:]' '[:lower:]'
+}
+
+same_addr() {
+  [[ "$(lower "$1")" == "$(lower "$2")" ]]
 }
 
 normalize_cast_output() {
@@ -101,11 +110,34 @@ send() {
     --private-key "${DEPLOYER_PK}" 2>&1
 }
 
+# cast send wrapper for pairAdmin-only calls
+send_as_admin() {
+  if [[ -n "${PAIR_ADMIN_PK}" ]]; then
+    cast send "$@" \
+      --rpc-url "${RPC_URL}" \
+      --private-key "${PAIR_ADMIN_PK}" 2>&1
+    return
+  fi
+
+  if same_addr "${PAIR_ADMIN_ADDR}" "${DEPLOYER_ADDR}"; then
+    send "$@"
+    return
+  fi
+
+  cast send "$@" \
+    --rpc-url "${RPC_URL}" \
+    --from "${PAIR_ADMIN_ADDR}" \
+    --unlocked 2>&1
+}
+
 # ── Preflight ────────────────────────────────────────────
 ensure_tool forge
 ensure_tool cast
 ensure_tool anvil
 [[ -d "${LENS_DIR}" ]] || fail "Missing lens directory: ${LENS_DIR}"
+require_addr "PAIR_ADMIN_ADDR" "${PAIR_ADMIN_ADDR}"
+require_addr "TAX_COLLECTOR_ADDR" "${TAX_COLLECTOR_ADDR}"
+[[ "${ADMIN_TOKEN_FUND}" =~ ^[0-9]+$ ]] || fail "LOCAL_ADMIN_TOKEN_FUND must be an integer (wei units)"
 
 # ── Kill any existing Anvil ──────────────────────────────
 if lsof -i :8545 -sTCP:LISTEN >/dev/null 2>&1; then
@@ -129,6 +161,18 @@ if ! kill -0 "${ANVIL_PID}" 2>/dev/null; then
   fail "Anvil failed to start"
 fi
 log "Anvil running (PID: ${ANVIL_PID})"
+
+ADMIN_IMPERSONATED=0
+if ! same_addr "${PAIR_ADMIN_ADDR}" "${DEPLOYER_ADDR}"; then
+  log "Funding pairAdmin with ETH for local gas..."
+  send "${PAIR_ADMIN_ADDR}" --value "${ADMIN_ETH_FUND}" >/dev/null
+
+  if [[ -z "${PAIR_ADMIN_PK}" ]]; then
+    log "Impersonating pairAdmin (no private key provided)..."
+    cast rpc anvil_impersonateAccount "${PAIR_ADMIN_ADDR}" --rpc-url "${RPC_URL}" >/dev/null
+    ADMIN_IMPERSONATED=1
+  fi
+fi
 
 # Cleanup on exit
 cleanup() {
@@ -166,19 +210,19 @@ log "  NAD  = ${NAD}"
 # ── Deploy Factory ───────────────────────────────────────
 log "Deploying UniswapV2Factory..."
 FACTORY_OUT=$(deploy "src/core/NadSwapV2Factory.sol:UniswapV2Factory" \
-  --constructor-args "${DEPLOYER_ADDR}")
+  --constructor-args "${PAIR_ADMIN_ADDR}")
 FACTORY=$(extract_addr "${FACTORY_OUT}")
 require_addr "Factory" "${FACTORY}"
 log "  FACTORY = ${FACTORY}"
 
 # ── Configure Factory ────────────────────────────────────
 log "Setting USDT as quote token..."
-send "${FACTORY}" "setQuoteToken(address,bool)" "${USDT}" true
+send_as_admin "${FACTORY}" "setQuoteToken(address,bool)" "${USDT}" true
 
 # ── Create Pair ──────────────────────────────────────────
 log "Creating USDT/NAD pair (0% tax)..."
-send "${FACTORY}" "createPair(address,address,uint16,uint16,address)" \
-  "${USDT}" "${NAD}" 0 0 "${DEPLOYER_ADDR}"
+send_as_admin "${FACTORY}" "createPair(address,address,uint16,uint16,address)" \
+  "${USDT}" "${NAD}" 0 0 "${TAX_COLLECTOR_ADDR}"
 PAIR=$(cast call "${FACTORY}" "getPair(address,address)(address)" "${USDT}" "${NAD}" --rpc-url "${RPC_URL}")
 log "  PAIR = ${PAIR}"
 
@@ -204,12 +248,30 @@ send "${NAD}"  "transfer(address,uint256)" "${PAIR}" "${LIQUIDITY}"
 log "Minting LP tokens..."
 send "${PAIR}" "mint(address)" "${DEPLOYER_ADDR}"
 
+if [[ "${ADMIN_IMPERSONATED}" -eq 1 ]]; then
+  cast rpc anvil_stopImpersonatingAccount "${PAIR_ADMIN_ADDR}" --rpc-url "${RPC_URL}" >/dev/null || true
+  ADMIN_IMPERSONATED=0
+fi
+
+log "Funding admin wallet with 10,000 USDT/NAD..."
+send "${USDT}" "mint(address,uint256)" "${PAIR_ADMIN_ADDR}" "${ADMIN_TOKEN_FUND}" >/dev/null
+send "${NAD}"  "mint(address,uint256)" "${PAIR_ADMIN_ADDR}" "${ADMIN_TOKEN_FUND}" >/dev/null
+
+ADMIN_USDT_BAL=$(cast call "${USDT}" "balanceOf(address)(uint256)" "${PAIR_ADMIN_ADDR}" --rpc-url "${RPC_URL}")
+ADMIN_NAD_BAL=$(cast call "${NAD}" "balanceOf(address)(uint256)" "${PAIR_ADMIN_ADDR}" --rpc-url "${RPC_URL}")
+ADMIN_USDT_BAL=$(echo "${ADMIN_USDT_BAL}" | awk '{print $1}')
+ADMIN_NAD_BAL=$(echo "${ADMIN_NAD_BAL}" | awk '{print $1}')
+[[ "${ADMIN_USDT_BAL}" == "${ADMIN_TOKEN_FUND}" ]] || fail "Admin USDT funding mismatch: ${ADMIN_USDT_BAL}"
+[[ "${ADMIN_NAD_BAL}" == "${ADMIN_TOKEN_FUND}" ]] || fail "Admin NAD funding mismatch: ${ADMIN_NAD_BAL}"
+log "  Admin funded: USDT=${ADMIN_USDT_BAL}, NAD=${ADMIN_NAD_BAL}"
+
 # ── Verification ─────────────────────────────────────────
 log "Verifying deployment..."
 
 PAIRS_LEN=$(cast call "${FACTORY}" "allPairsLength()(uint256)" --rpc-url "${RPC_URL}")
 ROUTER_FACTORY=$(cast call "${ROUTER}" "factory()(address)" --rpc-url "${RPC_URL}")
 LP_BAL=$(cast call "${PAIR}" "balanceOf(address)(uint256)" "${DEPLOYER_ADDR}" --rpc-url "${RPC_URL}")
+PAIR_ADMIN_ONCHAIN=$(cast call "${FACTORY}" "pairAdmin()(address)" --rpc-url "${RPC_URL}")
 
 echo ""
 if [[ "${PAIRS_LEN}" == "1" ]]; then
@@ -230,6 +292,12 @@ if [[ "${LP_BAL}" != "0" ]]; then
   echo "  ✅ Deployer LP balance = ${LP_BAL}"
 else
   echo "  ❌ Deployer LP balance is 0"
+fi
+
+if [[ "$(lower "${PAIR_ADMIN_ONCHAIN}")" == "$(lower "${PAIR_ADMIN_ADDR}")" ]]; then
+  echo "  ✅ Factory.pairAdmin() matches configured admin (${PAIR_ADMIN_ADDR})"
+else
+  echo "  ❌ Factory.pairAdmin() mismatch: ${PAIR_ADMIN_ONCHAIN} vs ${PAIR_ADMIN_ADDR}"
 fi
 
 # ── Build & Deploy Lens ──────────────────────────────────
@@ -320,6 +388,11 @@ NAD=${NAD}
 FACTORY=${FACTORY}
 ROUTER=${ROUTER}
 PAIR_USDT_NAD=${PAIR}
+ADMIN_ADDR=${PAIR_ADMIN_ADDR}
+PAIR_ADMIN=${PAIR_ADMIN_ADDR}
+TAX_COLLECTOR=${TAX_COLLECTOR_ADDR}
+ADMIN_TOKEN_FUND=${ADMIN_TOKEN_FUND}
+RPC_URL=${RPC_URL}
 LENS_ADDRESS=${LENS_ADDRESS}
 LENS_FACTORY=${LENS_FACTORY}
 LENS_ROUTER=${LENS_ROUTER}
@@ -340,6 +413,9 @@ echo "  NAD      = ${NAD}"
 echo "  FACTORY  = ${FACTORY}"
 echo "  ROUTER   = ${ROUTER}"
 echo "  PAIR     = ${PAIR}"
+echo "  ADMIN    = ${PAIR_ADMIN_ADDR}"
+echo "  ADMIN USDT = ${ADMIN_USDT_BAL}"
+echo "  ADMIN NAD  = ${ADMIN_NAD_BAL}"
 echo "  LENS     = ${LENS_ADDRESS}"
 echo "═══════════════════════════════════════════════════"
 echo "  Addresses saved to: ${LOCAL_DEPLOY_FILE}"

@@ -22,11 +22,13 @@ const envSchema = z.object({
   VITE_NAD: addressSchema,
   VITE_PAIR_USDT_NAD: addressSchema,
   VITE_CHAIN_ID: z.coerce.number().int().positive(),
-  VITE_RPC_URL: z.string().min(1)
+  VITE_RPC_URL: z.string().min(1),
+  VITE_ADMIN_ADDRESSES: z.string().optional()
 });
 
 export type AppEnv = AppAddresses & {
   contracts: AppContracts;
+  adminAddresses: AddressHex[];
 };
 
 export type ParseAppEnvResult =
@@ -41,6 +43,44 @@ export type ParseAppEnvResult =
     };
 
 const toAddressHex = (value: string): AddressHex => value as AddressHex;
+
+const parseAdminAddresses = (
+  rawValue: string | undefined
+):
+  | {
+      ok: true;
+      value: AddressHex[];
+    }
+  | {
+      ok: false;
+      message: string;
+    } => {
+  if (!rawValue || rawValue.trim() === "") {
+    return { ok: true, value: [] };
+  }
+
+  const candidates = rawValue
+    .split(",")
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+
+  if (candidates.length === 0) {
+    return { ok: true, value: [] };
+  }
+
+  const invalid = candidates.filter((candidate) => !addressSchema.safeParse(candidate).success);
+  if (invalid.length > 0) {
+    return {
+      ok: false,
+      message: `Invalid VITE_ADMIN_ADDRESSES entries: ${invalid.join(", ")}.`
+    };
+  }
+
+  return {
+    ok: true,
+    value: candidates.map(toAddressHex)
+  };
+};
 
 const normalizeInput = (raw: Record<string, unknown>) => ({
   ...raw,
@@ -83,11 +123,21 @@ export const parseAppEnv = (raw: Record<string, unknown>): ParseAppEnvResult => 
     pairUsdtNad: toAddressHex(parsed.data.VITE_PAIR_USDT_NAD)
   };
 
+  const adminAddresses = parseAdminAddresses(parsed.data.VITE_ADMIN_ADDRESSES);
+  if (!adminAddresses.ok) {
+    return {
+      ok: false,
+      missingKeys: [],
+      message: adminAddresses.message
+    };
+  }
+
   return {
     ok: true,
     value: {
       ...addresses,
-      contracts: toAppContracts(addresses)
+      contracts: toAppContracts(addresses),
+      adminAddresses: adminAddresses.value
     }
   };
 };
