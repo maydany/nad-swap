@@ -15,7 +15,8 @@ type TradeActionButtonProps = {
   swapLabel?: string;
 };
 
-const baseClassName = "w-full rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-60";
+const baseClassName =
+  "w-full rounded-xl px-4 py-3 text-base font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60";
 
 export const TradeActionButton = ({
   isConnected,
@@ -33,7 +34,7 @@ export const TradeActionButton = ({
 }: TradeActionButtonProps) => {
   if (!isConnected) {
     return (
-      <button type="button" disabled className={`${baseClassName} bg-slate-500`}>
+      <button type="button" disabled className={`${baseClassName} bg-slate-600`}>
         Connect wallet first
       </button>
     );
@@ -41,7 +42,7 @@ export const TradeActionButton = ({
 
   if (wrongNetwork) {
     return (
-      <button type="button" onClick={onSwitch} disabled={isSwitching} className={`${baseClassName} bg-amber-600`}>
+      <button type="button" onClick={onSwitch} disabled={isSwitching} className={`${baseClassName} bg-amber-600 hover:bg-amber-500`}>
         {isSwitching ? "Switching..." : "Switch to Local Anvil"}
       </button>
     );
@@ -49,14 +50,19 @@ export const TradeActionButton = ({
 
   if (needsApproval) {
     return (
-      <button type="button" onClick={onApprove} disabled={isApproving} className={`${baseClassName} bg-slate-900`}>
+      <button type="button" onClick={onApprove} disabled={isApproving} className={`${baseClassName} bg-slate-900 hover:bg-slate-800`}>
         {isApproving ? "Approving..." : approveLabel}
       </button>
     );
   }
 
   return (
-    <button type="button" onClick={onSwap} disabled={!canSwap || isSwapping} className={`${baseClassName} bg-cyan-700`}>
+    <button
+      type="button"
+      onClick={onSwap}
+      disabled={!canSwap || isSwapping}
+      className={`${baseClassName} bg-cyan-700 hover:bg-cyan-600`}
+    >
       {isSwapping ? "Swapping..." : swapLabel}
     </button>
   );

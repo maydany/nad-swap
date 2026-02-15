@@ -13,7 +13,7 @@ export const LensStatusPanel = ({ state }: LensStatusPanelProps) => {
         <button
           type="button"
           onClick={() => void state.refetch()}
-          disabled={!state.canQuery || state.isFetching}
+          disabled={!state.canQuery}
           className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 disabled:opacity-50"
         >
           {state.isFetching ? "Refreshing..." : "Refetch"}
@@ -27,7 +27,7 @@ export const LensStatusPanel = ({ state }: LensStatusPanelProps) => {
       )}
 
       {state.error && (
-        <p className="mt-3 rounded-lg bg-rose-100 px-3 py-2 text-sm text-rose-900">{state.error}</p>
+        <p className="mt-3 rounded-lg bg-rose-100 px-3 py-2 text-sm text-rose-900 whitespace-pre-wrap break-all">{state.error}</p>
       )}
 
       {state.canQuery && state.statuses && (
@@ -54,7 +54,7 @@ export const LensStatusPanel = ({ state }: LensStatusPanelProps) => {
       )}
 
       {state.canQuery && state.statuses?.overallStatus === 1 && (
-        <p className="mt-3 rounded-lg bg-rose-100 px-3 py-2 text-sm text-rose-900">
+        <p className="mt-3 rounded-lg bg-rose-100 px-3 py-2 text-sm text-rose-900 whitespace-pre-wrap break-all">
           Invalid pair reported by Lens. Trade actions are blocked.
         </p>
       )}

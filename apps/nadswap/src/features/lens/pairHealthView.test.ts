@@ -54,7 +54,7 @@ describe("mapPairHealthView", () => {
     expect(mapped).not.toBeNull();
     expect(mapped?.statuses.overallStatus).toBe(0);
     expect(mapped?.staticData.buyTaxBps).toBe(300);
-    expect(mapped?.dynamicData.accountingOk).toBe(true);
+    expect(mapped?.dynamicData.accountingOk).toBe(false);
     expect(mapped?.userData.allowance1).toBe(44n);
   });
 

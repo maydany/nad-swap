@@ -39,6 +39,8 @@ RPC_URL="http://127.0.0.1:8545"
 PAIR_ADMIN_ADDR="${LOCAL_ADMIN_ADDR:-${DEPLOYER_ADDR}}"
 PAIR_ADMIN_PK="${LOCAL_ADMIN_PK:-}"
 TAX_COLLECTOR_ADDR="${LOCAL_TAX_COLLECTOR_ADDR:-${PAIR_ADMIN_ADDR}}"
+BUY_TAX_BPS="${LOCAL_BUY_TAX_BPS:-500}"
+SELL_TAX_BPS="${LOCAL_SELL_TAX_BPS:-500}"
 ADMIN_TOKEN_FUND="${LOCAL_ADMIN_TOKEN_FUND:-10000000000000000000000}" # 10,000 tokens at 18 decimals
 ADMIN_ETH_FUND="${LOCAL_ADMIN_ETH_FUND:-100ether}"
 
@@ -140,6 +142,10 @@ ensure_tool anvil
 [[ -d "${LENS_DIR}" ]] || fail "Missing lens directory: ${LENS_DIR}"
 require_addr "PAIR_ADMIN_ADDR" "${PAIR_ADMIN_ADDR}"
 require_addr "TAX_COLLECTOR_ADDR" "${TAX_COLLECTOR_ADDR}"
+[[ "${BUY_TAX_BPS}" =~ ^[0-9]+$ ]] || fail "LOCAL_BUY_TAX_BPS must be an integer between 0 and 2000"
+[[ "${SELL_TAX_BPS}" =~ ^[0-9]+$ ]] || fail "LOCAL_SELL_TAX_BPS must be an integer between 0 and 2000"
+(( BUY_TAX_BPS <= 2000 )) || fail "LOCAL_BUY_TAX_BPS must be <= 2000"
+(( SELL_TAX_BPS <= 2000 )) || fail "LOCAL_SELL_TAX_BPS must be <= 2000"
 [[ "${ADMIN_TOKEN_FUND}" =~ ^[0-9]+$ ]] || fail "LOCAL_ADMIN_TOKEN_FUND must be an integer (wei units)"
 
 # ── Kill any existing Anvil ──────────────────────────────
@@ -223,9 +229,9 @@ log "Setting USDT as quote token..."
 send_as_admin "${FACTORY}" "setQuoteToken(address,bool)" "${USDT}" true
 
 # ── Create Pair ──────────────────────────────────────────
-log "Creating USDT/NAD pair (0% tax)..."
+log "Creating USDT/NAD pair (${BUY_TAX_BPS} bps buy / ${SELL_TAX_BPS} bps sell)..."
 send_as_admin "${FACTORY}" "createPair(address,address,uint16,uint16,address)" \
-  "${USDT}" "${NAD}" 0 0 "${TAX_COLLECTOR_ADDR}"
+  "${USDT}" "${NAD}" "${BUY_TAX_BPS}" "${SELL_TAX_BPS}" "${TAX_COLLECTOR_ADDR}"
 PAIR=$(cast call "${FACTORY}" "getPair(address,address)(address)" "${USDT}" "${NAD}" --rpc-url "${RPC_URL}")
 log "  PAIR = ${PAIR}"
 
@@ -394,6 +400,8 @@ PAIR_USDT_NAD=${PAIR}
 ADMIN_ADDR=${PAIR_ADMIN_ADDR}
 PAIR_ADMIN=${PAIR_ADMIN_ADDR}
 TAX_COLLECTOR=${TAX_COLLECTOR_ADDR}
+BUY_TAX_BPS=${BUY_TAX_BPS}
+SELL_TAX_BPS=${SELL_TAX_BPS}
 ADMIN_TOKEN_FUND=${ADMIN_TOKEN_FUND}
 RPC_URL=${RPC_URL}
 LENS_ADDRESS=${LENS_ADDRESS}
@@ -417,6 +425,8 @@ echo "  FACTORY  = ${FACTORY}"
 echo "  ROUTER   = ${ROUTER}"
 echo "  PAIR     = ${PAIR}"
 echo "  ADMIN    = ${PAIR_ADMIN_ADDR}"
+echo "  BUY_TAX  = ${BUY_TAX_BPS} bps"
+echo "  SELL_TAX = ${SELL_TAX_BPS} bps"
 echo "  ADMIN USDT = ${ADMIN_USDT_BAL}"
 echo "  ADMIN NAD  = ${ADMIN_NAD_BAL}"
 echo "  LENS     = ${LENS_ADDRESS}"

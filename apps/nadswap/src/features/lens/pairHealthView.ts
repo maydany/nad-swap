@@ -136,6 +136,16 @@ const toBigIntValue = (value: unknown): bigint => {
   return 0n;
 };
 
+const readVaultDrift = (segment: SegmentData): boolean => {
+  if (Array.isArray(segment)) {
+    return toBoolean(segment[14]);
+  }
+  if ("vaultDrift" in segment) {
+    return toBoolean((segment as Record<string, unknown>).vaultDrift);
+  }
+  return toBoolean((segment as Record<string, unknown>).accountingOk);
+};
+
 export const mapPairHealthView = (pairViewData: unknown): PairHealthViewModel | null => {
   const statuses = mapPairViewStatuses(pairViewData);
   if (!statuses) {
@@ -188,7 +198,8 @@ export const mapPairHealthView = (pairViewData: unknown): PairHealthViewModel | 
       expectedRaw1: toBigIntValue(readField(dynamicSegment, "expectedRaw1", 11)),
       dust0: toBigIntValue(readField(dynamicSegment, "dust0", 12)),
       dust1: toBigIntValue(readField(dynamicSegment, "dust1", 13)),
-      accountingOk: toBoolean(readField(dynamicSegment, "accountingOk", 14))
+      // Lens bool slot is `vaultDrift` (true means inconsistent), while UI expects `accountingOk`.
+      accountingOk: !readVaultDrift(dynamicSegment)
     },
     userData: {
       pair: toAddress(readField(userSegment, "pair", 1)),

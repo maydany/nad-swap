@@ -1,5 +1,6 @@
-import { erc20Abi, routerAbi, type AddressHex } from "@nadswap/contracts";
+import { erc20Abi, pairAbi, routerAbi, type AddressHex } from "@nadswap/contracts";
 import { useMemo, useState } from "react";
+import { HiOutlineArrowDown } from "react-icons/hi2";
 import { formatUnits, parseUnits } from "viem";
 import {
   useAccount,
@@ -16,15 +17,17 @@ import { TradeActionButton } from "./TradeActionButton";
 import { getSwapFeeBreakdown, type SwapDirection } from "./feeBreakdown";
 import { applySlippageBps } from "./math";
 
-const DEFAULT_SLIPPAGE_BPS = 50;
+const DEFAULT_SLIPPAGE_BPS = 0;
 
 type SwapCardProps = {
   expectedChainId: number;
   routerAddress: AddressHex;
+  pairAddress: AddressHex;
   usdtAddress: AddressHex;
   nadAddress: AddressHex;
   lensStatus: LensStatus | null;
   pairHealth: PairHealthViewModel | null;
+  refetchPairHealth?: () => Promise<unknown>;
 };
 
 const formatAmount = (value: bigint | null, decimals: number): string => {
@@ -33,7 +36,7 @@ const formatAmount = (value: bigint | null, decimals: number): string => {
   }
 
   return Number(formatUnits(value, decimals)).toLocaleString(undefined, {
-    maximumFractionDigits: 6
+    maximumFractionDigits: 12
   });
 };
 
@@ -62,35 +65,84 @@ const FeeFormulaTooltip = ({ isQuoteToBase, buyTaxBps, sellTaxBps, lpFeeBps }: F
     <div className="group relative inline-flex items-center">
       <button
         type="button"
-        className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-cyan-300 bg-white text-[11px] font-bold text-cyan-700"
-        aria-label="Show fee and tax formula"
+        className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-cyan-300 bg-cyan-50 text-[11px] font-bold text-cyan-700"
+        aria-label="수수료 및 세금 계산식 보기"
       >
         i
       </button>
       <div
         role="tooltip"
-        className="pointer-events-none absolute right-0 top-7 z-20 hidden w-[21rem] rounded-lg border border-slate-200 bg-white p-3 text-[11px] leading-5 text-slate-700 shadow-lg group-hover:block group-focus-within:block"
+        className="pointer-events-none absolute right-0 top-7 z-20 hidden w-[26rem] max-w-[calc(100vw-2rem)] rounded-lg border border-slate-200 bg-white p-3 text-[11px] leading-5 text-slate-700 shadow-lg group-hover:block group-focus-within:block"
       >
-        <p className="font-semibold text-slate-900">Current formula ({isQuoteToBase ? "Buy NAD" : "Sell NAD"})</p>
-        <p className="mt-1">LP fee: {lpFeeBps} bps, Tax: {currentTaxBps} bps</p>
+        <p className="font-semibold text-slate-900">현재 계산식 ({isQuoteToBase ? "NAD 매수" : "NAD 매도"})</p>
+        <p className="mt-1">
+          LP 수수료: {lpFeeBps} bps ({formatBps(lpFeeBps)}), 현재 적용 세율: {currentTaxBps} bps (
+          {formatBps(currentTaxBps)})
+        </p>
+        <p className="mt-2 text-slate-600">기호 정의: amountIn=사용자 입력 수량, reserveIn/out=풀의 입력/출력 토큰 준비금, 10000 bps=100%</p>
+        <p className="text-slate-600">모든 나눗셈은 온체인 정수 연산으로 처리되며, floor는 소수점 이하를 버립니다.</p>
         {isQuoteToBase ? (
           <>
             <p className="mt-2">1) taxIn = floor(amountIn x buyTaxBps / 10000)</p>
+            <p className="text-slate-600">매수(Quote→Base)에서는 입력 Quote에서 세금을 먼저 공제합니다.</p>
             <p>2) effectiveIn = amountIn - taxIn</p>
+            <p className="text-slate-600">실제 스왑 수학에 들어가는 입력은 effectiveIn입니다.</p>
             <p>3) amountInWithFee = effectiveIn x (10000 - lpFeeBps)</p>
+            <p className="text-slate-600">LP 수수료를 반영한 유효 입력으로 x*y=k 공식에 투입됩니다.</p>
             <p>4) grossOut = floor((amountInWithFee x reserveOut) / (reserveIn x 10000 + amountInWithFee))</p>
+            <p className="text-slate-600">정수 나눗셈 버림으로 인해 소수 부분은 출력에서 제외됩니다.</p>
             <p>5) netOut = grossOut</p>
+            <p className="text-slate-600">매수 경로는 출력 측 추가 세금이 없어 grossOut과 netOut이 동일합니다.</p>
           </>
         ) : (
           <>
             <p className="mt-2">1) amountInWithFee = amountIn x (10000 - lpFeeBps)</p>
+            <p className="text-slate-600">매도(Base→Quote)에서는 먼저 LP 수수료를 반영해 gross 출력 기반을 계산합니다.</p>
             <p>2) grossOut = floor((amountInWithFee x reserveOut) / (reserveIn x 10000 + amountInWithFee))</p>
+            <p className="text-slate-600">이 값은 세금 공제 전 Quote 총출력(Gross Output)입니다.</p>
             <p>3) taxOut = floor(grossOut x sellTaxBps / 10000)</p>
+            <p className="text-slate-600">매도세는 출력 Quote에서 계산되며, 버림 처리로 1 wei 단위 오차가 발생할 수 있습니다.</p>
             <p>4) netOut = grossOut - taxOut</p>
+            <p className="text-slate-600">사용자 실수령(Expected Receive)은 netOut이며, 카드의 Sell Tax Paid는 (grossOut-netOut)입니다.</p>
           </>
         )}
-        <p className="mt-2 text-slate-500">Displayed values follow on-chain integer math (wei units) before formatting.</p>
+        <p className="mt-2 text-slate-500">
+          카드의 수치는 포맷팅 전 wei 정수 기준 온체인 연산 결과를 따릅니다. 따라서 UI 표시값 간 합/차에서 소수점 반올림 차이가 보일 수 있습니다.
+        </p>
       </div>
+    </div>
+  );
+};
+
+type TokenPillProps = {
+  symbol: string;
+  tone: "sell" | "buy";
+};
+
+const TokenPill = ({ symbol, tone }: TokenPillProps) => {
+  const normalizedSymbol = symbol.toUpperCase();
+  const tokenImageSrc =
+    normalizedSymbol === "USDT" ? "/tokens/usdt.png" : normalizedSymbol === "NAD" ? "/tokens/nad.png" : null;
+  const [hasImageError, setHasImageError] = useState(false);
+  const badgeToneClassName = tone === "sell" ? "bg-blue-100 text-blue-700" : "bg-emerald-100 text-emerald-700";
+
+  return (
+    <div className="inline-flex h-10 items-center gap-1.5 rounded-full border border-slate-300 bg-white px-2.5">
+      {tokenImageSrc && !hasImageError ? (
+        <img
+          src={tokenImageSrc}
+          alt={normalizedSymbol}
+          className="h-6 w-6 rounded-full"
+          onError={() => setHasImageError(true)}
+        />
+      ) : (
+        <span
+          className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold leading-none ${badgeToneClassName}`}
+        >
+          {normalizedSymbol.charAt(0)}
+        </span>
+      )}
+      <span className="inline-flex h-6 items-center text-sm font-semibold leading-none text-slate-800">{normalizedSymbol}</span>
     </div>
   );
 };
@@ -98,10 +150,12 @@ const FeeFormulaTooltip = ({ isQuoteToBase, buyTaxBps, sellTaxBps, lpFeeBps }: F
 export const SwapCard = ({
   expectedChainId,
   routerAddress,
+  pairAddress,
   usdtAddress,
   nadAddress,
   lensStatus,
-  pairHealth
+  pairHealth,
+  refetchPairHealth
 }: SwapCardProps) => {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
@@ -110,13 +164,15 @@ export const SwapCard = ({
   const publicClient = usePublicClient({ chainId: expectedChainId });
 
   const [direction, setDirection] = useState<SwapDirection>("quoteToBase");
-  const [amountIn, setAmountIn] = useState("0");
+  const [amountIn, setAmountIn] = useState("");
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [claimMessage, setClaimMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const [isSwitching, setIsSwitching] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
   const [isSwapping, setIsSwapping] = useState(false);
+  const [isClaiming, setIsClaiming] = useState(false);
 
   const isQuoteToBase = direction === "quoteToBase";
   const wrongNetwork = isConnected && chainId !== expectedChainId;
@@ -219,9 +275,27 @@ export const SwapCard = ({
     }
   });
 
-  const quotedOut = Array.isArray(amountsOut) && amountsOut.length > 0 ? amountsOut[amountsOut.length - 1] : null;
+  const quotedOut =
+    parsedAmountIn !== null && Array.isArray(amountsOut) && amountsOut.length > 0 ? amountsOut[amountsOut.length - 1] : null;
   const amountOutMin = quotedOut !== null ? applySlippageBps(quotedOut, DEFAULT_SLIPPAGE_BPS) : null;
   const needsApproval = Boolean(parsedAmountIn && allowance < parsedAmountIn);
+  const isAmountOverBalance = Boolean(isConnected && parsedAmountIn !== null && parsedAmountIn > balanceIn);
+  const quotedOutLabel = isQuoteFetching ? "Fetching..." : formatAmount(quotedOut, outDecimals);
+  const accumulatedQuoteTax = pairHealth?.dynamicData.accumulatedQuoteTax ?? null;
+  const taxCollectorAddress = pairHealth?.staticData.taxCollector ?? null;
+  const isTaxCollector = Boolean(
+    address &&
+      taxCollectorAddress &&
+      normalizeAddress(address as AddressHex) === normalizeAddress(taxCollectorAddress as AddressHex)
+  );
+  const canClaimQuoteTax = Boolean(
+    isConnected &&
+      !wrongNetwork &&
+      address &&
+      isTaxCollector &&
+      accumulatedQuoteTax !== null &&
+      accumulatedQuoteTax > 0n
+  );
 
   const reserveIn = useMemo(() => {
     if (!pairHealth) {
@@ -285,6 +359,7 @@ export const SwapCard = ({
   const onSwitch = async () => {
     setActionError(null);
     setActionMessage(null);
+    setClaimMessage(null);
 
     if (!switchChainAsync) {
       setActionError("Wallet connector does not support programmatic chain switch.");
@@ -310,6 +385,7 @@ export const SwapCard = ({
 
     setActionError(null);
     setActionMessage(null);
+    setClaimMessage(null);
     setIsApproving(true);
 
     try {
@@ -342,6 +418,7 @@ export const SwapCard = ({
 
     setActionError(null);
     setActionMessage(null);
+    setClaimMessage(null);
     setIsSwapping(true);
 
     try {
@@ -358,8 +435,15 @@ export const SwapCard = ({
       });
 
       await publicClient.waitForTransactionReceipt({ hash: txHash });
-      await Promise.all([refetchAllowance(), refetchBalanceIn(), refetchBalanceOut(), refetchQuote()]);
+      await Promise.all([
+        refetchAllowance(),
+        refetchBalanceIn(),
+        refetchBalanceOut(),
+        parsedAmountIn ? refetchQuote() : Promise.resolve(),
+        refetchPairHealth ? refetchPairHealth() : Promise.resolve()
+      ]);
       setActionMessage("Swap transaction confirmed.");
+      setAmountIn("");
     } catch (error) {
       console.error(error);
       setActionError(normalizeError(error));
@@ -368,143 +452,261 @@ export const SwapCard = ({
     }
   };
 
+  const onClaimQuoteTax = async () => {
+    if (!address) {
+      return;
+    }
+
+    setActionError(null);
+    setActionMessage(null);
+    setClaimMessage(null);
+    setIsClaiming(true);
+
+    try {
+      if (!publicClient) {
+        throw new Error("Public client is not ready.");
+      }
+
+      const txHash = await writeContractAsync({
+        address: pairAddress,
+        abi: pairAbi,
+        functionName: "claimQuoteTax",
+        args: [address]
+      });
+
+      await publicClient.waitForTransactionReceipt({ hash: txHash });
+      await Promise.all([
+        refetchBalanceIn(),
+        refetchBalanceOut(),
+        parsedAmountIn ? refetchQuote() : Promise.resolve(),
+        refetchPairHealth ? refetchPairHealth() : Promise.resolve()
+      ]);
+      setClaimMessage("Quote tax claim transaction confirmed.");
+    } catch (error) {
+      console.error(error);
+      setActionError(normalizeError(error));
+    } finally {
+      setIsClaiming(false);
+    }
+  };
+
   return (
-    <section className="rounded-2xl border border-slate-300 bg-white/85 p-4 shadow-sm">
-      <h2 className="text-sm font-semibold text-slate-900">USDT/NAD Swap</h2>
+    <div className="grid items-start gap-4 xl:grid-cols-[minmax(20rem,0.95fr)_minmax(0,1.45fr)]">
+      <aside className="grid gap-4">
+        <section className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-600">Wallet Balance</h3>
+          <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3 gap-y-2 text-sm">
+            <span className="text-slate-500">{inSymbol}(Quote)</span>
+            <span className="text-right font-semibold text-slate-900 tabular-nums">
+              {formatAmount(balanceIn, inDecimals)} {inSymbol}
+            </span>
+            <span className="text-slate-500">{outSymbol}</span>
+            <span className="text-right font-semibold text-slate-900 tabular-nums">
+              {formatAmount(balanceOut, outDecimals)} {outSymbol}
+            </span>
+          </div>
+        </section>
 
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        <button
-          type="button"
-          onClick={() => setDirection("quoteToBase")}
-          className={`rounded-lg border px-3 py-2 text-sm font-semibold ${
-            isQuoteToBase ? "border-cyan-600 bg-cyan-100 text-cyan-900" : "border-slate-300 bg-white text-slate-700"
-          }`}
-        >
-          Buy NAD (USDT → NAD)
-        </button>
-        <button
-          type="button"
-          onClick={() => setDirection("baseToQuote")}
-          className={`rounded-lg border px-3 py-2 text-sm font-semibold ${
-            !isQuoteToBase ? "border-cyan-600 bg-cyan-100 text-cyan-900" : "border-slate-300 bg-white text-slate-700"
-          }`}
-        >
-          Sell NAD (NAD → USDT)
-        </button>
-      </div>
+        <section className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-600">Fee & Tax Breakdown</h3>
+            <FeeFormulaTooltip isQuoteToBase={isQuoteToBase} buyTaxBps={buyTaxBps} sellTaxBps={sellTaxBps} lpFeeBps={lpFeeBps} />
+          </div>
+          <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3 gap-y-1.5 text-sm">
+            <span className="text-slate-500">LP Fee</span>
+            <span className="text-right font-semibold text-slate-900 tabular-nums">
+              {formatBps(feeBreakdown.lpFeeBps)} ({feeBreakdown.lpFeeBps} bps)
+            </span>
+            <span className="text-slate-500">Buy Tax</span>
+            <span className="text-right font-semibold text-slate-900 tabular-nums">
+              {formatBps(buyTaxBps)} ({buyTaxBps} bps)
+            </span>
+            <span className="text-slate-500">Sell Tax</span>
+            <span className="text-right font-semibold text-slate-900 tabular-nums">
+              {formatBps(sellTaxBps)} ({sellTaxBps} bps)
+            </span>
+            <span className="text-slate-500">Applied Tax ({isQuoteToBase ? "Buy" : "Sell"})</span>
+            <span className="text-right font-semibold text-slate-900 tabular-nums">
+              {formatBps(feeBreakdown.taxBps)} ({feeBreakdown.taxBps} bps)
+            </span>
+            <span className="text-slate-500">Input Amount</span>
+            <span className="text-right font-semibold text-slate-900 tabular-nums">
+              {formatAmount(feeBreakdown.inputAmount, inDecimals)} {inSymbol}
+            </span>
+            {isQuoteToBase ? (
+              <>
+                <span className="text-slate-500">Buy Tax Paid</span>
+                <span className="text-right font-semibold text-slate-900 tabular-nums">
+                  {formatAmount(feeBreakdown.taxAmountIn, inDecimals)} {inSymbol}
+                </span>
+                <span className="text-slate-500">Effective Input</span>
+                <span className="text-right font-semibold text-slate-900 tabular-nums">
+                  {formatAmount(feeBreakdown.effectiveSwapInput, inDecimals)} {inSymbol}
+                </span>
+                <span className="text-slate-500">LP Fee Paid</span>
+                <span className="text-right font-semibold text-slate-900 tabular-nums">
+                  {formatAmount(feeBreakdown.lpFeeAmount, inDecimals)} {inSymbol}
+                </span>
+                <span className="text-slate-500">Expected Receive</span>
+                <span className="text-right font-semibold text-slate-900 tabular-nums">
+                  {formatAmount(feeBreakdown.netOutput, outDecimals)} {outSymbol}
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="text-slate-500">LP Fee Paid</span>
+                <span className="text-right font-semibold text-slate-900 tabular-nums">
+                  {formatAmount(feeBreakdown.lpFeeAmount, inDecimals)} {inSymbol}
+                </span>
+                <span className="text-slate-500">Gross Output</span>
+                <span className="text-right font-semibold text-slate-900 tabular-nums">
+                  {formatAmount(feeBreakdown.grossOutput, outDecimals)} {outSymbol}
+                </span>
+                <span className="text-slate-500">Sell Tax Paid</span>
+                <span className="text-right font-semibold text-slate-900 tabular-nums">
+                  {formatAmount(feeBreakdown.taxAmountOut, outDecimals)} {outSymbol}
+                </span>
+                <span className="text-slate-500">Expected Receive</span>
+                <span className="text-right font-semibold text-slate-900 tabular-nums">
+                  {formatAmount(feeBreakdown.netOutput, outDecimals)} {outSymbol}
+                </span>
+              </>
+            )}
+          </div>
+        </section>
 
-      <div className="mt-4 grid gap-2">
-        <label htmlFor="amount-in" className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-          Amount In ({inSymbol})
-        </label>
-        <input
-          id="amount-in"
-          value={amountIn}
-          onChange={(event) => setAmountIn(event.target.value)}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-          placeholder="0.0"
-          inputMode="decimal"
-        />
-      </div>
+        <section className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-600">Accumulated Quote Tax</h3>
+          <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3 text-sm">
+            <span className="text-slate-500">Total</span>
+            <span className="text-right font-semibold text-slate-900 tabular-nums">
+              {formatAmount(accumulatedQuoteTax, usdtDecimals)} {usdtSymbol}
+            </span>
+          </div>
+          {claimMessage && (
+            <p className="mt-3 rounded-lg bg-emerald-100 px-3 py-2 text-sm text-emerald-900">{claimMessage}</p>
+          )}
+          <div className={claimMessage ? "mt-2" : "mt-3"}>
+            {wrongNetwork ? (
+              <button
+                type="button"
+                onClick={() => void onSwitch()}
+                disabled={isSwitching}
+                className="w-full rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {isSwitching ? "Switching..." : `Switch to chain ${expectedChainId}`}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => void onClaimQuoteTax()}
+                disabled={!canClaimQuoteTax || isClaiming}
+                className="w-full rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {isClaiming ? "Claiming..." : "Claim"}
+              </button>
+            )}
+          </div>
+        </section>
+      </aside>
 
-      <div className="mt-4 grid gap-2 rounded-lg bg-slate-100 p-3 text-sm text-slate-700">
-        <p>Quote ({outSymbol}): {isQuoteFetching ? "Fetching..." : formatAmount(quotedOut, outDecimals)}</p>
-        <p>amountOutMin (0.5% slippage): {formatAmount(amountOutMin, outDecimals)}</p>
-        <p>
-          Allowance: {formatAmount(allowance, inDecimals)} {inSymbol}
-        </p>
-        <p>
-          Balance: {formatAmount(balanceIn, inDecimals)} {inSymbol} / {formatAmount(balanceOut, outDecimals)} {outSymbol}
-        </p>
-      </div>
+      <section className="min-w-0 rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm">
+        <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-600">Swap</p>
 
-      <div className="mt-4 grid gap-2 rounded-lg border border-cyan-200 bg-cyan-50 p-3 text-sm text-slate-800">
-        <div className="flex items-center justify-between gap-2">
-          <p className="font-semibold text-slate-900">Fee & Tax Breakdown</p>
-          <FeeFormulaTooltip isQuoteToBase={isQuoteToBase} buyTaxBps={buyTaxBps} sellTaxBps={sellTaxBps} lpFeeBps={lpFeeBps} />
+        <div className="mt-3 rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-2.5">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-600">Sell</p>
+            <TokenPill symbol={inSymbol} tone="sell" />
+          </div>
+
+          <label htmlFor="amount-in" className="sr-only">
+            Sell amount ({inSymbol})
+          </label>
+          <input
+            id="amount-in"
+            value={amountIn}
+            onChange={(event) => setAmountIn(event.target.value)}
+            className={`mt-4 w-full bg-transparent text-2xl font-semibold outline-none placeholder:text-slate-400 md:text-3xl ${
+              isAmountOverBalance ? "text-rose-500" : "text-slate-900"
+            }`}
+            placeholder="0"
+            inputMode="decimal"
+          />
+
+          <div className="mt-2 flex items-center justify-end">
+            <p className="text-sm text-slate-500">
+              Balance {formatAmount(balanceIn, inDecimals)} {inSymbol}
+            </p>
+          </div>
+          {isAmountOverBalance && <p className="mt-2 text-sm text-rose-600">Input amount exceeds wallet balance.</p>}
         </div>
-        <p>
-          LP Fee (current): {formatBps(feeBreakdown.lpFeeBps)} ({feeBreakdown.lpFeeBps} bps)
-        </p>
-        <p>
-          {isQuoteToBase ? "Buy Tax (current)" : "Sell Tax (current)"}: {formatBps(feeBreakdown.taxBps)} ({feeBreakdown.taxBps} bps)
-        </p>
-        <p>
-          Input Amount: {formatAmount(feeBreakdown.inputAmount, inDecimals)} {inSymbol}
-        </p>
-        {isQuoteToBase ? (
-          <>
-            <p>
-              Buy Tax Paid: {formatAmount(feeBreakdown.taxAmountIn, inDecimals)} {inSymbol}
-            </p>
-            <p>
-              Effective Input After Buy Tax: {formatAmount(feeBreakdown.effectiveSwapInput, inDecimals)} {inSymbol}
-            </p>
-            <p>
-              LP Fee Paid: {formatAmount(feeBreakdown.lpFeeAmount, inDecimals)} {inSymbol}
-            </p>
-            <p>
-              Expected Receive (Net): {formatAmount(feeBreakdown.netOutput, outDecimals)} {outSymbol}
-            </p>
-          </>
-        ) : (
-          <>
-            <p>
-              LP Fee Paid: {formatAmount(feeBreakdown.lpFeeAmount, inDecimals)} {inSymbol}
-            </p>
-            <p>
-              Gross Output Before Sell Tax: {formatAmount(feeBreakdown.grossOutput, outDecimals)} {outSymbol}
-            </p>
-            <p>
-              Sell Tax Paid: {formatAmount(feeBreakdown.taxAmountOut, outDecimals)} {outSymbol}
-            </p>
-            <p>
-              Expected Receive (Net): {formatAmount(feeBreakdown.netOutput, outDecimals)} {outSymbol}
-            </p>
-          </>
+
+        <div className="relative z-10 -my-3 flex justify-center">
+          <button
+            type="button"
+            onClick={() => setDirection((current) => (current === "quoteToBase" ? "baseToQuote" : "quoteToBase"))}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 shadow-sm hover:bg-slate-50"
+            aria-label="Swap direction"
+          >
+            <HiOutlineArrowDown className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="rounded-[1.4rem] border border-slate-200 bg-slate-100 px-4 pt-3 pb-2.5">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-600">Buy</p>
+            <TokenPill symbol={outSymbol} tone="buy" />
+          </div>
+
+          <p className="mt-4 break-all text-2xl font-semibold text-slate-900 md:text-3xl">{quotedOutLabel}</p>
+
+        </div>
+
+        {lensBlocksTrade && (
+          <p className="mt-4 rounded-lg bg-amber-100 px-3 py-2 text-sm text-amber-900">
+            Lens status is not OK. Trade is temporarily blocked.
+          </p>
         )}
-      </div>
 
-      {lensBlocksTrade && (
-        <p className="mt-4 rounded-lg bg-amber-100 px-3 py-2 text-sm text-amber-900">
-          Lens status is not OK. Trade is temporarily blocked.
-        </p>
-      )}
+        {parsedAmountIn !== null && quoteError && (
+          <p className="mt-4 rounded-lg bg-rose-100 px-3 py-2 text-sm text-rose-900 whitespace-pre-wrap break-all">
+            Quote error: {quoteError.message}
+          </p>
+        )}
 
-      {quoteError && (
-        <p className="mt-4 rounded-lg bg-rose-100 px-3 py-2 text-sm text-rose-900">Quote error: {quoteError.message}</p>
-      )}
+        {allowanceError && (
+          <p className="mt-4 rounded-lg bg-rose-100 px-3 py-2 text-sm text-rose-900 whitespace-pre-wrap break-all">
+            Allowance read error: {allowanceError.message}
+          </p>
+        )}
 
-      {allowanceError && (
-        <p className="mt-4 rounded-lg bg-rose-100 px-3 py-2 text-sm text-rose-900">
-          Allowance read error: {allowanceError.message}
-        </p>
-      )}
+        {actionError && (
+          <p className="mt-4 rounded-lg bg-rose-100 px-3 py-2 text-sm text-rose-900 whitespace-pre-wrap break-all">{actionError}</p>
+        )}
 
-      {actionError && (
-        <p className="mt-4 rounded-lg bg-rose-100 px-3 py-2 text-sm text-rose-900">{actionError}</p>
-      )}
+        {actionMessage && (
+          <p className="mt-4 rounded-lg bg-emerald-100 px-3 py-2 text-sm text-emerald-900">
+            {actionMessage}
+          </p>
+        )}
 
-      {actionMessage && (
-        <p className="mt-4 rounded-lg bg-emerald-100 px-3 py-2 text-sm text-emerald-900">{actionMessage}</p>
-      )}
-
-      <div className="mt-4">
-        <TradeActionButton
-          isConnected={isConnected}
-          wrongNetwork={wrongNetwork}
-          needsApproval={needsApproval}
-          canSwap={canSwap}
-          isSwitching={isSwitching}
-          isApproving={isApproving}
-          isSwapping={isSwapping}
-          onSwitch={() => void onSwitch()}
-          onApprove={() => void onApprove()}
-          onSwap={() => void onSwap()}
-          approveLabel={`Approve ${inSymbol}`}
-          swapLabel={`Swap ${inSymbol} -> ${outSymbol}`}
-        />
-      </div>
-    </section>
+        <div className="mt-5">
+          <TradeActionButton
+            isConnected={isConnected}
+            wrongNetwork={wrongNetwork}
+            needsApproval={needsApproval}
+            canSwap={canSwap}
+            isSwitching={isSwitching}
+            isApproving={isApproving}
+            isSwapping={isSwapping}
+            onSwitch={() => void onSwitch()}
+            onApprove={() => void onApprove()}
+            onSwap={() => void onSwap()}
+            approveLabel={`Approve ${inSymbol}`}
+            swapLabel={`Swap ${inSymbol} to ${outSymbol}`}
+          />
+        </div>
+      </section>
+    </div>
   );
 };

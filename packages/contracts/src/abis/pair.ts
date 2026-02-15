@@ -2,6 +2,8 @@ import { parseAbi } from "viem";
 
 export const pairAbi = parseAbi([
   "function claimQuoteTax(address to)",
+  "function skim(address to)",
+  "function sync()",
   "function taxCollector() view returns (address)",
   "function buyTaxBps() view returns (uint16)",
   "function sellTaxBps() view returns (uint16)",

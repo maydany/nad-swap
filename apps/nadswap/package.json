@@ -14,6 +14,7 @@
     "@nadswap/contracts": "workspace:*",
     "@tanstack/react-query": "^5.62.16",
     "react": "^18.3.1",
+    "react-icons": "^5.4.0",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.30.1",
     "viem": "^2.39.0",

@@ -71,7 +71,7 @@ export const WalletPanel = ({ targetChainId }: WalletPanelProps) => {
       )}
 
       {errorMessage && (
-        <p className="mt-3 rounded-lg bg-rose-100 px-3 py-2 text-sm text-rose-900">{errorMessage}</p>
+        <p className="mt-3 rounded-lg bg-rose-100 px-3 py-2 text-sm text-rose-900 whitespace-pre-wrap break-all">{errorMessage}</p>
       )}
     </section>
   );
