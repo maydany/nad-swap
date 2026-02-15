@@ -66,8 +66,9 @@ rawBaseBalance  = reserveBase                          (+ dust)
 
 > [!IMPORTANT]
 > This invariant only holds when the Quote token is **non-rebasing and non-fee-on-transfer**.
-> NadSwap enforces Router policy on **Quote support only**.
+> NadSwap enforces Router support policy on **Quote only** at protocol level.
 > Base token support is not allowlist-enforced in Factory/Router under this spec revision.
+> Operational policy: `pairAdmin` must only create pairs with standard ERC20 Base (non-FOT/non-rebasing), or swap UX/execution may break.
 
 ---
 
@@ -552,10 +553,11 @@ function setTaxConfig(address pair, uint16 buy, uint16 sell, address taxCollecto
 ### Router FOT Policy
 
 > [!WARNING]
-> NadSwap does **not** support Quote fee-on-transfer (FOT) or rebasing tokens in Router paths.
+> NadSwap does **not** support fee-on-transfer (FOT) or rebasing behavior in Router execution paths.
+> Protocol-level support guard is Quote-only (`isQuoteToken`); Base is not allowlist-enforced on-chain.
 > Router external signatures are preserved.  
 > `swapExactTokensForTokensSupportingFeeOnTransferTokens`-style functions MUST hard-revert with `FOT_NOT_SUPPORTED`.
-> This prevents Net/Gross mismatch under Quote-only tax math.
+> Operational consequence if a Base-FOT pair is created anyway: sell exact-in can revert, and buy exact-in can under-deliver user receipt vs Router quote.
 
 **Router support guard (required on swap/add-liquidity paths):**
 ```solidity
@@ -716,12 +718,12 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 | 24 | 🆕 CEI-order safety | claim: vault=0(E) → transfer(I) | Safe under `lock`; vault reset precedes external call |
 | 25 | 🆕 claimQuoteTax incentive design | taxCollector calls directly (own asset recovery) | No third-party incentive needed |
 | 26 | 🆕 ERC20 return value check | `_safeTransfer` internal `require(success)` | Handles tokens that don’t return bool |
-| 27 | 🆕 Quote FOT unsupported enforcement | Router guard enforces Quote policy; FOT-style variants always revert `FOT_NOT_SUPPORTED` | Prevents Net/Gross mismatch in tax math |
+| 27 | 🆕 Router FOT unsupported enforcement | FOT-style Router variants always revert `FOT_NOT_SUPPORTED`; Quote guard remains on-chain | Preserves ABI while preventing unsupported execution paths |
 | 28 | 🆕 No INIT_CODE_HASH dependency in routing | `pairFor` uses `factory.getPair` | Eliminates create2 hash drift risk |
 | 29 | 🆕 Quote out always taxed by sellTax | `quoteOut > 0` applies sellTax (including `baseIn == 0`) | Prevents bypass interpretation on same-token quote flash(out/in) |
 | 30 | 🆕 Vault drift liveness guard | `require(rawQuote >= vault, 'VAULT_DRIFT')` before quote-side subtraction | Prevents silent underflow-style liveness loss across lifecycle paths |
 | 31 | 🆕 Swap target hardening | `require(to != token0 && to != token1, 'INVALID_TO')` | Restores V2-compatible safety behavior |
-| 32 | 🆕 Base allowlist removed | Factory/Router no longer enforce base allowlist | Base token policy is non-enforced at protocol level; quote policy remains enforced |
+| 32 | 🆕 Base allowlist removed | Factory/Router no longer enforce base allowlist | Base policy is operational (pairAdmin standard-ERC20 only); quote policy remains protocol-enforced |
 | 33 | 🆕 Sell exact-in safe quote margin | Router quote uses `grossOut-1` before sell-tax deduction | Reduces liquidity-edge execution reverts (max 1 wei user-side conservatism) |
 | 34 | 🆕 claim dust behavior documented | claim keeps reserves unchanged; quote dust stays skimmable | Operational/accounting semantics are explicit to integrators |
 | 35 | 🆕 K multiply overflow treatment | Optional guard (`adj0 == 0 || adj1 <= max/adj0`) or token policy documentation | Classified as informational hardening, not core exploit path. Current implementation adopts the explicit guard |
@@ -885,7 +887,9 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 |------|-------------|
 | `test_quoteToken_fot_vaultDrift` | FOT/rebasing token as Quote causes vault accounting drift; prevented by quote whitelist |
 | `test_quoteToken_notSupported` | 🆕 Quote token disabled in factory policy path reverts via Router guard (`QUOTE_NOT_SUPPORTED`) |
-| `test_baseToken_policy_unrestricted` | 🆕 Base token path is not allowlist-blocked in Router when quote token policy is satisfied |
+| `test_baseToken_policy_unrestricted` | 🆕 Base token path is not allowlist-blocked on-chain when quote token policy is satisfied |
+| `test_baseToken_fot_sellExactIn_routerReverts` | 🆕 If Base is FOT, sell exact-in path can revert due to Router exact-in assumptions |
+| `test_baseToken_fot_buyExactIn_recipientReceivesLessThanQuoted` | 🆕 If Base is FOT, buy exact-in can settle while user receives less than Router-quoted output |
 | `test_router_supportingFOT_notSupported` | 🆕 FOT-supporting swap variants keep ABI but always revert with `FOT_NOT_SUPPORTED` |
 
 ### Unit — SafeERC20 / First-Depositor (§13 #22-26)

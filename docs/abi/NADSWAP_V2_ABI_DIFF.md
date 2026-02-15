@@ -19,7 +19,8 @@
   - `setQuoteToken(address,bool)` is `pairAdmin`-only
   - `setFeeTo(address)` is `pairAdmin`-only
 - Behavioral policy change:
-  - `BASE_NOT_SUPPORTED` guard path removed from Factory `createPair` and Router support guard.
+  - `BASE_NOT_SUPPORTED` guard path removed from Factory `createPair` and Router support guard (Base has no on-chain allowlist).
+  - Operational requirement: `pairAdmin` should only create Base pairs with standard ERC20 (non-FOT/non-rebasing).
 
 ### Added getters / methods
 - `pairAdmin() -> address`
@@ -55,6 +56,7 @@
 
 ### Preserved signatures with runtime policy changes
 - FOT-supporting swap/remove methods are preserved in ABI, but always revert with `FOT_NOT_SUPPORTED`.
+- On-chain Router support guard still validates Quote token policy only (`isQuoteToken`).
 
 ### Behavioral patch
 - `_addLiquidity` no longer auto-creates pairs.

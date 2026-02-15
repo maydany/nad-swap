@@ -92,7 +92,7 @@ ABI 변경 상세: [NADSWAP_V2_ABI_DIFF.md](docs/abi/NADSWAP_V2_ABI_DIFF.md)
 | `pairAdmin` | Factory | 유일한 관리자. pair 생성, 세율 변경, Quote 화이트리스트, `feeTo` 설정 권한. 배포 시 고정, 이후 변경 불가 |
 | `taxCollector` | Pair | 누적된 세금을 수령하는 주소. pair별 설정, `pairAdmin`이 변경 가능 |
 | Quote 토큰 | Pair | pair당 정확히 1개. 세금이 이 토큰으로만 누적됨 (예: WETH, USDT) |
-| Base 토큰 | Pair | Quote의 상대 토큰. 별도 allowlist 강제 없음 |
+| Base 토큰 | Pair | Quote의 상대 토큰. 온체인 allowlist 강제 없음(운영정책으로 표준 ERC20만 생성) |
 | Tax Vault | Pair | `accumulatedQuoteTax` — 누적 세금 잔고. ERC20 전송 없이 장부 적립 |
 
 **권한 구조:**
@@ -177,6 +177,7 @@ NadSwap은 pair 당 **정확히 1개의 Quote 토큰**(WETH, USDT 등)을 가지
 - `BOTH_QUOTE` — 두 토큰이 모두 quote이면 revert (pair당 quote는 정확히 1개)
 - `QUOTE_REQUIRED` — 둘 중 하나는 반드시 quote여야 함
 - Base 토큰은 별도 allowlist 없이 생성 가능(quote 조건만 강제)
+- 운영정책: `pairAdmin`은 Base를 비FOT/비리베이싱 표준 ERC20으로만 생성
 
 #### 1-4. `setTaxConfig` — 새로 추가 (Factory 경유)
 
@@ -426,7 +427,7 @@ function removeLiquidityETHSupportingFeeOnTransferTokens(...)        → revert(
 function removeLiquidityETHWithPermitSupportingFeeOnTransferTokens(...)  → revert('FOT_NOT_SUPPORTED')
 ```
 
-NadSwap의 세금 수학은 `rawBalance = reserve + taxVault` 불변식에 의존합니다. FOT 토큰은 전송 시 금액이 줄어들어 이 불변식을 깨뜨립니다. ABI를 유지하는 이유는 호환성 도구가 함수 존재를 감지할 수 있게 하되, 실제 실행은 명시적으로 차단하기 위함입니다.
+NadSwap의 Quote 세금 수학은 `rawBalance = reserve + taxVault` 불변식에 의존합니다. Quote-FOT/리베이싱은 이 불변식을 깨뜨리고, Base-FOT는 exact-in 경로 revert 또는 사용자 실수령 저하를 유발할 수 있습니다. ABI를 유지하는 이유는 호환성 도구가 함수 존재를 감지할 수 있게 하되, 실제 실행은 명시적으로 차단하기 위함입니다.
 
 #### 4-3. `_requireSupportedPairTokens` — 새로 추가
 
@@ -483,15 +484,15 @@ nad-swap/
 
 > **"100% 통과"를 넘어서, 코드-테스트-문서 정합성까지 자동 검증합니다.**
 
-### 검증 지표 (기준일: 2026-02-14)
+### 검증 지표 (기준일: 2026-02-15)
 
 | 항목 | 결과 |
 |------|------|
-| Foundry tests (non-fork strict) | `104/104` ✅ |
+| Foundry tests (non-fork strict) | `107/107` ✅ |
 | Foundry tests (fork suites) | `47/47` ✅ |
-| Foundry tests (non-fork all) | `109/109` ✅ |
+| Foundry tests (non-fork all) | `112/112` ✅ |
 | Traceability requirements | `30/30` ✅ |
-| Spec named tests | `87/87` ✅ |
+| Spec named tests | `90/90` ✅ |
 | Spec named invariants | `5/5` ✅ |
 | Math consistency vectors | `1,386/1,386` ✅ |
 | Migration checklist items | `13/13` ✅ |
@@ -588,6 +589,7 @@ NadSwap은 코드만 테스트하지 않습니다. **코드-테스트-문서 정
 ## 운영 상 제약 / 비목표
 
 - **FOT·리베이싱 미지원**: Router 경로에서 Base/Quote의 FOT(Fee-on-Transfer) 및 리베이싱 토큰은 지원 대상이 아닙니다.
+- **운영 강제 정책**: Base는 온체인 allowlist가 없으므로 `pairAdmin`이 비FOT/비리베이싱 표준 ERC20만 상장해야 합니다.
 - **포크 환경 의존성**: Fork 검증은 유효한 RPC/chainId/block 환경이 필수이며, 환경 누락 시 실패가 정상 동작입니다.
 - **의도적 비호환**: Uniswap V2와 ABI 일부 호환을 유지하지만, 동작 레벨의 Breaking Changes가 존재합니다 (위 참고).
 

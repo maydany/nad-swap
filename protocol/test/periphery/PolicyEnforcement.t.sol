@@ -59,6 +59,92 @@ contract PolicyEnforcementTest is PairFixture {
         assertGt(baseAfter - baseBefore, 0, "base token path unexpectedly blocked");
     }
 
+    function test_baseToken_fot_sellExactIn_routerReverts() public {
+        MockERC20 q = new MockERC20("QuoteF", "QF", 18);
+        MockFeeOnTransferERC20 b = new MockFeeOnTransferERC20("BaseFOT", "BFOT", 18, 100);
+        MockWETH w = new MockWETH();
+        UniswapV2Factory f = new UniswapV2Factory(PAIR_ADMIN);
+        UniswapV2Router02 r = new UniswapV2Router02(address(f), address(w));
+
+        vm.prank(PAIR_ADMIN);
+        f.setQuoteToken(address(q), true);
+        vm.prank(PAIR_ADMIN);
+        address pairAddr = f.createPair(address(q), address(b), 300, 500, COLLECTOR);
+        UniswapV2Pair p = UniswapV2Pair(pairAddr);
+
+        q.mint(LP, 1_200_000 ether);
+        b.mint(LP, 1_200_000 ether);
+        vm.prank(LP);
+        q.transfer(pairAddr, 1_000_000 ether);
+        vm.prank(LP);
+        b.transfer(pairAddr, 1_000_000 ether);
+        vm.prank(LP);
+        p.mint(LP);
+
+        uint256 amountIn = 1000 ether;
+        b.mint(TRADER, amountIn);
+        vm.prank(TRADER);
+        b.approve(address(r), uint256(-1));
+
+        address[] memory path = new address[](2);
+        path[0] = address(b);
+        path[1] = address(q);
+
+        vm.prank(TRADER);
+        (bool success,) = address(r).call(
+            abi.encodeWithSelector(
+                r.swapExactTokensForTokens.selector,
+                amountIn,
+                uint256(0),
+                path,
+                TRADER,
+                block.timestamp + 1
+            )
+        );
+        assertTrue(!success, "base FOT sell exact-in should revert");
+    }
+
+    function test_baseToken_fot_buyExactIn_recipientReceivesLessThanQuoted() public {
+        MockERC20 q = new MockERC20("QuoteF2", "QF2", 18);
+        MockFeeOnTransferERC20 b = new MockFeeOnTransferERC20("BaseFOT2", "BFOT2", 18, 100);
+        MockWETH w = new MockWETH();
+        UniswapV2Factory f = new UniswapV2Factory(PAIR_ADMIN);
+        UniswapV2Router02 r = new UniswapV2Router02(address(f), address(w));
+
+        vm.prank(PAIR_ADMIN);
+        f.setQuoteToken(address(q), true);
+        vm.prank(PAIR_ADMIN);
+        address pairAddr = f.createPair(address(q), address(b), 300, 500, COLLECTOR);
+        UniswapV2Pair p = UniswapV2Pair(pairAddr);
+
+        q.mint(LP, 1_200_000 ether);
+        b.mint(LP, 1_200_000 ether);
+        vm.prank(LP);
+        q.transfer(pairAddr, 1_000_000 ether);
+        vm.prank(LP);
+        b.transfer(pairAddr, 1_000_000 ether);
+        vm.prank(LP);
+        p.mint(LP);
+
+        uint256 quoteIn = 1000 ether;
+        q.mint(TRADER, quoteIn);
+        vm.prank(TRADER);
+        q.approve(address(r), uint256(-1));
+
+        address[] memory path = new address[](2);
+        path[0] = address(q);
+        path[1] = address(b);
+        uint256[] memory quoted = r.getAmountsOut(quoteIn, path);
+
+        uint256 baseBefore = b.balanceOf(TRADER);
+        vm.prank(TRADER);
+        r.swapExactTokensForTokens(quoteIn, quoted[1], path, TRADER, block.timestamp + 1);
+        uint256 received = b.balanceOf(TRADER) - baseBefore;
+
+        assertGt(received, 0, "base FOT buy returned zero");
+        assertLt(received, quoted[1], "base FOT buy should shortfall vs quote");
+    }
+
     function test_quoteToken_fot_vaultDrift() public {
         MockFeeOnTransferERC20 q = new MockFeeOnTransferERC20("FOT-Quote", "FOTQ", 18, 100);
         MockERC20 b = new MockERC20("Base4", "B4", 18);

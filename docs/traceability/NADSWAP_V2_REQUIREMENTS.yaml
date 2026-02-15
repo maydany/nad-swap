@@ -40,7 +40,7 @@ requirements:
     statement: "Factory requires exactly one quote token with QUOTE_REQUIRED guard."
   - id: FACT-004
     section: "10. Factory"
-    statement: "Factory does not enforce a base allowlist at pair creation once quote-token condition is satisfied."
+    statement: "Factory does not enforce a base allowlist at pair creation once quote-token condition is satisfied; base-token standardness is an operational pairAdmin policy."
   - id: FACT-005
     section: "10. Factory"
     statement: "Factory prevents duplicate pair creation."
@@ -70,7 +70,7 @@ requirements:
     statement: "Router addLiquidity reverts when pair is not pre-created."
   - id: ROUT-002
     section: "10. Router FOT policy"
-    statement: "FOT-supporting swap/removal entrypoints always revert FOT_NOT_SUPPORTED."
+    statement: "FOT-supporting swap/removal entrypoints always revert FOT_NOT_SUPPORTED, while on-chain support guard remains quote-token-only."
   - id: REG-001
     section: "16. Regression"
     statement: "When tax is zero, swap path matches V2 fee-only behavior."

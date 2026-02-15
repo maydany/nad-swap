@@ -25,7 +25,7 @@
 | LIB-002 | 11. pairFor mapping lookup | `protocol/src/periphery/libraries/NadSwapV2Library.sol` | `test_pairFor_usesFactoryGetPair` | `FOUNDRY_OFFLINE=true forge test --match-test test_pairFor_usesFactoryGetPair` | Implemented |
 | LIB-003 | 11. sell exact-in safe margin | `protocol/src/periphery/libraries/NadSwapV2Library.sol` | `test_sellExactIn_safeMargin_avoidsLiquidityEdge` | `FOUNDRY_OFFLINE=true forge test --match-test test_sellExactIn_safeMargin_avoidsLiquidityEdge` | Implemented |
 | ROUT-001 | 10. remove auto pair creation | `protocol/src/periphery/NadSwapV2Router02.sol` | `test_router_noPairRevert` | `FOUNDRY_OFFLINE=true forge test --match-test test_router_noPairRevert` | Implemented |
-| ROUT-002 | 10. FOT hard revert | `protocol/src/periphery/NadSwapV2Router02.sol` | `test_router_supportingFOT_notSupported,test_router_supportingFOT_notSupported_exactETHForTokens,test_router_supportingFOT_notSupported_exactTokensForETH,test_router_supportingFOT_notSupported_removeLiquidityETH,test_router_supportingFOT_notSupported_removeLiquidityETHWithPermit` | `FOUNDRY_OFFLINE=true forge test --match-contract RouterLibraryTest` | Implemented |
+| ROUT-002 | 10. FOT hard revert + quote-only guard | `protocol/src/periphery/NadSwapV2Router02.sol` | `test_router_supportingFOT_notSupported,test_router_supportingFOT_notSupported_exactETHForTokens,test_router_supportingFOT_notSupported_exactTokensForETH,test_router_supportingFOT_notSupported_removeLiquidityETH,test_router_supportingFOT_notSupported_removeLiquidityETHWithPermit` | `FOUNDRY_OFFLINE=true forge test --match-contract RouterLibraryTest` | Implemented |
 | REG-001 | 16. tax=0 regression | `protocol/test/core/Regression.t.sol` | `test_regression_taxZero_swapMatchesFeeOnlyMath` | `FOUNDRY_OFFLINE=true forge test --match-test test_regression_taxZero_swapMatchesFeeOnlyMath` | Implemented |
 | FUZ-001 | 16. fuzz | `protocol/test/core/FuzzInvariant.t.sol` | `testFuzz_buyTax_floor_matchesPair` | `FOUNDRY_OFFLINE=true forge test --match-test testFuzz_buyTax_floor_matchesPair` | Implemented |
 | INV-001 | 16. invariant | `protocol/test/core/FuzzInvariant.t.sol` | `testInvariant_rawQuote_equals_reservePlusVault_afterSync` | `FOUNDRY_OFFLINE=true forge test --match-test testInvariant_rawQuote_equals_reservePlusVault_afterSync` | Implemented |
@@ -39,8 +39,8 @@
 | SEC-003 | 16. static analysis gate | `scripts/gates/check_slither_gate.py` | `N/A` | `python3 scripts/gates/check_slither_gate.py` | Implemented |
 ## Spec Section 16 Test Coverage
 
-- Coverage target: `88` spec `test_*` names + `5` spec `invariant_*` names
-- Current status: `93/93` mapped
+- Coverage target: `90` spec `test_*` names + `5` spec `invariant_*` names
+- Current status: `95/95` mapped
 
 | Test Name | Code File | Verification Command | Status |
 |---|---|---|---|
@@ -128,6 +128,8 @@
 | `test_quoteToken_fot_vaultDrift` | `protocol/test/periphery/PolicyEnforcement.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_quoteToken_fot_vaultDrift` | Implemented |
 | `test_quoteToken_notSupported` | `protocol/test/periphery/PolicyEnforcement.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_quoteToken_notSupported` | Implemented |
 | `test_baseToken_policy_unrestricted` | `protocol/test/periphery/PolicyEnforcement.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_baseToken_policy_unrestricted` | Implemented |
+| `test_baseToken_fot_sellExactIn_routerReverts` | `protocol/test/periphery/PolicyEnforcement.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_baseToken_fot_sellExactIn_routerReverts` | Implemented |
+| `test_baseToken_fot_buyExactIn_recipientReceivesLessThanQuoted` | `protocol/test/periphery/PolicyEnforcement.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_baseToken_fot_buyExactIn_recipientReceivesLessThanQuoted` | Implemented |
 | `test_router_supportingFOT_notSupported` | `protocol/test/periphery/RouterLibrary.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_router_supportingFOT_notSupported` | Implemented |
 | `test_safeTransfer_nonStandard` | `protocol/test/core/ClaimTaxAdvanced.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_safeTransfer_nonStandard` | Implemented |
 | `test_firstDeposit_minimumLiquidity` | `protocol/test/core/PairLifecycle.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_firstDeposit_minimumLiquidity` | Implemented |

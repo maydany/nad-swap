@@ -66,8 +66,9 @@ rawBaseBalance  = reserveBase                          (+ dust)
 
 > [!IMPORTANT]
 > 이 불변식은 Quote 토큰이 **리베이싱/수수료전가(FOT)가 아닐 때만** 성립합니다.
-> NadSwap은 Router 경로에서 **Quote 정책만 강제**합니다.
+> NadSwap은 프로토콜 레벨에서 **Quote 정책만 온체인 강제**합니다.
 > 본 명세 리비전에서는 Base 지원 allowlist를 Factory/Router에서 강제하지 않습니다.
+> 운영 정책: `pairAdmin`은 Base를 표준 ERC20(비-FOT/비-리베이싱)으로만 상장해야 하며, 위반 시 swap 실행/UX가 깨질 수 있습니다.
 
 ---
 
@@ -552,10 +553,11 @@ function setTaxConfig(address pair, uint16 buy, uint16 sell, address taxCollecto
 ### Router FOT 정책
 
 > [!WARNING]
-> NadSwap은 Router 경로에서 Quote FOT 또는 리베이싱 토큰을 **지원하지 않습니다**.
+> NadSwap은 Router 실행 경로에서 FOT(수수료전가)·리베이싱 동작을 **지원하지 않습니다**.
+> 프로토콜의 온체인 지원 가드는 Quote(`isQuoteToken`)에만 적용되며 Base는 온체인 allowlist가 없습니다.
 > Router 외부 시그니처는 유지됩니다.  
 > `swapExactTokensForTokensSupportingFeeOnTransferTokens` 계열 함수는 반드시 `FOT_NOT_SUPPORTED`로 hard-revert 해야 합니다.
-> 이는 Quote 전용 세금 수학에서 Net/Gross 불일치를 방지하기 위함입니다.
+> 운영 정책을 어기고 Base-FOT 페어를 생성하면, sell exact-in은 revert될 수 있고 buy exact-in은 Router quote 대비 사용자 실수령이 부족해질 수 있습니다.
 
 **Router 지원 가드 (swap/add-liquidity 경로 필수):**
 ```solidity
@@ -716,12 +718,12 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 | 24 | 🆕 CEI 순서 안전성 | claim: vault=0(E) → transfer(I) | `lock` 하에서 안전, 외부 호출 전 vault 초기화 |
 | 25 | 🆕 claimQuoteTax 인센티브 설계 | taxCollector가 직접 호출(자산 회수) | 제3자 인센티브 불필요 |
 | 26 | 🆕 ERC20 반환값 검사 | `_safeTransfer` 내부 `require(success)` | bool 미반환 토큰 처리 |
-| 27 | 🆕 Quote FOT 미지원 강제 | Router 가드가 Quote 정책 강제, FOT 변형은 항상 `FOT_NOT_SUPPORTED` | 세금 수학의 Net/Gross 불일치 방지 |
+| 27 | 🆕 Router FOT 미지원 강제 | FOT 스타일 Router 변형은 항상 `FOT_NOT_SUPPORTED`; Quote 가드는 온체인 유지 | ABI 호환성을 유지하면서 미지원 실행 경로를 명시 차단 |
 | 28 | 🆕 라우팅에서 INIT_CODE_HASH 비의존 | `pairFor`가 `factory.getPair` 사용 | create2 해시 드리프트 위험 제거 |
 | 29 | 🆕 quote out은 항상 sellTax 과세 | `quoteOut > 0`이면 sellTax 적용 (`baseIn == 0` 포함) | 동일 토큰 quote flash(out/in) 우회 해석 방지 |
 | 30 | 🆕 Vault drift 라이브니스 가드 | quote 측 차감 전 `require(rawQuote >= vault, 'VAULT_DRIFT')` | 전 생명주기 경로에서 무음 언더플로우성 라이브니스 손실 방지 |
 | 31 | 🆕 swap 대상 하드닝 | `require(to != token0 && to != token1, 'INVALID_TO')` | V2 호환 안전 동작 복원 |
-| 32 | 🆕 Base allowlist 제거 | Factory/Router가 base allowlist를 더 이상 강제하지 않음 | 프로토콜 레벨 Base 정책 비강제, Quote 정책은 유지 |
+| 32 | 🆕 Base allowlist 제거 | Factory/Router가 base allowlist를 더 이상 강제하지 않음 | Base 정책은 운영 강제(pairAdmin 표준 ERC20 한정), Quote 정책은 프로토콜 강제 유지 |
 | 33 | 🆕 sell exact-in 안전 마진 quote | Router quote는 sell 세금 공제 전 `grossOut-1` 사용 | 유동성 경계 실행 revert 감소(최대 1 wei 보수적) |
 | 34 | 🆕 claim dust 동작 문서화 | claim은 reserve를 유지하고 quote dust는 skim 가능 상태로 남김 | 통합자 대상 운영/회계 의미 명확화 |
 | 35 | 🆕 K 곱셈 오버플로우 처리 | 선택적 가드(`adj0 == 0 || adj1 <= max/adj0`) 또는 토큰 정책 문서화 | 핵심 익스플로잇 경로는 아니며 정보성 하드닝. 현재 구현은 명시 가드를 채택 |
@@ -885,7 +887,9 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 |------|------|
 | `test_quoteToken_fot_vaultDrift` | Quote로 FOT/리베이싱 토큰 사용 시 vault 회계 drift 발생, quote 화이트리스트로 예방 |
 | `test_quoteToken_notSupported` | 🆕 Factory 정책에서 비활성 Quote 토큰 경로는 Router 가드로 revert (`QUOTE_NOT_SUPPORTED`) |
-| `test_baseToken_policy_unrestricted` | 🆕 quote 정책 충족 시 Router에서 base 경로는 allowlist 정책으로 차단되지 않음 |
+| `test_baseToken_policy_unrestricted` | 🆕 quote 정책 충족 시 Router에서 base 경로는 온체인 allowlist 정책으로 차단되지 않음 |
+| `test_baseToken_fot_sellExactIn_routerReverts` | 🆕 Base가 FOT인 경우 sell exact-in 경로가 Router exact-in 가정과 충돌해 revert될 수 있음 |
+| `test_baseToken_fot_buyExactIn_recipientReceivesLessThanQuoted` | 🆕 Base가 FOT인 경우 buy exact-in 실행은 되더라도 사용자 실수령이 Router quote보다 작아질 수 있음 |
 | `test_router_supportingFOT_notSupported` | 🆕 FOT-supporting swap 변형은 ABI를 유지하되 항상 `FOT_NOT_SUPPORTED`로 revert |
 
 ### Unit — SafeERC20 / 최초 예치자 (§13 #22-26)
