@@ -1,0 +1,1099 @@
+{
+  "components": {
+    "button": {
+      "requiredTokenRefs": [
+        "semantic.action.primary",
+        "semantic.action.primaryHover",
+        "semantic.action.secondary",
+        "semantic.action.secondaryHover",
+        "semantic.action.danger",
+        "semantic.action.dangerHover",
+        "semantic.text.onAccent",
+        "semantic.border.focus",
+        "radius.md",
+        "spacing.2",
+        "spacing.3",
+        "spacing.4"
+      ],
+      "slots": [
+        "root",
+        "icon",
+        "label"
+      ],
+      "defaultVariants": {
+        "intent": "primary",
+        "appearance": "solid",
+        "size": "md"
+      },
+      "variants": {
+        "intent": {
+          "primary": {
+            "root": "text-semantic-text-onAccent"
+          },
+          "secondary": {
+            "root": "text-semantic-text-primary"
+          },
+          "danger": {
+            "root": "text-semantic-text-onAccent"
+          },
+          "success": {
+            "root": "text-semantic-text-onAccent"
+          }
+        },
+        "appearance": {
+          "solid": {
+            "root": "border border-transparent"
+          },
+          "outline": {
+            "root": "bg-transparent border border-semantic-border-default"
+          },
+          "ghost": {
+            "root": "bg-transparent border border-transparent"
+          }
+        },
+        "size": {
+          "sm": {
+            "root": "h-9 px-3 gap-2 rounded-md text-sm font-medium",
+            "icon": "h-4 w-4",
+            "label": "leading-5"
+          },
+          "md": {
+            "root": "h-10 px-4 gap-2 rounded-lg text-base font-medium",
+            "icon": "h-4 w-4",
+            "label": "leading-6"
+          },
+          "lg": {
+            "root": "h-12 px-5 gap-3 rounded-xl text-lg font-semibold",
+            "icon": "h-5 w-5",
+            "label": "leading-6"
+          }
+        }
+      },
+      "sizes": {
+        "sm": {
+          "minHeight": "36px"
+        },
+        "md": {
+          "minHeight": "40px"
+        },
+        "lg": {
+          "minHeight": "48px"
+        }
+      },
+      "states": {
+        "default": {
+          "root": "inline-flex items-center justify-center transition-colors duration-base ease-in-out"
+        },
+        "hover": {
+          "root": "hover:opacity-95"
+        },
+        "active": {
+          "root": "active:scale-[0.99]"
+        },
+        "focusVisible": {
+          "root": "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-semantic-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-semantic-bg-base"
+        },
+        "disabled": {
+          "root": "disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
+        },
+        "selected": {
+          "root": "aria-pressed:ring-2 aria-pressed:ring-semantic-border-focus"
+        }
+      },
+      "compoundVariants": [
+        {
+          "when": {
+            "intent": "primary",
+            "appearance": "solid"
+          },
+          "classes": {
+            "root": "bg-semantic-action-primary hover:bg-semantic-action-primaryHover"
+          }
+        },
+        {
+          "when": {
+            "intent": "secondary",
+            "appearance": "solid"
+          },
+          "classes": {
+            "root": "bg-semantic-action-secondary hover:bg-semantic-action-secondaryHover"
+          }
+        },
+        {
+          "when": {
+            "intent": "danger",
+            "appearance": "solid"
+          },
+          "classes": {
+            "root": "bg-semantic-action-danger hover:bg-semantic-action-dangerHover"
+          }
+        },
+        {
+          "when": {
+            "intent": "success",
+            "appearance": "solid"
+          },
+          "classes": {
+            "root": "bg-semantic-action-success hover:brightness-110"
+          }
+        }
+      ],
+      "a11y": {
+        "minTargetSize": "44px",
+        "focusRule": "Use a visible 2px focus ring with 3:1+ contrast against surrounding surfaces.",
+        "notes": [
+          "Do not rely on color alone to indicate destructive actions.",
+          "Preserve disabled semantics with the native disabled attribute."
+        ]
+      }
+    },
+    "input": {
+      "requiredTokenRefs": [
+        "semantic.bg.raised",
+        "semantic.text.primary",
+        "semantic.text.secondary",
+        "semantic.border.default",
+        "semantic.border.focus",
+        "semantic.action.danger",
+        "radius.lg",
+        "spacing.3",
+        "spacing.4"
+      ],
+      "slots": [
+        "wrapper",
+        "field",
+        "prefix",
+        "suffix",
+        "message"
+      ],
+      "defaultVariants": {
+        "size": "md",
+        "tone": "default"
+      },
+      "variants": {
+        "size": {
+          "sm": {
+            "wrapper": "h-10 px-3 rounded-lg",
+            "field": "text-sm"
+          },
+          "md": {
+            "wrapper": "h-12 px-4 rounded-xl",
+            "field": "text-base"
+          },
+          "lg": {
+            "wrapper": "h-14 px-4 rounded-2xl",
+            "field": "text-lg"
+          }
+        },
+        "tone": {
+          "default": {
+            "wrapper": "bg-semantic-bg-raised border border-semantic-border-default",
+            "message": "text-semantic-text-secondary"
+          },
+          "error": {
+            "wrapper": "bg-semantic-bg-raised border border-danger-500",
+            "message": "text-danger-500"
+          },
+          "success": {
+            "wrapper": "bg-semantic-bg-raised border border-success-500",
+            "message": "text-success-500"
+          }
+        }
+      },
+      "sizes": {
+        "sm": {
+          "minHeight": "40px"
+        },
+        "md": {
+          "minHeight": "48px"
+        },
+        "lg": {
+          "minHeight": "56px"
+        }
+      },
+      "states": {
+        "default": {
+          "wrapper": "flex items-center gap-2 transition-colors duration-base ease-in-out",
+          "field": "w-full bg-transparent text-semantic-text-primary placeholder:text-semantic-text-secondary focus:outline-none"
+        },
+        "hover": {
+          "wrapper": "hover:border-semantic-border-strong"
+        },
+        "active": {
+          "wrapper": "active:border-semantic-border-strong"
+        },
+        "focusVisible": {
+          "wrapper": "focus-within:ring-2 focus-within:ring-semantic-border-focus focus-within:ring-offset-2 focus-within:ring-offset-semantic-bg-base"
+        },
+        "disabled": {
+          "wrapper": "opacity-50 pointer-events-none",
+          "field": "cursor-not-allowed"
+        },
+        "selected": {
+          "wrapper": "data-[selected=true]:border-semantic-action-primary"
+        }
+      },
+      "compoundVariants": [],
+      "a11y": {
+        "minTargetSize": "44px",
+        "focusRule": "Use focus-within ring for grouped controls and preserve native input focus.",
+        "notes": [
+          "Pair with visible label and helper/error text.",
+          "Use aria-invalid when tone=error."
+        ]
+      }
+    },
+    "textarea": {
+      "requiredTokenRefs": [
+        "semantic.bg.raised",
+        "semantic.text.primary",
+        "semantic.text.secondary",
+        "semantic.border.default",
+        "semantic.border.focus",
+        "radius.lg",
+        "spacing.3",
+        "spacing.4"
+      ],
+      "slots": [
+        "wrapper",
+        "field",
+        "message"
+      ],
+      "defaultVariants": {
+        "size": "md",
+        "tone": "default"
+      },
+      "variants": {
+        "size": {
+          "sm": {
+            "wrapper": "p-3 rounded-lg",
+            "field": "min-h-20 text-sm"
+          },
+          "md": {
+            "wrapper": "p-4 rounded-xl",
+            "field": "min-h-28 text-base"
+          },
+          "lg": {
+            "wrapper": "p-4 rounded-2xl",
+            "field": "min-h-36 text-lg"
+          }
+        },
+        "tone": {
+          "default": {
+            "wrapper": "bg-semantic-bg-raised border border-semantic-border-default"
+          },
+          "error": {
+            "wrapper": "bg-semantic-bg-raised border border-danger-500"
+          }
+        }
+      },
+      "sizes": {
+        "sm": {
+          "minHeight": "80px"
+        },
+        "md": {
+          "minHeight": "112px"
+        },
+        "lg": {
+          "minHeight": "144px"
+        }
+      },
+      "states": {
+        "default": {
+          "wrapper": "transition-colors duration-base ease-in-out",
+          "field": "w-full resize-y bg-transparent text-semantic-text-primary placeholder:text-semantic-text-secondary focus:outline-none"
+        },
+        "hover": {
+          "wrapper": "hover:border-semantic-border-strong"
+        },
+        "active": {
+          "wrapper": "active:border-semantic-border-strong"
+        },
+        "focusVisible": {
+          "wrapper": "focus-within:ring-2 focus-within:ring-semantic-border-focus focus-within:ring-offset-2 focus-within:ring-offset-semantic-bg-base"
+        },
+        "disabled": {
+          "wrapper": "opacity-50 pointer-events-none"
+        },
+        "selected": {
+          "wrapper": "data-[selected=true]:border-semantic-action-primary"
+        }
+      },
+      "compoundVariants": [],
+      "a11y": {
+        "minTargetSize": "44px",
+        "focusRule": "Use focus-within ring and maintain sufficient contrast for placeholder text.",
+        "notes": [
+          "Expose character limits and validation states with aria-live messaging."
+        ]
+      }
+    },
+    "select": {
+      "requiredTokenRefs": [
+        "semantic.bg.raised",
+        "semantic.text.primary",
+        "semantic.text.secondary",
+        "semantic.border.default",
+        "semantic.border.focus",
+        "radius.lg",
+        "spacing.3",
+        "spacing.4"
+      ],
+      "slots": [
+        "trigger",
+        "value",
+        "icon",
+        "content",
+        "item"
+      ],
+      "defaultVariants": {
+        "size": "md",
+        "tone": "default"
+      },
+      "variants": {
+        "size": {
+          "sm": {
+            "trigger": "h-10 px-3 rounded-lg text-sm"
+          },
+          "md": {
+            "trigger": "h-12 px-4 rounded-xl text-base"
+          },
+          "lg": {
+            "trigger": "h-14 px-4 rounded-2xl text-lg"
+          }
+        },
+        "tone": {
+          "default": {
+            "trigger": "bg-semantic-bg-raised border border-semantic-border-default"
+          },
+          "error": {
+            "trigger": "bg-semantic-bg-raised border border-danger-500"
+          }
+        }
+      },
+      "sizes": {
+        "sm": {
+          "minHeight": "40px"
+        },
+        "md": {
+          "minHeight": "48px"
+        },
+        "lg": {
+          "minHeight": "56px"
+        }
+      },
+      "states": {
+        "default": {
+          "trigger": "inline-flex items-center justify-between gap-2 w-full text-semantic-text-primary",
+          "content": "bg-semantic-bg-raised border border-semantic-border-default rounded-xl shadow-lg",
+          "item": "px-3 py-2 rounded-lg text-semantic-text-primary"
+        },
+        "hover": {
+          "trigger": "hover:border-semantic-border-strong",
+          "item": "hover:bg-semantic-bg-muted"
+        },
+        "active": {
+          "trigger": "active:border-semantic-border-strong",
+          "item": "active:bg-semantic-bg-muted"
+        },
+        "focusVisible": {
+          "trigger": "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-semantic-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-semantic-bg-base"
+        },
+        "disabled": {
+          "trigger": "opacity-50 pointer-events-none"
+        },
+        "selected": {
+          "item": "data-[state=checked]:bg-semantic-action-primary data-[state=checked]:text-semantic-text-onAccent"
+        }
+      },
+      "compoundVariants": [],
+      "a11y": {
+        "minTargetSize": "44px",
+        "focusRule": "Expose listbox keyboard interactions and visible active descendant indication.",
+        "notes": [
+          "Use aria-expanded and aria-controls on trigger.",
+          "Ensure item text contrast remains 4.5:1 in selected and hover states."
+        ]
+      }
+    },
+    "card": {
+      "requiredTokenRefs": [
+        "semantic.bg.raised",
+        "semantic.bg.muted",
+        "semantic.text.primary",
+        "semantic.text.secondary",
+        "semantic.border.default",
+        "radius.xl",
+        "shadow.md",
+        "spacing.4",
+        "spacing.6"
+      ],
+      "slots": [
+        "root",
+        "header",
+        "content",
+        "footer"
+      ],
+      "defaultVariants": {
+        "tone": "default",
+        "elevation": "flat"
+      },
+      "variants": {
+        "tone": {
+          "default": {
+            "root": "bg-semantic-bg-raised border border-semantic-border-default"
+          },
+          "subtle": {
+            "root": "bg-semantic-bg-muted border border-semantic-border-muted"
+          }
+        },
+        "elevation": {
+          "flat": {
+            "root": "shadow-none"
+          },
+          "floating": {
+            "root": "shadow-lg"
+          }
+        }
+      },
+      "sizes": {
+        "sm": {
+          "padding": "16px"
+        },
+        "md": {
+          "padding": "24px"
+        },
+        "lg": {
+          "padding": "32px"
+        }
+      },
+      "states": {
+        "default": {
+          "root": "rounded-xl p-6",
+          "header": "mb-4",
+          "footer": "mt-4"
+        },
+        "hover": {
+          "root": "hover:border-semantic-border-strong"
+        },
+        "active": {
+          "root": "active:translate-y-px"
+        },
+        "focusVisible": {
+          "root": "focus-within:ring-2 focus-within:ring-semantic-border-focus"
+        },
+        "disabled": {
+          "root": "opacity-50 pointer-events-none"
+        },
+        "selected": {
+          "root": "data-[selected=true]:border-semantic-action-primary"
+        }
+      },
+      "compoundVariants": [],
+      "a11y": {
+        "minTargetSize": "44px",
+        "focusRule": "Cards that are interactive should expose focus ring and role=button or link semantics.",
+        "notes": [
+          "Do not hide actionable affordances inside non-interactive card markup."
+        ]
+      }
+    },
+    "badge": {
+      "requiredTokenRefs": [
+        "semantic.text.onAccent",
+        "semantic.text.primary",
+        "semantic.action.primary",
+        "semantic.action.success",
+        "semantic.action.warning",
+        "semantic.action.danger",
+        "radius.full",
+        "spacing.2",
+        "spacing.3"
+      ],
+      "slots": [
+        "root",
+        "dot",
+        "label"
+      ],
+      "defaultVariants": {
+        "intent": "neutral",
+        "size": "md"
+      },
+      "variants": {
+        "intent": {
+          "neutral": {
+            "root": "bg-semantic-bg-muted text-semantic-text-primary"
+          },
+          "brand": {
+            "root": "bg-semantic-action-primary text-semantic-text-onAccent"
+          },
+          "success": {
+            "root": "bg-semantic-action-success text-semantic-text-onAccent"
+          },
+          "warning": {
+            "root": "bg-semantic-action-warning text-neutral-950"
+          },
+          "danger": {
+            "root": "bg-semantic-action-danger text-semantic-text-onAccent"
+          }
+        },
+        "size": {
+          "sm": {
+            "root": "h-6 px-2 text-xs",
+            "dot": "h-1.5 w-1.5"
+          },
+          "md": {
+            "root": "h-7 px-3 text-sm",
+            "dot": "h-2 w-2"
+          },
+          "lg": {
+            "root": "h-8 px-3 text-base",
+            "dot": "h-2 w-2"
+          }
+        }
+      },
+      "sizes": {
+        "sm": {
+          "minHeight": "24px"
+        },
+        "md": {
+          "minHeight": "28px"
+        },
+        "lg": {
+          "minHeight": "32px"
+        }
+      },
+      "states": {
+        "default": {
+          "root": "inline-flex items-center gap-2 rounded-full font-medium"
+        },
+        "hover": {
+          "root": "hover:brightness-105"
+        },
+        "active": {
+          "root": "active:brightness-95"
+        },
+        "focusVisible": {
+          "root": "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-semantic-border-focus"
+        },
+        "disabled": {
+          "root": "opacity-50"
+        },
+        "selected": {
+          "root": "data-[selected=true]:ring-2 data-[selected=true]:ring-semantic-border-focus"
+        }
+      },
+      "compoundVariants": [],
+      "a11y": {
+        "minTargetSize": "44px",
+        "focusRule": "Interactive badges must provide keyboard focus and pressed state semantics.",
+        "notes": [
+          "Status-only badges should include screen-reader text for context."
+        ]
+      }
+    },
+    "alert": {
+      "requiredTokenRefs": [
+        "semantic.bg.raised",
+        "semantic.text.primary",
+        "semantic.text.secondary",
+        "semantic.action.success",
+        "semantic.action.warning",
+        "semantic.action.danger",
+        "radius.lg",
+        "spacing.3",
+        "spacing.4"
+      ],
+      "slots": [
+        "root",
+        "icon",
+        "title",
+        "description",
+        "action"
+      ],
+      "defaultVariants": {
+        "intent": "info",
+        "density": "md"
+      },
+      "variants": {
+        "intent": {
+          "info": {
+            "root": "bg-semantic-bg-raised border border-semantic-border-default"
+          },
+          "success": {
+            "root": "bg-success-100/20 border border-success-500"
+          },
+          "warning": {
+            "root": "bg-warning-100/20 border border-warning-500"
+          },
+          "danger": {
+            "root": "bg-danger-100/20 border border-danger-500"
+          }
+        },
+        "density": {
+          "sm": {
+            "root": "p-3",
+            "title": "text-sm",
+            "description": "text-xs"
+          },
+          "md": {
+            "root": "p-4",
+            "title": "text-base",
+            "description": "text-sm"
+          }
+        }
+      },
+      "sizes": {
+        "sm": {
+          "minHeight": "56px"
+        },
+        "md": {
+          "minHeight": "64px"
+        }
+      },
+      "states": {
+        "default": {
+          "root": "rounded-lg flex items-start gap-3",
+          "title": "text-semantic-text-primary font-medium",
+          "description": "text-semantic-text-secondary"
+        },
+        "hover": {
+          "root": "hover:border-semantic-border-strong"
+        },
+        "active": {
+          "root": "active:brightness-95"
+        },
+        "focusVisible": {
+          "root": "focus-within:ring-2 focus-within:ring-semantic-border-focus"
+        },
+        "disabled": {
+          "root": "opacity-60"
+        },
+        "selected": {
+          "root": "data-[selected=true]:ring-2 data-[selected=true]:ring-semantic-border-focus"
+        }
+      },
+      "compoundVariants": [],
+      "a11y": {
+        "minTargetSize": "44px",
+        "focusRule": "Use role=alert only for urgent updates; otherwise use status/live region politely.",
+        "notes": [
+          "Icon-only alerts must include text equivalents."
+        ]
+      }
+    },
+    "toast": {
+      "requiredTokenRefs": [
+        "semantic.bg.raised",
+        "semantic.text.primary",
+        "semantic.text.secondary",
+        "semantic.border.default",
+        "shadow.lg",
+        "radius.lg",
+        "motion.duration.fast",
+        "motion.easing.inOut"
+      ],
+      "slots": [
+        "root",
+        "icon",
+        "title",
+        "description",
+        "close"
+      ],
+      "defaultVariants": {
+        "intent": "info",
+        "size": "md"
+      },
+      "variants": {
+        "intent": {
+          "info": {
+            "root": "border-semantic-border-default"
+          },
+          "success": {
+            "root": "border-success-500"
+          },
+          "warning": {
+            "root": "border-warning-500"
+          },
+          "danger": {
+            "root": "border-danger-500"
+          }
+        },
+        "size": {
+          "sm": {
+            "root": "w-72 p-3",
+            "title": "text-sm",
+            "description": "text-xs"
+          },
+          "md": {
+            "root": "w-80 p-4",
+            "title": "text-base",
+            "description": "text-sm"
+          }
+        }
+      },
+      "sizes": {
+        "sm": {
+          "minHeight": "64px"
+        },
+        "md": {
+          "minHeight": "72px"
+        }
+      },
+      "states": {
+        "default": {
+          "root": "bg-semantic-bg-raised border rounded-lg shadow-lg transition-all duration-fast ease-in-out"
+        },
+        "hover": {
+          "root": "hover:border-semantic-border-strong"
+        },
+        "active": {
+          "root": "active:translate-y-px"
+        },
+        "focusVisible": {
+          "close": "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-semantic-border-focus"
+        },
+        "disabled": {
+          "root": "opacity-60"
+        },
+        "selected": {
+          "root": "data-[selected=true]:ring-2 data-[selected=true]:ring-semantic-border-focus"
+        }
+      },
+      "compoundVariants": [],
+      "a11y": {
+        "minTargetSize": "44px",
+        "focusRule": "Ensure close action is keyboard reachable and announcement region is polite by default.",
+        "notes": [
+          "Do not auto-dismiss critical error toasts before users can read them."
+        ]
+      }
+    },
+    "navigationHeader": {
+      "requiredTokenRefs": [
+        "semantic.bg.base",
+        "semantic.bg.overlay",
+        "semantic.text.primary",
+        "semantic.text.secondary",
+        "semantic.border.default",
+        "radius.full",
+        "spacing.3",
+        "spacing.4",
+        "spacing.6"
+      ],
+      "slots": [
+        "root",
+        "brand",
+        "navItem",
+        "actions"
+      ],
+      "defaultVariants": {
+        "density": "md",
+        "surface": "translucent"
+      },
+      "variants": {
+        "density": {
+          "sm": {
+            "root": "h-14 px-4"
+          },
+          "md": {
+            "root": "h-16 px-6"
+          }
+        },
+        "surface": {
+          "solid": {
+            "root": "bg-semantic-bg-base border-b border-semantic-border-default"
+          },
+          "translucent": {
+            "root": "bg-semantic-bg-base/80 backdrop-blur-xl border-b border-semantic-border-muted"
+          }
+        }
+      },
+      "sizes": {
+        "sm": {
+          "minHeight": "56px"
+        },
+        "md": {
+          "minHeight": "64px"
+        }
+      },
+      "states": {
+        "default": {
+          "root": "sticky top-0 z-40 flex items-center justify-between",
+          "navItem": "text-semantic-text-secondary hover:text-semantic-text-primary"
+        },
+        "hover": {
+          "navItem": "hover:bg-semantic-bg-subtle rounded-full px-3 py-2"
+        },
+        "active": {
+          "navItem": "active:opacity-80"
+        },
+        "focusVisible": {
+          "navItem": "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-semantic-border-focus"
+        },
+        "disabled": {
+          "navItem": "opacity-50 pointer-events-none"
+        },
+        "selected": {
+          "navItem": "data-[active=true]:text-semantic-text-primary data-[active=true]:bg-semantic-bg-subtle"
+        }
+      },
+      "compoundVariants": [],
+      "a11y": {
+        "minTargetSize": "44px",
+        "focusRule": "Preserve keyboard tab order and visible active route indication.",
+        "notes": [
+          "Avoid placing essential actions behind hover-only affordances."
+        ]
+      }
+    },
+    "navigationSidebar": {
+      "requiredTokenRefs": [
+        "semantic.bg.base",
+        "semantic.bg.raised",
+        "semantic.text.primary",
+        "semantic.text.secondary",
+        "semantic.border.default",
+        "radius.lg",
+        "spacing.2",
+        "spacing.3",
+        "spacing.4"
+      ],
+      "slots": [
+        "root",
+        "section",
+        "item",
+        "icon",
+        "label"
+      ],
+      "defaultVariants": {
+        "width": "md"
+      },
+      "variants": {
+        "width": {
+          "sm": {
+            "root": "w-56"
+          },
+          "md": {
+            "root": "w-64"
+          },
+          "lg": {
+            "root": "w-72"
+          }
+        }
+      },
+      "sizes": {
+        "sm": {
+          "minWidth": "224px"
+        },
+        "md": {
+          "minWidth": "256px"
+        },
+        "lg": {
+          "minWidth": "288px"
+        }
+      },
+      "states": {
+        "default": {
+          "root": "h-full bg-semantic-bg-base border-r border-semantic-border-default p-3",
+          "item": "flex items-center gap-3 rounded-lg px-3 py-2 text-semantic-text-secondary"
+        },
+        "hover": {
+          "item": "hover:bg-semantic-bg-raised hover:text-semantic-text-primary"
+        },
+        "active": {
+          "item": "active:opacity-80"
+        },
+        "focusVisible": {
+          "item": "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-semantic-border-focus"
+        },
+        "disabled": {
+          "item": "opacity-50 pointer-events-none"
+        },
+        "selected": {
+          "item": "data-[active=true]:bg-semantic-bg-raised data-[active=true]:text-semantic-text-primary"
+        }
+      },
+      "compoundVariants": [],
+      "a11y": {
+        "minTargetSize": "44px",
+        "focusRule": "Use nav landmark semantics and aria-current on active destination.",
+        "notes": [
+          "Collapsed sidebar mode must retain accessible labels (tooltips or sr-only text)."
+        ]
+      }
+    },
+    "modal": {
+      "requiredTokenRefs": [
+        "semantic.bg.scrim",
+        "semantic.bg.raised",
+        "semantic.text.primary",
+        "semantic.border.default",
+        "radius.2xl",
+        "shadow.lg",
+        "motion.duration.base",
+        "motion.easing.inOut",
+        "spacing.4",
+        "spacing.6"
+      ],
+      "slots": [
+        "overlay",
+        "content",
+        "header",
+        "body",
+        "footer",
+        "close"
+      ],
+      "defaultVariants": {
+        "size": "md"
+      },
+      "variants": {
+        "size": {
+          "sm": {
+            "content": "w-[min(92vw,420px)]"
+          },
+          "md": {
+            "content": "w-[min(92vw,560px)]"
+          },
+          "lg": {
+            "content": "w-[min(92vw,720px)]"
+          }
+        }
+      },
+      "sizes": {
+        "sm": {
+          "maxWidth": "420px"
+        },
+        "md": {
+          "maxWidth": "560px"
+        },
+        "lg": {
+          "maxWidth": "720px"
+        }
+      },
+      "states": {
+        "default": {
+          "overlay": "fixed inset-0 bg-semantic-bg-scrim",
+          "content": "rounded-2xl bg-semantic-bg-raised border border-semantic-border-default shadow-lg p-6"
+        },
+        "hover": {
+          "close": "hover:bg-semantic-bg-muted"
+        },
+        "active": {
+          "close": "active:scale-[0.98]"
+        },
+        "focusVisible": {
+          "close": "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-semantic-border-focus",
+          "content": "focus:outline-none"
+        },
+        "disabled": {
+          "close": "opacity-50 pointer-events-none"
+        },
+        "selected": {
+          "content": "data-[selected=true]:ring-2 data-[selected=true]:ring-semantic-border-focus"
+        }
+      },
+      "compoundVariants": [],
+      "a11y": {
+        "minTargetSize": "44px",
+        "focusRule": "Trap focus while open and return focus to trigger on close.",
+        "notes": [
+          "Use aria-modal=true, role=dialog, and labelledby/description wiring.",
+          "Close on Escape unless blocked by critical flow requirements."
+        ]
+      }
+    },
+    "drawer": {
+      "requiredTokenRefs": [
+        "semantic.bg.scrim",
+        "semantic.bg.raised",
+        "semantic.text.primary",
+        "semantic.border.default",
+        "radius.2xl",
+        "shadow.lg",
+        "motion.duration.base",
+        "motion.easing.quick",
+        "spacing.4",
+        "spacing.6"
+      ],
+      "slots": [
+        "overlay",
+        "panel",
+        "header",
+        "body",
+        "footer",
+        "handle"
+      ],
+      "defaultVariants": {
+        "side": "right",
+        "size": "md"
+      },
+      "variants": {
+        "side": {
+          "right": {
+            "panel": "right-0 border-l"
+          },
+          "left": {
+            "panel": "left-0 border-r"
+          },
+          "bottom": {
+            "panel": "bottom-0 left-0 right-0 border-t rounded-t-2xl"
+          }
+        },
+        "size": {
+          "sm": {
+            "panel": "w-[min(92vw,360px)]"
+          },
+          "md": {
+            "panel": "w-[min(92vw,440px)]"
+          },
+          "lg": {
+            "panel": "w-[min(92vw,560px)]"
+          }
+        }
+      },
+      "sizes": {
+        "sm": {
+          "maxWidth": "360px"
+        },
+        "md": {
+          "maxWidth": "440px"
+        },
+        "lg": {
+          "maxWidth": "560px"
+        }
+      },
+      "states": {
+        "default": {
+          "overlay": "fixed inset-0 bg-semantic-bg-scrim",
+          "panel": "fixed top-0 h-full bg-semantic-bg-raised border-semantic-border-default shadow-lg p-6"
+        },
+        "hover": {
+          "handle": "hover:bg-semantic-bg-muted"
+        },
+        "active": {
+          "handle": "active:opacity-80"
+        },
+        "focusVisible": {
+          "panel": "focus:outline-none",
+          "handle": "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-semantic-border-focus"
+        },
+        "disabled": {
+          "handle": "opacity-50 pointer-events-none"
+        },
+        "selected": {
+          "panel": "data-[selected=true]:ring-2 data-[selected=true]:ring-semantic-border-focus"
+        }
+      },
+      "compoundVariants": [],
+      "a11y": {
+        "minTargetSize": "44px",
+        "focusRule": "Maintain logical reading order and trap focus when drawer is modal.",
+        "notes": [
+          "For bottom drawers on mobile, ensure drag handle has an accessible label.",
+          "Preserve Escape and overlay-click close behavior unless blocked intentionally."
+        ]
+      }
+    }
+  }
+}

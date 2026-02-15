@@ -1,0 +1,25 @@
+schema_version: "1.0"
+package_name: "uniswap-core-surfaces-design-system"
+generated_at: "2026-02-15T15:36:50Z"
+source:
+  type: "mixed"
+  value: "https://app.uniswap.org/ + https://app.uniswap.org/assets/index-DXaJfaQ2.js + https://unpkg.com/@uniswap/widgets@2.59.0/dist/fonts.css"
+tailwind_target: "v4"
+match_strategy: "strict"
+modes:
+  - "dark"
+component_generation_defaults:
+  source_of_truth_files:
+    - "design-system.json"
+    - "component-blueprints.json"
+  token_policy:
+    rename_forbidden: true
+    silent_token_creation_forbidden: true
+  missing_token_report:
+    required: true
+    section_name: "Missing Token Report"
+confidence:
+  overall: 0.87
+  notes:
+    - "Core dark-theme color, breakpoint, radius, and motion values are directly observed in production bundle constants."
+    - "Scale interpolation and semantic role layering are inferred for reusable token ramps."

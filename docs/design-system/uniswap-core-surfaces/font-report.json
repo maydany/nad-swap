@@ -1,0 +1,34 @@
+{
+  "fonts": [
+    {
+      "detected": "Basel / Basel Grotesk",
+      "confidence": "likely paid",
+      "freeAlternatives": [
+        "Inter",
+        "Plus Jakarta Sans",
+        "Manrope"
+      ],
+      "notes": "Production app preloads Basel-Grotesk Book/Medium; Inter is the closest neutral UI fallback with similar width behavior."
+    },
+    {
+      "detected": "Inter",
+      "confidence": "free/open-source",
+      "freeAlternatives": [
+        "Source Sans 3",
+        "Public Sans",
+        "Work Sans"
+      ],
+      "notes": "Inter is explicitly referenced via @fontsource in the official Uniswap widgets distribution."
+    },
+    {
+      "detected": "IBM Plex Mono",
+      "confidence": "free/open-source",
+      "freeAlternatives": [
+        "JetBrains Mono",
+        "Fira Code",
+        "Source Code Pro"
+      ],
+      "notes": "Used as the code/monospace face in Uniswap widgets; replacements preserve technical readability."
+    }
+  ]
+}

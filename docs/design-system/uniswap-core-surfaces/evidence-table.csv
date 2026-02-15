@@ -1,0 +1,13 @@
+token_or_group,source,status,confidence,notes
+Basel font family,app.uniswap.org HTML inline styles + preload tags,observed,1.00,"Global font-family Basel and Basel-Grotesk Book/Medium preload entries are explicit."
+Dark core surfaces (surface1/surface2/surface3),app.uniswap.org/assets/index-DXaJfaQ2.js,observed,0.99,"Vi theme object includes #131313, #1F1F1F, rgba(255,255,255,0.12)."
+Dark text hierarchy (neutral1/neutral2/neutral3),app.uniswap.org/assets/index-DXaJfaQ2.js,observed,0.99,"Vi theme object includes white with alpha variants for secondary/tertiary text."
+Accent brand pair (accent1/accent1Hovered),app.uniswap.org/assets/index-DXaJfaQ2.js,observed,0.99,"#FF37C7 and #E500A5 declared directly."
+Status colors (success/warning/critical),app.uniswap.org/assets/index-DXaJfaQ2.js,observed,0.99,"Dark and light status colors both declared in qi/Vi objects."
+Breakpoint scale,app.uniswap.org/assets/index-DXaJfaQ2.js,observed,0.98,"jg object defines xxs=360 through xxxl=1536."
+Radius scale,app.uniswap.org/assets/index-DXaJfaQ2.js,observed,0.98,"O4 object defines rounded4..rounded32/full."
+Motion durations/easings,app.uniswap.org/assets/index-DXaJfaQ2.js,observed,0.97,"w8o and O8o include durations and cubic-bezier timings."
+Monospace/code font,@uniswap/widgets/dist/fonts.css + widgets bundle,observed,0.95,"IBM Plex Mono and Inter/InterVariable are explicit in official package files."
+Primary and accent 10-step ramps,generated from observed anchor values,inferred,0.82,"Intermediate stops are interpolated for reusable Tailwind semantics."
+Semantic role mapping,generated from observed token names and UI behavior,inferred,0.86,"bg/text/border/action groups are normalized for downstream component generation."
+Container tiers and extra spacing steps,generated from observed breakpoints and widget rhythm,inferred,0.74,"Adds implementation-ready tiers beyond explicitly declared values."

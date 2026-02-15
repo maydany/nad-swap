@@ -1,0 +1,44 @@
+{
+  "fonts": [
+    {
+      "detected": "ABC Whyte",
+      "confidence": "likely paid",
+      "freeAlternatives": [
+        "Inter",
+        "Manrope",
+        "Plus Jakarta Sans"
+      ],
+      "notes": "ABC Whyte is loaded as a hosted WOFF2 asset on InjHub; licensing details are not public in the fetched assets. Inter is the closest neutral UI substitute."
+    },
+    {
+      "detected": "ABC Whyte Mono",
+      "confidence": "likely paid",
+      "freeAlternatives": [
+        "IBM Plex Mono",
+        "JetBrains Mono",
+        "Source Code Pro"
+      ],
+      "notes": "Mono companion to ABC Whyte appears in hosted assets; IBM Plex Mono is the most practical width/tone replacement for UI code labels."
+    },
+    {
+      "detected": "Proxima Nova",
+      "confidence": "likely paid",
+      "freeAlternatives": [
+        "Inter",
+        "Source Sans 3",
+        "Plus Jakarta Sans"
+      ],
+      "notes": "Proxima Nova family files are present in CSS bundle. Inter and Source Sans 3 provide similar readability and broad weight coverage."
+    },
+    {
+      "detected": "Inter",
+      "confidence": "free/open-source",
+      "freeAlternatives": [
+        "Inter",
+        "Manrope",
+        "Public Sans"
+      ],
+      "notes": "Inter is explicitly loaded in the production CSS and is open-source, making it safe for direct reuse."
+    }
+  ]
+}

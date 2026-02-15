@@ -1,0 +1,7 @@
+- Scope is limited to Uniswap core app surfaces (swap flow, shared nav and shell primitives), not the full ecosystem.
+- Theme coverage is intentionally dark-only, even though source evidence includes light-theme values.
+- Strict-clone means observed production constants are preferred; inferred values exist only where a full reusable scale was not directly declared.
+- Live deep-link rendering in headless mode returned `client packet length exceeds 255 buffer`, so source truth is taken from production asset bundles and public package artifacts.
+- Tailwind v4 is the primary target, but `tailwind.preset.ts` remains v3-compatible through `theme.extend` mappings.
+- Component blueprints prioritize deterministic token references and avoid silently introducing new token keys.
+- Open question: if your implementation must exactly mirror every chain-specific branding surface, add a dedicated `network` token family beyond the current semantic core.

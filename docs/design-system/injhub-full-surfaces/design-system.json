@@ -1,0 +1,641 @@
+{
+  "meta": {
+    "name": "injhub-full-surfaces",
+    "tailwindTarget": "v4",
+    "modes": [
+      "light",
+      "dark"
+    ],
+    "matchStrategy": "strict",
+    "scope": [
+      "/stake",
+      "/wallet",
+      "/governance",
+      "/community-buyback",
+      "/ecosystem"
+    ]
+  },
+  "tokens": {
+    "color": {
+      "white": "#ffffff",
+      "black": "#000000",
+      "primary": {
+        "50": "#ebf0ff",
+        "100": "#dbe3ff",
+        "200": "#becbff",
+        "300": "#97a8ff",
+        "400": "#5e5eff",
+        "500": "#4d4cff",
+        "600": "#3420e2",
+        "700": "#2010d0",
+        "800": "#22233c",
+        "850": "#1b1f3a",
+        "900": "#161a33",
+        "950": "#0c0d26"
+      },
+      "secondary": {
+        "50": "#fcfdff",
+        "100": "#ebf0ff",
+        "200": "#d4e0ff",
+        "300": "#c2d3ff",
+        "400": "#aac2ff",
+        "500": "#87a7f3",
+        "600": "#6c91e7",
+        "700": "#4669b9",
+        "800": "#314887",
+        "900": "#182e4b",
+        "950": "oklch(29.3% 0.066 243.157)"
+      },
+      "accent": {
+        "50": "#fff5f0",
+        "100": "#ffece0",
+        "200": "#ffdbc7",
+        "300": "#ffc8a8",
+        "400": "#ffb58a",
+        "500": "#ffa36e",
+        "600": "#ff7424",
+        "700": "#db5000",
+        "800": "#943600",
+        "900": "#471a00",
+        "950": "#240d00"
+      },
+      "neutral": {
+        "0": "#ffffff",
+        "50": "oklch(98.5% 0 0)",
+        "100": "oklch(97% 0 0)",
+        "200": "oklch(92.2% 0 0)",
+        "300": "oklch(87% 0 0)",
+        "400": "oklch(70.8% 0 0)",
+        "500": "oklch(55.6% 0 0)",
+        "600": "oklch(43.9% 0 0)",
+        "700": "oklch(37.1% 0 0)",
+        "800": "oklch(26.9% 0 0)",
+        "900": "oklch(20.5% 0 0)",
+        "950": "oklch(14.5% 0 0)"
+      },
+      "success": {
+        "50": "#dff7e1",
+        "100": "#beeec3",
+        "200": "#7dde87",
+        "300": "#3ccd4b",
+        "400": "#248e2f",
+        "500": "#144e1a",
+        "600": "#103d14",
+        "700": "#0c3110",
+        "800": "#08200b",
+        "900": "#041005",
+        "950": "#020803"
+      },
+      "warning": {
+        "50": "#fdfff5",
+        "100": "#fcffeb",
+        "200": "#f8ffd1",
+        "300": "#f4ffb3",
+        "400": "#efff94",
+        "500": "#e8ff5f",
+        "600": "#c7eb00",
+        "700": "#b2d100",
+        "800": "#93ad00",
+        "900": "#6c8000",
+        "950": "#4e5c00"
+      },
+      "danger": {
+        "100": "oklch(93.6% 0.032 17.717)",
+        "200": "oklch(88.5% 0.062 18.334)",
+        "400": "oklch(70.4% 0.191 22.216)",
+        "500": "oklch(63.7% 0.237 25.331)"
+      },
+      "brand": {
+        "50": "#ebf0ff",
+        "100": "#dbe3ff",
+        "200": "#becbff",
+        "300": "#97a8ff",
+        "400": "#5e5eff",
+        "500": "#4d4cff",
+        "600": "#3420e2",
+        "700": "#2010d0",
+        "800": "#22233c",
+        "850": "#1b1f3a",
+        "900": "#161a33",
+        "950": "#0c0d26"
+      },
+      "ocean": {
+        "50": "#e8e5ff",
+        "100": "#d5d1ff",
+        "200": "#a69eff",
+        "300": "#7c70ff",
+        "400": "#4d3dff",
+        "500": "#1f0aff",
+        "600": "#1100d1",
+        "700": "#0d009e",
+        "800": "#09006b",
+        "900": "#040033",
+        "950": "#020019"
+      },
+      "midnight": {
+        "50": "#e0e9f5",
+        "100": "#c1d3eb",
+        "200": "#83a8d7",
+        "300": "#467cc4",
+        "400": "#2d558b",
+        "500": "#182e4b",
+        "600": "#14263e",
+        "700": "#0f1c2e",
+        "800": "#0a131f",
+        "900": "#05090f",
+        "950": "#020508"
+      },
+      "lemon": {
+        "50": "#fdfff5",
+        "100": "#fcffeb",
+        "200": "#f8ffd1",
+        "300": "#f4ffb3",
+        "400": "#efff94",
+        "500": "#e8ff5f",
+        "600": "#c7eb00",
+        "700": "#b2d100",
+        "800": "#93ad00",
+        "900": "#6c8000",
+        "950": "#4e5c00"
+      },
+      "lime": {
+        "50": "#fafffa",
+        "100": "#f6fff5",
+        "200": "#edffeb",
+        "300": "#e4ffe0",
+        "400": "#d6ffd1",
+        "500": "#ceffc8",
+        "550": "#b4fea9",
+        "600": "#81ff70",
+        "700": "#30ff14",
+        "800": "#15b800",
+        "900": "#0b6100",
+        "950": "#063300"
+      },
+      "coral": {
+        "50": "#fff5f0",
+        "100": "#ffece0",
+        "200": "#ffdbc7",
+        "300": "#ffc8a8",
+        "400": "#ffb58a",
+        "500": "#ffa36e",
+        "600": "#ff7424",
+        "700": "#db5000",
+        "800": "#943600",
+        "900": "#471a00",
+        "950": "#240d00"
+      },
+      "sand": {
+        "50": "#fbf9f4",
+        "100": "#f6f2e9",
+        "200": "#efe8d7",
+        "300": "#e6dcc1",
+        "400": "#ddcfac",
+        "500": "#d5c498",
+        "600": "#c0a563",
+        "700": "#9c823f",
+        "800": "#69572b",
+        "900": "#332a15",
+        "950": "#19150a"
+      },
+      "cinnamon": {
+        "50": "#faede1",
+        "100": "#f5dac2",
+        "200": "#e9b381",
+        "300": "#df8f44",
+        "400": "#b7691f",
+        "500": "#7a4515",
+        "600": "#603710",
+        "700": "#4a2a0d",
+        "800": "#301b08",
+        "900": "#1a0f04",
+        "950": "#0d0702"
+      },
+      "turquoise": {
+        "50": "#dcf6fe",
+        "100": "#b4ebfe",
+        "200": "#6dd9fd",
+        "300": "#22c5fc",
+        "400": "#039bce",
+        "500": "#026585",
+        "600": "#025069",
+        "700": "#013d50",
+        "800": "#012a37",
+        "900": "#001319",
+        "950": "#000b0f"
+      },
+      "aubergine": {
+        "50": "#f8ddef",
+        "100": "#f2c0e1",
+        "200": "#e47cc1",
+        "300": "#d73da3",
+        "400": "#a12176",
+        "500": "#611447",
+        "600": "#4c1038",
+        "700": "#3b0c2c",
+        "800": "#26081c",
+        "900": "#150410",
+        "950": "#080206"
+      },
+      "inj": {
+        "sky": "#aac2ff",
+        "snow": "#eeefff",
+        "lime": "#ceffc8",
+        "sand": "#d5c498",
+        "lemon": "#e8ff5f",
+        "black": "#0b182b",
+        "coral": "#ffa36e",
+        "ocean": "#4d3dff",
+        "forest": "#144e1a",
+        "cinnamon": "#7a4515",
+        "midnight": "#182e4b",
+        "aubergine": "#611447",
+        "turquoise": "#026585"
+      },
+      "utility": {
+        "borderGray": "#434448",
+        "placeholderGray": "#727376"
+      }
+    },
+    "typography": {
+      "fontFamily": {
+        "sans": [
+          "ABC Whyte",
+          "Inter",
+          "Proxima Nova",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "sans-serif"
+        ],
+        "ui": [
+          "Inter",
+          "ABC Whyte",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "sans-serif"
+        ],
+        "mono": [
+          "ABC Whyte Mono",
+          "ui-monospace",
+          "SFMono-Regular",
+          "monospace"
+        ]
+      },
+      "fontSize": {
+        "xs": {
+          "size": "12px",
+          "lineHeight": "1.33333",
+          "letterSpacing": "0"
+        },
+        "sm": {
+          "size": "14px",
+          "lineHeight": "1.42857",
+          "letterSpacing": "0"
+        },
+        "base": {
+          "size": "16px",
+          "lineHeight": "1.5",
+          "letterSpacing": "0"
+        },
+        "lg": {
+          "size": "18px",
+          "lineHeight": "1.55556",
+          "letterSpacing": "0"
+        },
+        "xl": {
+          "size": "20px",
+          "lineHeight": "1.4",
+          "letterSpacing": "-0.01em"
+        },
+        "2xl": {
+          "size": "24px",
+          "lineHeight": "1.33333",
+          "letterSpacing": "-0.015em"
+        },
+        "3xl": {
+          "size": "30px",
+          "lineHeight": "1.2",
+          "letterSpacing": "-0.02em"
+        },
+        "4xl": {
+          "size": "36px",
+          "lineHeight": "1.11111",
+          "letterSpacing": "-0.02em"
+        },
+        "5xl": {
+          "size": "48px",
+          "lineHeight": "1",
+          "letterSpacing": "-0.02em"
+        },
+        "7xl": {
+          "size": "72px",
+          "lineHeight": "1",
+          "letterSpacing": "-0.03em"
+        }
+      },
+      "fontWeight": {
+        "regular": 400,
+        "medium": 500,
+        "semibold": 600,
+        "bold": 700
+      },
+      "tracking": {
+        "tight": "-0.025em",
+        "normal": "0",
+        "wide": "0.025em",
+        "wider": "0.05em",
+        "widest": "0.1em"
+      }
+    },
+    "spacing": {
+      "0": "0px",
+      "0.5": "2px",
+      "1": "4px",
+      "1.5": "6px",
+      "2": "8px",
+      "2.5": "10px",
+      "3": "12px",
+      "3.5": "14px",
+      "4": "16px",
+      "4.5": "18px",
+      "5": "20px",
+      "5.5": "22px",
+      "6": "24px",
+      "6.5": "26px",
+      "7": "28px",
+      "7.5": "30px",
+      "8": "32px",
+      "8.5": "34px",
+      "9": "36px",
+      "10": "40px",
+      "11": "44px",
+      "12": "48px",
+      "14": "56px",
+      "16": "64px",
+      "20": "80px",
+      "24": "96px"
+    },
+    "radius": {
+      "none": "0px",
+      "xs": "2px",
+      "sm": "4px",
+      "md": "6px",
+      "lg": "8px",
+      "xl": "12px",
+      "2xl": "16px",
+      "full": "9999px"
+    },
+    "shadow": {
+      "xs": "0 1px 2px 0 #0000000d",
+      "sm": "0 1px 3px 0 #0000001a, 0 1px 2px -1px #0000001a",
+      "md": "0 4px 6px -1px #0000001a, 0 2px 4px -2px #0000001a",
+      "lg": "0 10px 15px -3px #0000001a, 0 4px 6px -4px #0000001a"
+    },
+    "borderWidth": {
+      "DEFAULT": "1px",
+      "2": "2px"
+    },
+    "motion": {
+      "duration": {
+        "fast": "100ms",
+        "base": "150ms",
+        "slow": "300ms",
+        "slower": "500ms"
+      },
+      "easing": {
+        "standard": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "in": "cubic-bezier(0.4, 0, 1, 1)",
+        "out": "cubic-bezier(0, 0, 0.2, 1)",
+        "entrance": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "exit": "cubic-bezier(0.7, 0, 0.84, 0)"
+      }
+    },
+    "breakpoints": {
+      "2xs": "375px",
+      "sm": "640px",
+      "md": "768px",
+      "lg": "1024px",
+      "xl": "1280px",
+      "2xl": "1536px"
+    },
+    "container": {
+      "maxWidth": {
+        "xs": "20rem",
+        "sm": "24rem",
+        "md": "28rem",
+        "lg": "32rem",
+        "xl": "36rem",
+        "2xl": "42rem",
+        "3xl": "48rem",
+        "5xl": "64rem",
+        "7xl": "80rem",
+        "app": "90rem"
+      },
+      "paddingInline": "1rem"
+    }
+  },
+  "semantic": {
+    "bg": {
+      "base": {
+        "light": "tokens.color.white",
+        "dark": "tokens.color.neutral.900"
+      },
+      "muted": {
+        "light": "tokens.color.neutral.50",
+        "dark": "tokens.color.neutral.800"
+      },
+      "elevated": {
+        "light": "tokens.color.neutral.100",
+        "dark": "tokens.color.neutral.800"
+      },
+      "accented": {
+        "light": "tokens.color.neutral.200",
+        "dark": "tokens.color.neutral.700"
+      },
+      "inverted": {
+        "light": "tokens.color.neutral.900",
+        "dark": "tokens.color.white"
+      }
+    },
+    "text": {
+      "primary": {
+        "light": "tokens.color.neutral.700",
+        "dark": "tokens.color.neutral.200"
+      },
+      "muted": {
+        "light": "tokens.color.neutral.500",
+        "dark": "tokens.color.neutral.400"
+      },
+      "dimmed": {
+        "light": "tokens.color.neutral.400",
+        "dark": "tokens.color.neutral.500"
+      },
+      "highlighted": {
+        "light": "tokens.color.neutral.900",
+        "dark": "tokens.color.white"
+      },
+      "inverted": {
+        "light": "tokens.color.white",
+        "dark": "tokens.color.neutral.900"
+      }
+    },
+    "border": {
+      "default": {
+        "light": "tokens.color.neutral.200",
+        "dark": "tokens.color.neutral.800"
+      },
+      "muted": {
+        "light": "tokens.color.neutral.200",
+        "dark": "tokens.color.neutral.700"
+      },
+      "accented": {
+        "light": "tokens.color.neutral.300",
+        "dark": "tokens.color.neutral.700"
+      },
+      "inverted": {
+        "light": "tokens.color.neutral.900",
+        "dark": "tokens.color.white"
+      },
+      "focus": "tokens.color.primary.500"
+    },
+    "action": {
+      "primary": "tokens.color.primary.500",
+      "primaryHover": "tokens.color.primary.600",
+      "secondary": "tokens.color.secondary.500",
+      "secondaryHover": "tokens.color.secondary.600",
+      "success": "tokens.color.success.500",
+      "warning": "tokens.color.warning.500",
+      "danger": "tokens.color.danger.500",
+      "dangerHover": "tokens.color.danger.400",
+      "info": "tokens.color.secondary.500"
+    },
+    "status": {
+      "success": {
+        "fg": "tokens.color.success.500",
+        "bgSoft": "tokens.color.success.100"
+      },
+      "warning": {
+        "fg": "tokens.color.warning.700",
+        "bgSoft": "tokens.color.warning.100"
+      },
+      "danger": {
+        "fg": "tokens.color.danger.500",
+        "bgSoft": "tokens.color.danger.100"
+      },
+      "info": {
+        "fg": "tokens.color.secondary.700",
+        "bgSoft": "tokens.color.secondary.100"
+      }
+    },
+    "aliases": {
+      "ui-color-neutral-50": "tokens.color.neutral.50",
+      "ui-color-neutral-100": "tokens.color.neutral.100",
+      "ui-color-neutral-200": "tokens.color.neutral.200",
+      "ui-color-neutral-300": "tokens.color.neutral.300",
+      "ui-color-neutral-400": "tokens.color.neutral.400",
+      "ui-color-neutral-500": "tokens.color.neutral.500",
+      "ui-color-neutral-600": "tokens.color.neutral.600",
+      "ui-color-neutral-700": "tokens.color.neutral.700",
+      "ui-color-neutral-800": "tokens.color.neutral.800",
+      "ui-color-neutral-900": "tokens.color.neutral.900",
+      "ui-color-primary-200": "tokens.color.primary.200",
+      "ui-color-primary-300": "tokens.color.primary.300",
+      "ui-color-primary-400": "tokens.color.primary.400",
+      "ui-color-primary-500": "tokens.color.primary.500",
+      "ui-color-primary-600": "tokens.color.primary.600",
+      "ui-color-primary-800": "tokens.color.primary.800",
+      "ui-primary": "tokens.color.primary.500",
+      "ui-secondary": "tokens.color.secondary.500",
+      "ui-success": "tokens.color.success.500",
+      "ui-warning": "tokens.color.warning.500",
+      "ui-error": "tokens.color.danger.500",
+      "ui-info": "tokens.color.secondary.500"
+    }
+  },
+  "modes": {
+    "default": "dark",
+    "light": {
+      "ui-text-dimmed": "tokens.color.neutral.400",
+      "ui-text-muted": "tokens.color.neutral.500",
+      "ui-text-toned": "tokens.color.neutral.600",
+      "ui-text": "tokens.color.neutral.700",
+      "ui-text-highlighted": "tokens.color.neutral.900",
+      "ui-text-inverted": "tokens.color.white",
+      "ui-bg": "tokens.color.white",
+      "ui-bg-muted": "tokens.color.neutral.50",
+      "ui-bg-elevated": "tokens.color.neutral.100",
+      "ui-bg-accented": "tokens.color.neutral.200",
+      "ui-bg-inverted": "tokens.color.neutral.900",
+      "ui-border": "tokens.color.neutral.200",
+      "ui-border-muted": "tokens.color.neutral.200",
+      "ui-border-accented": "tokens.color.neutral.300",
+      "ui-border-inverted": "tokens.color.neutral.900"
+    },
+    "dark": {
+      "ui-text-dimmed": "tokens.color.neutral.500",
+      "ui-text-muted": "tokens.color.neutral.400",
+      "ui-text-toned": "tokens.color.neutral.300",
+      "ui-text": "tokens.color.neutral.200",
+      "ui-text-highlighted": "tokens.color.white",
+      "ui-text-inverted": "tokens.color.neutral.900",
+      "ui-bg": "tokens.color.neutral.900",
+      "ui-bg-muted": "tokens.color.neutral.800",
+      "ui-bg-elevated": "tokens.color.neutral.800",
+      "ui-bg-accented": "tokens.color.neutral.700",
+      "ui-bg-inverted": "tokens.color.white",
+      "ui-border": "tokens.color.neutral.800",
+      "ui-border-muted": "tokens.color.neutral.700",
+      "ui-border-accented": "tokens.color.neutral.700",
+      "ui-border-inverted": "tokens.color.white"
+    }
+  },
+  "evidence": {
+    "observed": [
+      "Live stake route shell preloads ABCWhyte-Regular.woff2 and toggles color mode classes using dark as fallback.",
+      "Production CSS defines @font-face for ABC Whyte, ABC Whyte Mono, Inter, and Proxima Nova.",
+      "Production CSS defines brand scale --color-brand-50..950 and injective palette aliases (inj-sky, inj-black, inj-coral, etc.).",
+      "Production CSS defines expanded palettes: midnight, ocean, lemon, lime, coral, sand, cinnamon, turquoise, aubergine.",
+      "Production CSS defines spacing base --spacing: .25rem and utility usage confirms half-step multipliers (e.g., 3.5, 4.5, 8.5).",
+      "Production CSS defines typography scale variables for xs/sm/base/lg/xl/2xl/3xl/4xl/5xl/7xl with line-height pairs.",
+      "Production CSS defines radius variables xs..2xl and shadow utility values for xs/sm/md/lg.",
+      "Production CSS defines motion tokens: default transition duration 0.15s and cubic-bezier(0.4,0,0.2,1), plus ease-in and ease-out.",
+      "Rendered /stake content shows staking form, rewards cards, and validator data-table patterns.",
+      "Rendered /governance content shows proposal list, KPI stats, and tab-like filter controls.",
+      "Rendered /community-buyback content shows gradient card treatment, buyback history table, and stat blocks.",
+      "Rendered /wallet and /ecosystem content confirm empty-state card patterns and media-heavy card grid patterns."
+    ],
+    "inferred": [
+      {
+        "item": "ui-color-neutral-50..900 map to neutral scale from observed old-neutral values",
+        "confidence": 0.79,
+        "reason": "ui-color-neutral tokens are referenced extensively but not explicitly declared in fetched CSS; references align with neutral role usage in light/dark mode mappings."
+      },
+      {
+        "item": "ui-color-primary-200/300/400/500/600/800 map to brand scale tokens",
+        "confidence": 0.84,
+        "reason": "primary utilities co-occur with brand-* classes and matching tonal behavior across states indicates shared source scale."
+      },
+      {
+        "item": "ui-primary resolves to ui-color-primary-500",
+        "confidence": 0.9,
+        "reason": "semantic action utilities consistently use ui-primary for primary-filled surfaces and hover variants tied to primary-600."
+      },
+      {
+        "item": "ui-secondary resolves to secondary sky scale (500 baseline)",
+        "confidence": 0.58,
+        "reason": "secondary semantic tokens are referenced without direct declaration; sky palette is the closest observed non-primary informational accent family."
+      },
+      {
+        "item": "ui-success/ui-warning/ui-error/ui-info map to success.500/warning.500/danger.500/secondary.500",
+        "confidence": 0.66,
+        "reason": "status naming conventions and observed utility usage patterns match standard semantic assignment, but explicit source declarations were not present in fetched CSS."
+      },
+      {
+        "item": "mode default remains dark",
+        "confidence": 0.95,
+        "reason": "inline boot script sets color mode preference fallback to dark when local storage key is missing."
+      }
+    ]
+  }
+}

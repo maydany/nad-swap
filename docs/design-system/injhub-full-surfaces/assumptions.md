@@ -1,0 +1,7 @@
+- Scope is the full InjHub product surface (`/stake`, `/wallet`, `/governance`, `/community-buyback`, `/ecosystem`), not only staking flows.
+- Strict clone means token values and interaction semantics are preserved, while layout-level reconstruction remains componentized and reusable.
+- Light and dark mode are both modeled, with dark set as default because the boot script falls back to `dark` when no preference exists.
+- Where runtime semantic variables (`--ui-color-*`, `--ui-primary`, `--ui-success`, etc.) are referenced but not explicitly declared in fetched CSS, mappings are inferred and documented in `design-system.json` evidence.
+- CSS-observed values are treated as authoritative due limited screenshot rendering in this execution environment.
+- `ui-secondary` and `ui-info` are inferred onto the observed secondary/sky family because no direct declarations were retrievable.
+- Component recipes are token-driven; they avoid page-specific naming unless the token is part of Injective brand identity.

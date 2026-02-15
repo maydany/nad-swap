@@ -1,0 +1,26 @@
+schema_version: "1.0"
+package_name: "injhub-full-surfaces-design-system"
+generated_at: "2026-02-15T15:45:00Z"
+source:
+  type: "mixed"
+  value: "https://injhub.com/stake + https://injhub.com/wallet + https://injhub.com/governance + https://injhub.com/community-buyback + https://injhub.com/ecosystem + https://injhub.com/_nuxt/entry.CWzN26OW.css"
+tailwind_target: "v4"
+match_strategy: "strict"
+modes:
+  - "light"
+  - "dark"
+component_generation_defaults:
+  source_of_truth_files:
+    - "design-system.json"
+    - "component-blueprints.json"
+  token_policy:
+    rename_forbidden: true
+    silent_token_creation_forbidden: true
+  missing_token_report:
+    required: true
+    section_name: "Missing Token Report"
+confidence:
+  overall: 0.84
+  notes:
+    - "Core palette, typography, spacing, radius, and motion tokens are directly observed from production CSS bundles."
+    - "Runtime semantic aliases (ui-color/ui-primary family) are inferred from observed references and naming conventions."

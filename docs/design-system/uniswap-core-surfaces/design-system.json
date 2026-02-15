@@ -1,0 +1,291 @@
+{
+  "meta": {
+    "name": "uniswap-core-surfaces",
+    "tailwindTarget": "v4",
+    "modes": [
+      "dark"
+    ],
+    "matchStrategy": "strict"
+  },
+  "tokens": {
+    "color": {
+      "primary": {
+        "50": "#FFE8F8",
+        "100": "#FFD1F1",
+        "200": "#FFB3E8",
+        "300": "#FF8CDB",
+        "400": "#FF63CE",
+        "500": "#FF37C7",
+        "600": "#E500A5",
+        "700": "#B80084",
+        "800": "#8A0063",
+        "900": "#5A003F"
+      },
+      "secondary": {
+        "100": "#FFFFFFD9",
+        "200": "#FFFFFFA6",
+        "300": "#FFFFFF94",
+        "400": "#FFFFFF61",
+        "500": "#FFFFFF1F",
+        "600": "#FFFFFF14",
+        "700": "#0000000F",
+        "800": "#0000000A",
+        "900": "#00000000"
+      },
+      "accent": {
+        "100": "#D0D9F8",
+        "200": "#4C82FB",
+        "300": "#4981FF",
+        "400": "#23A3FF",
+        "500": "#0052FF",
+        "600": "#0047FF",
+        "700": "#10143D",
+        "800": "#040E34",
+        "900": "#02071A"
+      },
+      "neutral": {
+        "0": "#FFFFFF",
+        "50": "#FCFCFC",
+        "100": "#F5F5F5",
+        "200": "#D9D9D9",
+        "300": "#B3B3B3",
+        "400": "#8C8C8C",
+        "500": "#666666",
+        "600": "#393939",
+        "700": "#2F2F2F",
+        "800": "#242424",
+        "900": "#1F1F1F",
+        "950": "#131313"
+      },
+      "success": {
+        "100": "#093A16",
+        "300": "#15863C",
+        "500": "#21C95E",
+        "700": "#0C8911"
+      },
+      "warning": {
+        "100": "#7A5801",
+        "300": "#996F01",
+        "500": "#FFBF17",
+        "700": "#FFDD0D"
+      },
+      "danger": {
+        "100": "#BF0D0D",
+        "300": "#E10F0F",
+        "500": "#FF593C",
+        "700": "#FF401F"
+      }
+    },
+    "semantic": {
+      "bg": {
+        "base": "color.neutral.950",
+        "raised": "color.neutral.900",
+        "muted": "color.neutral.800",
+        "subtle": "color.secondary.500",
+        "overlay": "color.secondary.600",
+        "scrim": "#00000099"
+      },
+      "text": {
+        "primary": "color.neutral.0",
+        "secondary": "color.secondary.200",
+        "tertiary": "color.secondary.400",
+        "inverse": "color.neutral.950",
+        "onAccent": "color.neutral.0"
+      },
+      "border": {
+        "default": "color.secondary.500",
+        "muted": "color.secondary.600",
+        "strong": "color.secondary.400",
+        "focus": "color.primary.500"
+      },
+      "action": {
+        "primary": "color.primary.500",
+        "primaryHover": "color.primary.600",
+        "secondary": "color.secondary.500",
+        "secondaryHover": "color.secondary.400",
+        "danger": "color.danger.500",
+        "dangerHover": "color.danger.700",
+        "success": "color.success.500",
+        "warning": "color.warning.500"
+      }
+    },
+    "typography": {
+      "fontFamily": {
+        "sans": [
+          "Basel",
+          "Inter",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "sans-serif"
+        ],
+        "sansVariable": [
+          "Basel",
+          "InterVariable",
+          "Inter",
+          "sans-serif"
+        ],
+        "mono": [
+          "IBM Plex Mono",
+          "ui-monospace",
+          "SFMono-Regular",
+          "monospace"
+        ]
+      },
+      "fontSize": {
+        "xs": {
+          "size": "12px",
+          "lineHeight": "16px",
+          "letterSpacing": "0",
+          "weight": 485
+        },
+        "sm": {
+          "size": "14px",
+          "lineHeight": "20px",
+          "letterSpacing": "0",
+          "weight": 485
+        },
+        "base": {
+          "size": "16px",
+          "lineHeight": "24px",
+          "letterSpacing": "0",
+          "weight": 485
+        },
+        "lg": {
+          "size": "18px",
+          "lineHeight": "26px",
+          "letterSpacing": "0",
+          "weight": 535
+        },
+        "xl": {
+          "size": "20px",
+          "lineHeight": "30px",
+          "letterSpacing": "-0.01em",
+          "weight": 535
+        },
+        "2xl": {
+          "size": "24px",
+          "lineHeight": "34px",
+          "letterSpacing": "-0.015em",
+          "weight": 535
+        }
+      },
+      "fontWeight": {
+        "book": 485,
+        "medium": 535,
+        "semibold": 600,
+        "bold": 700
+      }
+    },
+    "spacing": {
+      "0": "0px",
+      "1": "4px",
+      "2": "8px",
+      "3": "12px",
+      "4": "16px",
+      "5": "20px",
+      "6": "24px",
+      "7": "28px",
+      "8": "32px",
+      "10": "40px",
+      "12": "48px",
+      "14": "56px",
+      "16": "64px"
+    },
+    "radius": {
+      "none": "0px",
+      "xs": "4px",
+      "sm": "6px",
+      "md": "8px",
+      "lg": "12px",
+      "xl": "16px",
+      "2xl": "20px",
+      "3xl": "24px",
+      "4xl": "32px",
+      "full": "999999px"
+    },
+    "shadow": {
+      "sm": "0px 0px 10px 0px rgba(34, 34, 34, 0.04)",
+      "md": "4px 4px 8px rgba(0, 0, 0, 0.32)",
+      "lg": "12px 16px 24px rgba(0, 0, 0, 0.24), 12px 8px 12px rgba(0, 0, 0, 0.24), 4px 4px 8px rgba(0, 0, 0, 0.32)"
+    },
+    "borderWidth": {
+      "DEFAULT": "1px",
+      "2": "2px"
+    },
+    "motion": {
+      "duration": {
+        "fast": "125ms",
+        "base": "250ms",
+        "slow": "500ms"
+      },
+      "easing": {
+        "ease": "ease",
+        "in": "ease-in",
+        "out": "ease-out",
+        "inOut": "ease-in-out",
+        "stiff": "cubic-bezier(0.17, 0.67, 0.45, 1)",
+        "quick": "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+        "bouncy": "cubic-bezier(0.34, 1.56, 0.64, 1)"
+      }
+    },
+    "breakpoints": {
+      "xxs": "360px",
+      "xs": "380px",
+      "sm": "450px",
+      "md": "640px",
+      "lg": "768px",
+      "xl": "1024px",
+      "2xl": "1280px",
+      "3xl": "1536px"
+    },
+    "container": {
+      "maxWidth": {
+        "base": "1200px",
+        "lg": "1280px",
+        "xl": "1536px"
+      },
+      "paddingInline": "24px"
+    }
+  },
+  "evidence": {
+    "observed": [
+      "app.uniswap.org index HTML preloads Basel-Grotesk Book/Medium and sets global font-family to Basel.",
+      "Production token object includes dark neutral/surface colors: neutral1=#FFFFFF, surface1=#131313, surface2=#1F1F1F, surface3Solid=#393939.",
+      "Production token object includes light neutral/surface colors: neutral1=#131313, surface1=#FFFFFF, surface2=#F9F9F9, surface3Solid=#F2F2F2.",
+      "Accent colors in production token object: accent1=#FF37C7 and accent1Hovered=#E500A5.",
+      "Dark status colors observed: success=#21C95E, warning=#FFBF17, critical=#FF593C.",
+      "Light status colors observed: success=#0C8911, warning=#996F01, critical=#E10F0F.",
+      "Radii scale observed in production constants: 4, 6, 8, 12, 16, 20, 24, 32, full.",
+      "Breakpoints observed in production constants: 360, 380, 450, 640, 768, 1024, 1280, 1536.",
+      "Motion durations observed in production constants: fast=125ms, medium=250ms, slow=500ms.",
+      "Transition easings observed in production constants include ease-in-out and cubic-bezier presets for stiff/quick/bouncy."
+    ],
+    "inferred": [
+      {
+        "item": "primary scale steps 50-900 around #FF37C7",
+        "confidence": 0.82,
+        "reason": "Only primary and hover values are directly observed; intermediate scale steps were interpolated for reusable Tailwind ramps."
+      },
+      {
+        "item": "semantic bg/text/border/action role mapping",
+        "confidence": 0.86,
+        "reason": "Role mapping is inferred from token naming and swap UI patterns rather than explicit semantic groups in source."
+      },
+      {
+        "item": "typography size ramp xs-2xl",
+        "confidence": 0.77,
+        "reason": "16px baseline is directly observed; the full scale is harmonized with observed 14/16/20 values and production UI density."
+      },
+      {
+        "item": "container maxWidth and padding defaults",
+        "confidence": 0.74,
+        "reason": "1200px max width is observed; additional container tiers are inferred from production breakpoints."
+      },
+      {
+        "item": "shadow token stratification sm/md/lg",
+        "confidence": 0.79,
+        "reason": "Observed deep/shallow shadow strings were normalized into a three-tier token system for component reuse."
+      }
+    ]
+  }
+}
