@@ -13,5 +13,5 @@
 | 9 | Pair address resolution via `factory.getPair` | Confirmed | Remove INIT_CODE_HASH derivation dependence. |
 | 10 | Quote-out flash paths include sell tax | Confirmed | Strategy cost models must include quote output tax. |
 | 11 | Sell exact-in quote uses 1 wei safe margin | Confirmed | Router quotes intentionally conservative by <=1 wei. |
-| 12 | claimQuoteTax may absorb quote dust on reserve sync | Confirmed | Accounting/reporting should treat this as expected behavior. Pre-release hard break: legacy selectors (`feeCollector/accumulatedQuoteFees/claimQuoteFees`) are removed. |
+| 12 | claimQuoteTax keeps reserves unchanged; quote dust remains skimmable | Confirmed | Accounting/reporting should treat claim as tax-vault withdrawal only. Quote dust is not forcibly LP-owned at claim timing and remains removable via `skim`. Pre-release hard break: legacy selectors (`feeCollector/accumulatedQuoteFees/claimQuoteFees`) are removed. |
 | 13 | Storage slot compatibility for V2 fields is mandatory | Confirmed | `check_storage_layout.py` gate active in CI. |

@@ -63,7 +63,7 @@ Uniswap V2를 포크하여 **Pair `swap()` 수학 내부에 buy/sell 거래세�
 
 **코어 강제 (Core Enforcement):** 세금 로직을 Router가 아닌 Pair `swap()` 수학 내부에 배치합니다. 대안으로 Router에서 세금을 부과하는 방식(V2 FOT 패턴)이 있지만, 이는 Router를 우회하는 직접 호출을 막을 수 없습니다. 코어 내장 방식은 Pair 코드의 복잡성이 증가하는 트레이드오프가 있지만, 우회 불가능이라는 보안 보장을 얻습니다.
 
-**Tax Vault:** 매 스왑에서 세금을 즉시 ERC20 전송하지 않고, `accumulatedQuoteTax` 상태 변수에 장부 적립합니다. 이로써 스왑당 ~21,000 gas를 절감합니다. 트레이드오프는 `taxCollector`가 별도로 `claimQuoteTax()`를 호출해야 세금을 수령할 수 있다는 점이며, claim 시점의 quote dust가 LP reserve에 흡수될 수 있습니다.
+**Tax Vault:** 매 스왑에서 세금을 즉시 ERC20 전송하지 않고, `accumulatedQuoteTax` 상태 변수에 장부 적립합니다. 이로써 스왑당 ~21,000 gas를 절감합니다. 트레이드오프는 `taxCollector`가 별도로 `claimQuoteTax()`를 호출해야 세금을 수령할 수 있다는 점이며, claim은 reserve를 재동기화하지 않으므로 quote dust는 skimmable 상태로 유지됩니다.
 
 **역산 수학 (Reverse Math):** sell 방향에서 사용자가 수령할 Net 금액을 기준으로, Pair 내부에서 세금 포함 Gross 금액을 ceil 역산합니다. 이를 통해 Router의 quote와 실제 실행 결과가 정확히 일치합니다. 트레이드오프로 Library에서 floor로 계산한 `grossOut`과 Pair에서 ceil로 역산한 `grossOut` 사이에 최대 1 wei 차이가 발생할 수 있으며, Router는 이를 `grossOut - 1` 안전 마진으로 처리합니다.
 
@@ -304,9 +304,9 @@ function claimQuoteTax(address to) external lock;
 // require(msg.sender == taxCollector)
 ```
 
-`taxCollector`가 누적된 quote 세금을 수령합니다. Claim 후 tax vault=0이 되고, reserve가 raw 잔고 기준으로 재동기화됩니다.
+`taxCollector`가 누적된 quote 세금을 수령합니다. Claim은 tax vault만 0으로 리셋하고 reserve/TWAP는 건드리지 않습니다.
 
-> **참고**: claim 시점의 quote 측 dust(직접 전송 등으로 발생한 미량)가 LP reserve에 흡수될 수 있습니다. 이는 의도된 동작입니다.
+> **참고**: claim 시점의 quote 측 dust(직접 전송 등으로 발생한 미량)는 reserve에 편입되지 않고 그대로 유지됩니다. dust는 `skim`으로 회수할 수 있으며, 이후 `sync`/`swap`/`mint`/`burn` 경로에서만 reserve 반영이 일어날 수 있습니다.
 
 #### 2-7. `setTaxConfig` — 새로 추가 (Factory 경유)
 

@@ -11,7 +11,7 @@
 | PAIR-007 | 6. non-zero input | `protocol/src/core/NadSwapV2Pair.sol` | `test_swap_zeroInput_revert` | `FOUNDRY_OFFLINE=true forge test --match-test test_swap_zeroInput_revert` | Implemented |
 | PAIR-008 | 8. claim access + recipient | `protocol/src/core/NadSwapV2Pair.sol` | `test_claim_nonTaxCollector_revert,test_claim_zeroAddress_revert` | `FOUNDRY_OFFLINE=true forge test --match-contract PairSwapTest` | Implemented |
 | PAIR-009 | 8. claim vault reset | `protocol/src/core/NadSwapV2Pair.sol` | `test_claim_vaultReset_reserveSync` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_vaultReset_reserveSync` | Implemented |
-| PAIR-010 | 8. claim reserve resync + dust semantics | `protocol/src/core/NadSwapV2Pair.sol` | `test_claim_vaultReset_reserveSync,test_sync_afterClaim` | `FOUNDRY_OFFLINE=true forge test --match-contract PairLifecycleTest` | Implemented |
+| PAIR-010 | 8. claim reserve unchanged + dust semantics | `protocol/src/core/NadSwapV2Pair.sol` | `test_claim_vaultReset_reserveSync,test_claim_doesNotAbsorbDust` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_doesNotAbsorbDust` | Implemented |
 | FACT-001 | 10. createPair access control | `protocol/src/core/NadSwapV2Factory.sol` | `test_createPair_onlyPairAdmin` | `FOUNDRY_OFFLINE=true forge test --match-test test_createPair_onlyPairAdmin` | Implemented |
 | FACT-002 | 10. BOTH_QUOTE | `protocol/src/core/NadSwapV2Factory.sol` | `test_createPair_bothQuote_revert` | `FOUNDRY_OFFLINE=true forge test --match-test test_createPair_bothQuote_revert` | Implemented |
 | FACT-003 | 10. QUOTE_REQUIRED | `protocol/src/core/NadSwapV2Factory.sol` | `test_createPair_noQuote_revert` | `FOUNDRY_OFFLINE=true forge test --match-test test_createPair_noQuote_revert` | Implemented |
@@ -39,8 +39,8 @@
 | SEC-003 | 16. static analysis gate | `scripts/gates/check_slither_gate.py` | `N/A` | `python3 scripts/gates/check_slither_gate.py` | Implemented |
 ## Spec Section 16 Test Coverage
 
-- Coverage target: `87` spec `test_*` names + `5` spec `invariant_*` names
-- Current status: `92/92` mapped
+- Coverage target: `88` spec `test_*` names + `5` spec `invariant_*` names
+- Current status: `93/93` mapped
 
 | Test Name | Code File | Verification Command | Status |
 |---|---|---|---|
@@ -80,6 +80,7 @@
 | `test_burn_vaultDrift_revert` | `protocol/test/core/PairLifecycle.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_burn_vaultDrift_revert` | Implemented |
 | `test_sync_vaultDrift_revert` | `protocol/test/core/PairLifecycle.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_sync_vaultDrift_revert` | Implemented |
 | `test_claim_vaultReset_reserveSync` | `protocol/test/core/PairSwap.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_vaultReset_reserveSync` | Implemented |
+| `test_claim_doesNotAbsorbDust` | `protocol/test/core/ClaimTaxAdvanced.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_doesNotAbsorbDust` | Implemented |
 | `test_claim_selfTransfer_revert` | `protocol/test/core/ClaimTaxAdvanced.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_selfTransfer_revert` | Implemented |
 | `test_claim_zeroAddress_revert` | `protocol/test/core/PairSwap.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_zeroAddress_revert` | Implemented |
 | `test_claim_noTax_revert` | `protocol/test/core/PairSwap.t.sol` | `FOUNDRY_OFFLINE=true forge test --match-test test_claim_noTax_revert` | Implemented |

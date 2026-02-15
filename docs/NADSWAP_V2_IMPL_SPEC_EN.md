@@ -432,19 +432,14 @@ function claimQuoteTax(address to) external lock {
     
     accumulatedQuoteTax = 0;
     _safeTransfer(quoteToken, to, uint(taxAmount));
-    
-    // Re-sync reserves after effective balance recalculation
-    uint raw0 = IERC20(token0).balanceOf(address(this));
-    uint raw1 = IERC20(token1).balanceOf(address(this));
-    // vault=0 so effective = raw
-    _update(raw0, raw1, reserve0, reserve1);
-    
-    emit QuoteTaxClaimed(to, fees);
+
+    // claim does not update reserves; dust remains skimmable
+    emit QuoteTaxClaimed(to, taxAmount);
 }
 ```
 
 > [!NOTE]
-> Because claim re-syncs reserves from raw balances, any quote-side dust present at claim time may be absorbed into LP-owned reserves.
+> Claim does not re-sync reserves. Quote-side dust present at claim time remains dust and can be removed via `skim`.
 
 ---
 
@@ -718,7 +713,7 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 | 21 | Factory pair integrity | `isPair[pair]` mapping check (no external calls) | |
 | 22 | 🆕 SafeERC20 usage | `_safeTransfer` (V2 original pattern) | Non-standard token (USDT etc.) compatible |
 | 23 | 🆕 First-depositor inflation guard | V2 `MINIMUM_LIQUIDITY` 1000 burn | Prevents LP share manipulation on initial supply |
-| 24 | 🆕 CEI-order safety | claim: vault=0(E) → transfer(I) → _update (post-interaction state sync) | Safe under `lock`; vault reset precedes external call |
+| 24 | 🆕 CEI-order safety | claim: vault=0(E) → transfer(I) | Safe under `lock`; vault reset precedes external call |
 | 25 | 🆕 claimQuoteTax incentive design | taxCollector calls directly (own asset recovery) | No third-party incentive needed |
 | 26 | 🆕 ERC20 return value check | `_safeTransfer` internal `require(success)` | Handles tokens that don’t return bool |
 | 27 | 🆕 Quote FOT unsupported enforcement | Router guard enforces Quote policy; FOT-style variants always revert `FOT_NOT_SUPPORTED` | Prevents Net/Gross mismatch in tax math |
@@ -728,7 +723,7 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 | 31 | 🆕 Swap target hardening | `require(to != token0 && to != token1, 'INVALID_TO')` | Restores V2-compatible safety behavior |
 | 32 | 🆕 Base allowlist removed | Factory/Router no longer enforce base allowlist | Base token policy is non-enforced at protocol level; quote policy remains enforced |
 | 33 | 🆕 Sell exact-in safe quote margin | Router quote uses `grossOut-1` before sell-tax deduction | Reduces liquidity-edge execution reverts (max 1 wei user-side conservatism) |
-| 34 | 🆕 claim dust behavior documented | claim `_update(raw0,raw1,...)` may absorb quote dust into reserves | Operational/accounting semantics are explicit to integrators |
+| 34 | 🆕 claim dust behavior documented | claim keeps reserves unchanged; quote dust stays skimmable | Operational/accounting semantics are explicit to integrators |
 | 35 | 🆕 K multiply overflow treatment | Optional guard (`adj0 == 0 || adj1 <= max/adj0`) or token policy documentation | Classified as informational hardening, not core exploit path. Current implementation adopts the explicit guard |
 
 ---
@@ -759,7 +754,7 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 | Q9 | Dual-output rejected | SINGLE_SIDE_ONLY enforced. Flash swap dual-output pattern not supported (behavioral incompatibility documented) |
 | Q10 | pairAdmin is immutable after deployment | No `setPairAdmin` function in this spec; admin role is fixed by deployment-time configuration |
 | Q11 | Router sell exact-in uses 1-wei safety margin | Improves executable-path success rate near gross liquidity edges; user quote can be up to 1 wei conservative |
-| Q12 | claim may absorb quote dust into reserves | Accepted and documented accounting semantics of `_update(raw0,raw1,...)` after claim |
+| Q12 | claim does not absorb quote dust into reserves | Claim only withdraws tax vault; dust remains removable via `skim` until explicit reserve-update paths run |
 | Q13 | K multiply overflow treated as informational hardening | Optional explicit guard or token-supply policy documentation; not required for base design correctness. Current implementation uses the explicit guard |
 
 ---
@@ -815,7 +810,8 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 
 | Test | Verification |
 |------|-------------|
-| `test_claim_vaultReset_reserveSync` | After claim: `vault=0`, reserve=raw, token receipt matches |
+| `test_claim_vaultReset_reserveSync` | After claim: `vault=0`, reserves unchanged, token receipt matches |
+| `test_claim_doesNotAbsorbDust` | 🆕 Quote dust remains outside reserves after claim and is still skimmable |
 | `test_claim_selfTransfer_revert` | 🆕 `to=address(this)` → INVALID_TO revert (prevents vault donation) |
 | `test_claim_zeroAddress_revert` | 🆕 `to=address(0)` → INVALID_TO revert |
 | `test_claim_noTax_revert` | 🆕 Claim when vault=0 → NO_TAX revert |
@@ -908,13 +904,13 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 - `getAmountsIn` multi-hop ceil cumulative error ≤ N wei (N = hop count)
 - Sell exact-in grossOut roundtrip (floor→ceil) error ≤ 1 wei
 - 🆕 Vault monotonically increasing invariant maintained across arbitrary tax changes
-- 🆕 `rawQuote = reserveQuote` (vault=0) after arbitrary claimQuoteTax
+- 🆕 claim leaves reserves unchanged while resetting `vault=0`; quote-side dust remains skimmable (`test_claim_doesNotAbsorbDust`)
 
 ### Invariant
 
 - `rawQuote = reserve + vault + dust`, `rawBase = reserve + dust`
 - `accumulatedQuoteTax` monotonically increasing (except claim), no overflow
-- claim sets `vault=0` and re-syncs reserves to raw balances; quote-side dust may be absorbed into reserves (`test_claim_vaultReset_reserveSync`, `test_sync_afterClaim`)
+- claim sets `vault=0` without reserve re-sync; quote-side dust remains outside reserves until explicit update paths run (`test_claim_vaultReset_reserveSync`, `test_claim_doesNotAbsorbDust`)
 - 🆕 If `totalSupply > 0` then `reserve0 > 0 && reserve1 > 0` (liquidity consistency)
 - 🆕 For all pairs where `isPair[pair] == true`: `getPair[t0][t1] == pair` (Factory mapping consistency)
 
@@ -932,7 +928,7 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 
 - **When tax=0, swap math and quote paths produce results identical to V2** (structural incompatibilities like Factory ABI, Router auto-creation, SINGLE_SIDE_ONLY are separate)
 - 🆕 **When tax=0 and feeTo disabled**, mint/burn LP token amounts are identical to V2
-- 🆕 claim dust semantics are explicit: reserve sync may absorb quote-side dust (`test_claim_vaultReset_reserveSync`, `test_sync_afterClaim`)
+- 🆕 claim dust semantics are explicit: claim does not absorb quote-side dust and `skim` can still remove it (`test_claim_vaultReset_reserveSync`, `test_claim_doesNotAbsorbDust`)
 - 🆕 Storage-layout regression gate: `forge inspect` diff confirms V2-original field slot/offset/type parity (append-only policy enforced)
 
 ---
@@ -976,5 +972,5 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 | 9 | Pair address derivation | SDKs may hardcode `INIT_CODE_HASH` | **Use `factory.getPair` for routing** | Avoid bytecode-hash drift after Pair upgrades |
 | 10 | Quote flash cost assumption | V2 assumes same-token flash cost mostly LP fee | **sellTax is included on quoteOut paths** | Re-model real costs for quote flash(out/in) strategies |
 | 11 | sell exact-in quote behavior | `netOut = floor(grossOut×(1-tax))` | **Router uses `grossOut-1` safety margin before tax deduction** | Expect up to 1 wei conservative quote on sell exact-in |
-| 12 | claim + quote dust semantics | Dust usually removable via `skim` | **claim reserve sync can absorb quote-side dust** | Update accounting/indexer assumptions around claim events |
+| 12 | claim + quote dust semantics | Dust usually removable via `skim` | **claim keeps reserves unchanged; quote-side dust stays skimmable** | Update accounting/indexer assumptions around claim events |
 | 13 | Storage slot hardcoding (`eth_getStorageAt`) | Some indexers/bots parse V2 fixed slots directly (e.g., reserve slot assumptions) | **V2-original slot offsets must remain unchanged; NadSwap fields are append-only** | If violated, off-chain parsers/charts/MEV infra may break despite on-chain logic being sound |

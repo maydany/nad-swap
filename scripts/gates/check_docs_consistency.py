@@ -121,11 +121,19 @@ def verify_claim_semantics_doc():
     if "Effective reserve unchanged after claim" in text:
         fail("Spec still contains outdated claim invariant wording: 'unchanged after claim'")
 
-    required_snippets = [
+    forbidden_snippets = [
         "claim sets `vault=0` and re-syncs reserves to raw balances",
         "quote-side dust may be absorbed into reserves",
-        "`test_claim_vaultReset_reserveSync`",
-        "`test_sync_afterClaim`",
+    ]
+    for snippet in forbidden_snippets:
+        if snippet in text:
+            fail(f"Spec still contains outdated claim semantics snippet: {snippet}")
+
+    required_snippets = [
+        "Claim does not re-sync reserves. Quote-side dust present at claim time remains dust and can be removed via `skim`.",
+        "claim keeps reserves unchanged; quote dust stays skimmable",
+        "claim sets `vault=0` without reserve re-sync",
+        "`test_claim_doesNotAbsorbDust`",
     ]
     for snippet in required_snippets:
         if snippet not in text:

@@ -188,14 +188,14 @@ contract PairSwapTest is TestBase {
         assertGt(taxAmount, 0, "tax not accrued");
 
         uint256 beforeBal = quote.balanceOf(FEE_RECIPIENT);
+        (uint256 reserveQuoteBefore, uint256 reserveBaseBefore) = _reservesQuoteBase();
         vm.prank(COLLECTOR);
         pair.claimQuoteTax(FEE_RECIPIENT);
 
         (uint256 reserveQuote, uint256 reserveBase) = _reservesQuoteBase();
-        (uint256 rawQuote, uint256 rawBase) = _rawQuoteBase();
         assertEq(pair.accumulatedQuoteTax(), 0, "vault not reset");
         assertEq(quote.balanceOf(FEE_RECIPIENT) - beforeBal, taxAmount, "tax transfer mismatch");
-        assertEq(reserveQuote, rawQuote, "quote reserve not synced to raw");
-        assertEq(reserveBase, rawBase, "base reserve not synced to raw");
+        assertEq(reserveQuote, reserveQuoteBefore, "quote reserve changed on claim");
+        assertEq(reserveBase, reserveBaseBefore, "base reserve changed on claim");
     }
 }

@@ -34,6 +34,36 @@ contract ClaimTaxAdvancedTest is PairFixture {
         assertEq(afterRecipient - beforeRecipient, taxAmount, "claim transfer mismatch");
     }
 
+    function test_claim_doesNotAbsorbDust() public {
+        _accrueVault();
+        uint256 taxAmount = pair.accumulatedQuoteTax();
+        assertGt(taxAmount, 0, "tax not accrued");
+
+        uint256 quoteDust = 3 ether;
+        _mintToken(quoteTokenAddr, OTHER, quoteDust);
+        vm.prank(OTHER);
+        _safeTokenTransfer(quoteTokenAddr, address(pair), quoteDust);
+
+        (uint256 reserveQuoteBefore, uint256 reserveBaseBefore) = _reservesQuoteBase();
+        uint256 recipientBefore = _quoteBalance(FEE_RECIPIENT);
+
+        vm.prank(COLLECTOR);
+        pair.claimQuoteTax(FEE_RECIPIENT);
+
+        (uint256 reserveQuoteAfter, uint256 reserveBaseAfter) = _reservesQuoteBase();
+        (uint256 rawQuoteAfter,) = _rawQuoteBase();
+        assertEq(pair.accumulatedQuoteTax(), 0, "vault not reset");
+        assertEq(_quoteBalance(FEE_RECIPIENT) - recipientBefore, taxAmount, "claim transfer mismatch");
+        assertEq(reserveQuoteAfter, reserveQuoteBefore, "claim absorbed quote dust");
+        assertEq(reserveBaseAfter, reserveBaseBefore, "base reserve changed on claim");
+        assertEq(rawQuoteAfter, reserveQuoteAfter + quoteDust, "quote dust should remain after claim");
+
+        uint256 skimBefore = _quoteBalance(OTHER);
+        pair.skim(OTHER);
+        uint256 skimAfter = _quoteBalance(OTHER);
+        assertEq(skimAfter - skimBefore, quoteDust, "quote dust not skimmable after claim");
+    }
+
     function test_claim_reentrancy_blocked() public {
         _accrueVault();
 

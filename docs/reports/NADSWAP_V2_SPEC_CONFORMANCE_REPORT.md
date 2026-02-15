@@ -1,11 +1,10 @@
 # NadSwap V2 Spec Conformance Report (Updated)
 
 Date: 2026-02-14
-Scope: `draft_1` excluded
+Scope: current repository tree
 
 ## Validation Scope
 - Included: `protocol/src`, `protocol/test`, `scripts`, `docs/traceability`, `docs/reports`
-- Excluded: `draft_1/**`
 
 ## Evidence Commands
 - `cd protocol && FOUNDRY_OFFLINE=true forge test --no-match-path "test/fork/**"`
@@ -21,14 +20,14 @@ Scope: `draft_1` excluded
 ## Gate Results
 <!-- GENERATED:START -->
 - Metrics source: `docs/reports/NADSWAP_V2_VERIFICATION_METRICS.json`
-- Generated at: `2026-02-14T20:30:38.691093+00:00`
-- Git SHA: `7841edea9b3263330af134c6cf6470a446f0e6f7`
+- Generated at: `2026-02-15T05:35:09.835861+00:00`
+- Git SHA: `f20d4957a9cd03f7b51c4ed5c22cd87255282d87`
 - Baseline source: `docs/reports/NADSWAP_V2_VERIFICATION_BASELINE.json`
-- Foundry tests (non-fork strict): **PASS** (`104/104`)
+- Foundry tests (non-fork strict): **PASS** (`105/105`)
 - Foundry tests (fork suites): **PASS** (`47/47`)
-- Foundry tests (non-fork all): **PASS** (`109/109`)
+- Foundry tests (non-fork all): **PASS** (`110/110`)
 - Traceability requirements: **PASS** (`30/30`)
-- Spec Section 16 named tests: **PASS** (`87/87`)
+- Spec Section 16 named tests: **PASS** (`88/88`)
 - Spec Section 16 named invariants: **PASS** (`5/5`)
 - Math consistency vectors: **PASS** (`1386/1386`)
 - Migration checklist items: **PASS** (`13/13`)

@@ -432,19 +432,14 @@ function claimQuoteTax(address to) external lock {
     
     accumulatedQuoteTax = 0;
     _safeTransfer(quoteToken, to, uint(taxAmount));
-    
-    // effective balance 재계산 후 reserve 재동기화
-    uint raw0 = IERC20(token0).balanceOf(address(this));
-    uint raw1 = IERC20(token1).balanceOf(address(this));
-    // vault=0 이므로 effective = raw
-    _update(raw0, raw1, reserve0, reserve1);
-    
-    emit QuoteTaxClaimed(to, fees);
+
+    // claim은 reserve를 업데이트하지 않음(dust는 skim 가능 상태 유지)
+    emit QuoteTaxClaimed(to, taxAmount);
 }
 ```
 
 > [!NOTE]
-> claim은 raw 잔고로 reserve를 재동기화하므로, claim 시점의 quote 측 dust가 LP 소유 reserve로 흡수될 수 있습니다.
+> claim은 reserve를 재동기화하지 않습니다. claim 시점 quote dust는 dust로 남고 `skim`으로 회수할 수 있습니다.
 
 ---
 
@@ -718,7 +713,7 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 | 21 | Factory pair 무결성 | `isPair[pair]` 매핑 확인(외부 호출 없음) | |
 | 22 | 🆕 SafeERC20 사용 | `_safeTransfer` (V2 원형 패턴) | 비표준 토큰(USDT 등) 호환 |
 | 23 | 🆕 최초 예치자 인플레이션 가드 | V2 `MINIMUM_LIQUIDITY` 1000 소각 | 초기 공급 시 LP 지분 조작 방지 |
-| 24 | 🆕 CEI 순서 안전성 | claim: vault=0(E) → transfer(I) → _update (상호작용 후 상태 동기화) | `lock` 하에서 안전, 외부 호출 전 vault 초기화 |
+| 24 | 🆕 CEI 순서 안전성 | claim: vault=0(E) → transfer(I) | `lock` 하에서 안전, 외부 호출 전 vault 초기화 |
 | 25 | 🆕 claimQuoteTax 인센티브 설계 | taxCollector가 직접 호출(자산 회수) | 제3자 인센티브 불필요 |
 | 26 | 🆕 ERC20 반환값 검사 | `_safeTransfer` 내부 `require(success)` | bool 미반환 토큰 처리 |
 | 27 | 🆕 Quote FOT 미지원 강제 | Router 가드가 Quote 정책 강제, FOT 변형은 항상 `FOT_NOT_SUPPORTED` | 세금 수학의 Net/Gross 불일치 방지 |
@@ -728,7 +723,7 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 | 31 | 🆕 swap 대상 하드닝 | `require(to != token0 && to != token1, 'INVALID_TO')` | V2 호환 안전 동작 복원 |
 | 32 | 🆕 Base allowlist 제거 | Factory/Router가 base allowlist를 더 이상 강제하지 않음 | 프로토콜 레벨 Base 정책 비강제, Quote 정책은 유지 |
 | 33 | 🆕 sell exact-in 안전 마진 quote | Router quote는 sell 세금 공제 전 `grossOut-1` 사용 | 유동성 경계 실행 revert 감소(최대 1 wei 보수적) |
-| 34 | 🆕 claim dust 동작 문서화 | claim `_update(raw0,raw1,...)`가 quote dust를 reserve로 흡수 가능 | 통합자 대상 운영/회계 의미 명확화 |
+| 34 | 🆕 claim dust 동작 문서화 | claim은 reserve를 유지하고 quote dust는 skim 가능 상태로 남김 | 통합자 대상 운영/회계 의미 명확화 |
 | 35 | 🆕 K 곱셈 오버플로우 처리 | 선택적 가드(`adj0 == 0 || adj1 <= max/adj0`) 또는 토큰 정책 문서화 | 핵심 익스플로잇 경로는 아니며 정보성 하드닝. 현재 구현은 명시 가드를 채택 |
 
 ---
@@ -759,7 +754,7 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 | Q9 | 듀얼 출력 거부 | SINGLE_SIDE_ONLY 강제. 플래시 스왑 듀얼 출력 패턴 미지원(비호환성 문서화) |
 | Q10 | pairAdmin은 배포 후 불변 | 이 명세에는 `setPairAdmin` 없음. 관리자 역할은 배포 시 설정으로 고정 |
 | Q11 | Router sell exact-in은 1 wei 안전 마진 사용 | gross 유동성 경계 근처 실행 성공률 향상. 사용자 quote는 최대 1 wei 보수적일 수 있음 |
-| Q12 | claim은 quote dust를 reserve에 흡수할 수 있음 | claim 이후 `_update(raw0,raw1,...)`의 회계 의미를 수용/문서화 |
+| Q12 | claim은 quote dust를 reserve에 흡수하지 않음 | claim은 tax vault 인출만 수행하며, dust는 명시적 reserve 업데이트 경로 전까지 `skim`으로 제거 가능 |
 | Q13 | K 곱셈 오버플로우는 정보성 하드닝으로 취급 | 명시 가드 또는 토큰 공급 정책 문서화 선택 가능. 기본 설계 정합성에는 필수 아님. 현재 구현은 명시 가드 사용 |
 
 ---
@@ -815,7 +810,8 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 
 | 테스트 | 검증 |
 |------|------|
-| `test_claim_vaultReset_reserveSync` | claim 후 `vault=0`, reserve=raw, 수령 토큰 수량 일치 |
+| `test_claim_vaultReset_reserveSync` | claim 후 `vault=0`, reserve 불변, 수령 토큰 수량 일치 |
+| `test_claim_doesNotAbsorbDust` | 🆕 quote dust는 claim 후에도 reserve에 편입되지 않고 skim으로 회수 가능 |
 | `test_claim_selfTransfer_revert` | 🆕 `to=address(this)` → INVALID_TO revert( vault donation 방지) |
 | `test_claim_zeroAddress_revert` | 🆕 `to=address(0)` → INVALID_TO revert |
 | `test_claim_noTax_revert` | 🆕 vault=0에서 claim → NO_TAX revert |
@@ -908,13 +904,13 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 - `getAmountsIn` 멀티홉 ceil 누적 오차 ≤ N wei (N = hop 수)
 - sell exact-in grossOut 라운드트립(floor→ceil) 오차 ≤ 1 wei
 - 🆕 임의 세금 변경 전반에서 vault 단조 증가 불변식 유지
-- 🆕 임의 claimQuoteTax 이후 `rawQuote = reserveQuote` (vault=0)
+- 🆕 claim은 `vault=0`으로 리셋하되 reserve는 유지하며, quote dust는 skimmable 상태를 유지 (`test_claim_doesNotAbsorbDust`)
 
 ### Invariant
 
 - `rawQuote = reserve + vault + dust`, `rawBase = reserve + dust`
 - `accumulatedQuoteTax`는 단조 증가(단 claim 제외), 오버플로우 없음
-- claim은 `vault=0` 설정 후 reserve를 raw 잔고로 재동기화하며, quote dust가 reserve로 흡수될 수 있음 (`test_claim_vaultReset_reserveSync`, `test_sync_afterClaim`)
+- claim은 `vault=0`으로 리셋하되 reserve를 재동기화하지 않으며, quote dust는 명시적 업데이트 경로 전까지 reserve 밖에 남음 (`test_claim_vaultReset_reserveSync`, `test_claim_doesNotAbsorbDust`)
 - 🆕 `totalSupply > 0`이면 `reserve0 > 0 && reserve1 > 0` (유동성 일관성)
 - 🆕 모든 `isPair[pair] == true` 페어에 대해 `getPair[t0][t1] == pair` (Factory 매핑 일관성)
 
@@ -932,7 +928,7 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 
 - **tax=0일 때 swap 수학/quote 경로는 V2와 동일한 결과를 생성** (Factory ABI, Router 자동 생성, SINGLE_SIDE_ONLY 같은 구조적 비호환은 별개)
 - 🆕 **tax=0 + feeTo 비활성일 때**, mint/burn LP 토큰 수량은 V2와 동일
-- 🆕 claim dust 의미는 명시적: reserve sync가 quote dust를 흡수할 수 있음 (`test_claim_vaultReset_reserveSync`, `test_sync_afterClaim`)
+- 🆕 claim dust 의미는 명시적: claim은 quote dust를 흡수하지 않고 `skim`으로 제거 가능 (`test_claim_vaultReset_reserveSync`, `test_claim_doesNotAbsorbDust`)
 - 🆕 스토리지 레이아웃 회귀 게이트: `forge inspect` diff로 V2 원본 필드 슬롯/오프셋/타입 동일성 확인(append-only 정책 강제)
 
 ---
@@ -976,5 +972,5 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 | 9 | Pair 주소 파생 | SDK에서 `INIT_CODE_HASH` 하드코딩 가능 | **라우팅은 `factory.getPair` 사용** | Pair 업그레이드 후 바이트코드 해시 드리프트 방지 |
 | 10 | Quote flash 비용 가정 | V2는 동일 토큰 flash 비용을 주로 LP fee로 가정 | **quoteOut 경로에 sellTax 포함** | quote flash(out/in) 전략의 실비용 재모델링 필요 |
 | 11 | sell exact-in quote 동작 | `netOut = floor(grossOut×(1-tax))` | **Router가 세금 공제 전 `grossOut-1` 안전 마진 사용** | sell exact-in quote가 최대 1 wei 보수적일 수 있음 |
-| 12 | claim + quote dust 의미 | dust는 보통 `skim`으로 제거 | **claim reserve sync가 quote dust를 흡수 가능** | claim 이벤트 주변 회계/인덱서 가정 업데이트 필요 |
+| 12 | claim + quote dust 의미 | dust는 보통 `skim`으로 제거 | **claim은 reserve를 유지하며 quote dust는 skimmable 상태 유지** | claim 이벤트 주변 회계/인덱서 가정 업데이트 필요 |
 | 13 | 스토리지 슬롯 하드코딩(`eth_getStorageAt`) | 일부 인덱서/봇이 V2 고정 슬롯을 직접 파싱 | **V2 원본 슬롯 오프셋은 유지, NadSwap 필드는 append-only** | 위반 시 온체인 로직이 정상이어도 오프체인 파서/차트/MEV 인프라가 깨질 수 있음 |

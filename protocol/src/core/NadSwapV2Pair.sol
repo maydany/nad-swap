@@ -351,11 +351,6 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
         accumulatedQuoteTax = 0;
         _safeTransfer(quoteToken, to, uint256(taxAmount));
 
-        uint256 raw0 = IERC20(token0).balanceOf(address(this));
-        uint256 raw1 = IERC20(token1).balanceOf(address(this));
-        (uint112 _reserve0, uint112 _reserve1,) = getReserves();
-        _update(raw0, raw1, _reserve0, _reserve1);
-
         emit QuoteTaxClaimed(to, taxAmount);
     }
 }
