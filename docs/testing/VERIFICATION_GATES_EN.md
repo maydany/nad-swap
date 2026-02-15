@@ -6,11 +6,11 @@
 
 ## Overview
 
-`run_all_tests.sh` executes **16 automated verification gates** across 6 layers: compilation, security, storage compatibility, mathematical correctness, specification traceability, documentation consistency, and live-chain fork testing.
+`run_all_tests.sh` executes the following orchestration:
 
 ```
 run_all_tests.sh
-├── run_local_gates.sh (Strict Gate)
+├── run_local_gates.sh --skip-fork
 │   ├── 1.  Build
 │   ├── 2.  Slither Static Analysis
 │   ├── 3.  Storage Layout
@@ -27,10 +27,35 @@ run_all_tests.sh
 │   ├── 14. Render Verification Reports
 │   ├── 15. Docs Symbol Refs
 │   └── 16. Docs Consistency
-└── run_fork_tests.sh (Monad Fork Suite — re-run)
+├── run_lens_tests.sh                   (Lens unit + Monad fork smoke)
+└── run_fork_tests.sh                   (Protocol Monad fork suite)
 ```
 
-If **any** single gate fails, the entire run reports `FAIL`. Total: **16 gates**.
+The numbered 1~16 list is the **gate count inside `run_local_gates.sh`**.
+`run_all_tests.sh` invokes local gates with `--skip-fork`, then runs the fork suite as a separate step.
+
+If **any** single stage fails, the entire run reports `FAIL`.
+
+## CLI Options Summary
+
+### `run_all_tests.sh`
+
+| Option | Meaning |
+|--------|---------|
+| `--only lens` | Run Lens suite only |
+| `--skip-lens` | Skip Lens suite |
+| `--skip-fork` | Skip protocol fork + Lens fork smoke |
+
+### `scripts/runners/run_lens_tests.sh`
+
+| Option | Meaning |
+|--------|---------|
+| `--skip-fork` | Run Lens unit tests only |
+| `--rpc <url>` | Override `MONAD_RPC_URL` |
+| `--chain-id <id>` | Override `MONAD_CHAIN_ID` |
+| `--block <n>` | Override `MONAD_FORK_BLOCK` |
+| `--latest` | Set `MONAD_FORK_BLOCK=0` (latest block) |
+| `-v|-vv|-vvv|-vvvv` | Forge verbosity |
 
 ---
 
@@ -274,14 +299,17 @@ Parses all gate results into a single JSON metrics file:
 
 | Metric Key | Source | Example |
 |------------|--------|---------|
-| `non_fork_all` | forge test output | 112 |
-| `non_fork_strict` | forge test (excl. fork + invariant) | 107 |
+| `non_fork_all` | forge test output | 117 |
+| `non_fork_strict` | forge test (excl. fork + invariant) | 112 |
 | `fork_suite_total` | fork-logs parsing | 47 |
 | `requirements_count` | YAML requirement IDs | 30 |
 | `spec_test_count` | Spec `test_*` names | 90 |
 | `spec_invariant_count` | Spec `invariant_*` names | 5 |
 | `math_consistency_total` | Python verification vectors | 1386 |
 | `migration_items_total` | Migration checklist rows | 13 |
+
+> Note: `docs/reports/NADSWAP_V2_VERIFICATION_METRICS.json` currently captures `protocol/` metrics.
+> Lens suite results are not yet aggregated into that metrics JSON.
 
 If a gate could not run due to environment issues, the collector falls back to baseline values (recorded as `BASELINE` status).
 

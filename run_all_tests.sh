@@ -7,6 +7,7 @@ RUNNERS="${ROOT}/scripts/runners"
 SKIP_SLITHER=0
 SKIP_UPSTREAM=0
 SKIP_FORK=0
+SKIP_LENS=0
 ONLY=""
 
 require_option_value() {
@@ -28,21 +29,25 @@ NadSwap V2 — 모든 검증 게이트를 한 번에 실행합니다.
 Suites:
   gates       Strict-gate (build, slither, storage, unit/fuzz, invariant,
               math, traceability, migration, docs consistency)
+  lens        NadSwap Lens V1.1 suite (unit + Monad fork smoke)
   nightly     High-depth invariant (FOUNDRY_PROFILE=invariant-nightly)
   fork        Monad fork test suite (requires RPC)
 
 Options:
-  --only <suite>          Run a single suite: gates | fork
+  --only <suite>          Run a single suite: gates | lens | fork
   --skip-slither          Skip Slither static-analysis gate.
   --skip-upstream-sync    Skip cloning/syncing upstream pinned refs.
   --skip-fork             Skip fork test suite (no RPC needed).
+  --skip-lens             Skip lens test suite.
   -h, --help              Show this help.
 
 Examples:
   ./run_all_tests.sh                          # Run everything
   ./run_all_tests.sh --skip-slither           # Skip Slither
+  ./run_all_tests.sh --skip-lens              # Skip lens suite
   ./run_all_tests.sh --skip-fork              # Skip fork tests (no RPC)
   ./run_all_tests.sh --only gates             # Gates only
+  ./run_all_tests.sh --only lens              # Lens only
   ./run_all_tests.sh --only fork              # Fork only
 EOF
 }
@@ -82,6 +87,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --skip-fork)
       SKIP_FORK=1
+      shift
+      ;;
+    --skip-lens)
+      SKIP_LENS=1
       shift
       ;;
     -h|--help)
@@ -145,20 +154,45 @@ run_fork() {
   log_pass "Fork test suite completed"
 }
 
+run_lens() {
+  log "LENS TEST SUITE"
+  if [[ "${SKIP_FORK}" -eq 1 ]]; then
+    log_step "Running: scripts/runners/run_lens_tests.sh --skip-fork"
+    if ! "${RUNNERS}/run_lens_tests.sh" --skip-fork; then
+      log_fail "Lens test suite failed"
+      return 1
+    fi
+  else
+    log_step "Running: scripts/runners/run_lens_tests.sh"
+    if ! "${RUNNERS}/run_lens_tests.sh"; then
+      log_fail "Lens test suite failed"
+      return 1
+    fi
+  fi
+  log_pass "Lens test suite completed"
+}
+
 # ─── Execute ───
 FAILED=0
 
 if [[ -n "${ONLY}" ]]; then
   case "${ONLY}" in
     gates)   run_gates   || FAILED=1 ;;
+    lens)    run_lens    || FAILED=1 ;;
     fork)    run_fork    || FAILED=1 ;;
     *)
-      log_fail "Unknown suite: ${ONLY}. Use: gates | fork"
+      log_fail "Unknown suite: ${ONLY}. Use: gates | lens | fork"
       exit 1
       ;;
   esac
 else
   run_gates || FAILED=1
+
+  if [[ "${SKIP_LENS}" -eq 0 ]]; then
+    run_lens || FAILED=1
+  else
+    log_step "Skipping lens tests (--skip-lens)"
+  fi
 
   if [[ "${SKIP_FORK}" -eq 0 ]]; then
     run_fork || FAILED=1

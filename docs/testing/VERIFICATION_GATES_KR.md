@@ -6,11 +6,11 @@
 
 ## 개요
 
-`run_all_tests.sh`는 컴파일, 보안, 스토리지 호환성, 수학적 정확성, 스펙 추적성, 문서 일관성, 라이브 체인 포크 테스트까지 6개 레이어에 걸쳐 **16개의 자동화된 검증 게이트**를 실행합니다.
+`run_all_tests.sh`는 아래 오케스트레이션으로 실행됩니다:
 
 ```
 run_all_tests.sh
-├── run_local_gates.sh (Strict Gate)
+├── run_local_gates.sh --skip-fork
 │   ├── 1.  Build (컴파일)
 │   ├── 2.  Slither 정적 보안 분석
 │   ├── 3.  Storage Layout (스토리지 레이아웃)
@@ -27,10 +27,35 @@ run_all_tests.sh
 │   ├── 14. Render Verification Reports (리포트 렌더링)
 │   ├── 15. Docs Symbol Refs (문서 심볼 참조)
 │   └── 16. Docs Consistency (문서 일관성)
-└── run_fork_tests.sh (Monad 포크 스위트 — 재실행)
+├── run_lens_tests.sh                   (Lens unit + Monad fork smoke)
+└── run_fork_tests.sh                   (Protocol Monad 포크 스위트)
 ```
 
-**하나라도** 실패하면 전체 결과가 `FAIL`로 보고됩니다. 총: **16개 게이트**.
+`run_local_gates.sh`의 번호 1~16은 **local-gates 내부 게이트 개수**를 의미합니다.
+`run_all_tests.sh`는 local-gates 실행 시 `--skip-fork`를 전달하고, fork suite를 별도 단계에서 실행합니다.
+
+**하나라도** 실패하면 전체 결과가 `FAIL`로 보고됩니다.
+
+## CLI 옵션 요약
+
+### `run_all_tests.sh`
+
+| 옵션 | 의미 |
+|------|------|
+| `--only lens` | Lens suite만 실행 |
+| `--skip-lens` | Lens suite 실행 생략 |
+| `--skip-fork` | Protocol fork + Lens fork smoke 실행 생략 |
+
+### `scripts/runners/run_lens_tests.sh`
+
+| 옵션 | 의미 |
+|------|------|
+| `--skip-fork` | Lens unit만 실행 |
+| `--rpc <url>` | `MONAD_RPC_URL` override |
+| `--chain-id <id>` | `MONAD_CHAIN_ID` override |
+| `--block <n>` | `MONAD_FORK_BLOCK` override |
+| `--latest` | `MONAD_FORK_BLOCK=0`으로 latest 블록 사용 |
+| `-v|-vv|-vvv|-vvvv` | Forge verbosity |
 
 ---
 
@@ -274,14 +299,17 @@ fork와 invariant를 제외한 모든 테스트를 실행합니다:
 
 | 메트릭 키 | 소스 | 예시 |
 |----------|------|-----|
-| `non_fork_all` | forge 테스트 출력 | 112 |
-| `non_fork_strict` | forge 테스트 (fork + invariant 제외) | 107 |
+| `non_fork_all` | forge 테스트 출력 | 117 |
+| `non_fork_strict` | forge 테스트 (fork + invariant 제외) | 112 |
 | `fork_suite_total` | fork-logs 파싱 | 47 |
 | `requirements_count` | YAML 요구사항 ID 수 | 30 |
 | `spec_test_count` | 스펙 `test_*` 이름 수 | 90 |
 | `spec_invariant_count` | 스펙 `invariant_*` 이름 수 | 5 |
 | `math_consistency_total` | Python 검증 벡터 수 | 1386 |
 | `migration_items_total` | 마이그레이션 항목 수 | 13 |
+
+> 참고: `docs/reports/NADSWAP_V2_VERIFICATION_METRICS.json`은 현재 `protocol/` 기준 메트릭입니다.
+> Lens suite 결과는 해당 메트릭 JSON에 별도 집계되지 않습니다.
 
 환경 문제로 게이트를 실행할 수 없는 경우, 이전에 저장된 baseline 값으로 폴백합니다 (`BASELINE` 상태로 기록).
 

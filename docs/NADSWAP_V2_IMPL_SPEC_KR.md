@@ -86,6 +86,10 @@ rawBaseBalance  = reserveBase                          (+ dust)
 > [!WARNING]
 > **Factory ABI 비호환**: `createPair`는 시그니처가 바뀐 `pairAdmin` 전용입니다. Router의 `_addLiquidity` 자동 생성 경로도 제거되었습니다. 기존 V2 툴링과 호환되지 않습니다.
 
+> [!NOTE]
+> 본 명세의 수학/불변식/검증 범위는 `protocol/`(core + periphery)입니다.
+> `lens/`는 companion module로 별도 문서에서 관리합니다: [./lens/README.md](./lens/README.md)
+
 ---
 
 ## 4. Pair 상태 변수 및 권한
@@ -943,6 +947,12 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 4. **`createPair(tokenA, tokenB, buyTax, sellTax, taxCollector)`** — 생성과 세금 설정을 동시에 수행
 5. 모니터링 후 필요 시 `setTaxConfig`로 세율/taxCollector 즉시 변경
 6. 주기적으로 `claimQuoteTax` 실행
+
+> [!NOTE]
+> 로컬 통합 배포(`./deploy_local.sh`)는 core 배포 후 `NadSwapLensV1_1` 배포와 Lens read-path smoke
+> (`getPair`, `getPairsLength`, `getPairsPage`, `getPairView`)를 추가로 수행하며,
+> 결과는 `envs/deployed.local.env`의 `LENS_*` 키에 기록됩니다.
+> 단, 본 명세의 core 수학/불변식 적합성 범위(§4~§16)는 `protocol/` 기준으로 유지됩니다.
 
 ---
 

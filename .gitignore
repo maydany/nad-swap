@@ -10,6 +10,10 @@ protocol/cache/
 protocol/out/
 protocol/broadcast/
 protocol/lib/
+lens/cache/
+lens/out/
+lens/broadcast/
+lens/lib/
 
 # Upstream pinned refs (cloned by run_local_gates.sh)
 upstream/
@@ -20,6 +24,7 @@ invariant-logs/
 
 # Local deployment output (runtime-generated)
 envs/deployed.local.env
+envs/deployed.lens.env
 
 # Misc
 *.log

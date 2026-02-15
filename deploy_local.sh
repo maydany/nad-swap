@@ -7,8 +7,12 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROTOCOL_DIR="${ROOT}/protocol"
+LENS_DIR="${ROOT}/lens"
 DEPLOY_DIR="${ROOT}/envs"
 ENV_FILE="${DEPLOY_DIR}/local.env"
+LOCAL_DEPLOY_FILE="${DEPLOY_DIR}/deployed.local.env"
+# Temporary file produced by lens/script/DeployLens.s.sol.
+LENS_ENV_FILE="${DEPLOY_DIR}/deployed.lens.env"
 
 # ── Anvil default account #0 ────────────────────────────
 [[ -f "${ENV_FILE}" ]] || { echo "[FAIL] Missing env file: ${ENV_FILE}" >&2; exit 1; }
@@ -45,6 +49,28 @@ require_addr() {
   [[ "${addr}" =~ ^0x[0-9a-fA-F]{40}$ ]] || fail "Could not parse ${label} deployment address"
 }
 
+lower() {
+  echo "$1" | tr '[:upper:]' '[:lower:]'
+}
+
+normalize_cast_output() {
+  echo "$1" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:](),[]'
+}
+
+assert_cast_contains() {
+  local label="$1"
+  local output="$2"
+  local expected="$3"
+  local normalized_output
+  local normalized_expected
+
+  normalized_output="$(normalize_cast_output "${output}")"
+  normalized_expected="$(normalize_cast_output "${expected}")"
+
+  [[ "${normalized_output}" == *"${normalized_expected}"* ]] \
+    || fail "${label} check failed. Output: ${output}"
+}
+
 # forge create wrapper
 deploy() {
   local contract="$1"
@@ -68,6 +94,7 @@ send() {
 ensure_tool forge
 ensure_tool cast
 ensure_tool anvil
+[[ -d "${LENS_DIR}" ]] || fail "Missing lens directory: ${LENS_DIR}"
 
 # ── Kill any existing Anvil ──────────────────────────────
 if lsof -i :8545 -sTCP:LISTEN >/dev/null 2>&1; then
@@ -189,9 +216,85 @@ else
   echo "  ❌ Deployer LP balance is 0"
 fi
 
+# ── Build & Deploy Lens ──────────────────────────────────
+log "Building Lens contracts..."
+(cd "${LENS_DIR}" && forge build --force)
+
+log "Deploying NadSwapLensV1_1..."
+rm -f "${LENS_ENV_FILE}"
+(
+  cd "${LENS_DIR}" && \
+  LENS_FACTORY="${FACTORY}" \
+  LENS_ROUTER="${ROUTER}" \
+  forge script script/DeployLens.s.sol:DeployLensScript \
+    --rpc-url "${RPC_URL}" \
+    --private-key "${DEPLOYER_PK}" \
+    --broadcast
+)
+
+[[ -f "${LENS_ENV_FILE}" ]] || fail "Missing Lens deployment output: ${LENS_ENV_FILE}"
+# shellcheck source=/dev/null
+source "${LENS_ENV_FILE}"
+
+[[ -n "${LENS_ADDRESS:-}" ]] || fail "LENS_ADDRESS missing in ${LENS_ENV_FILE}"
+[[ -n "${LENS_FACTORY:-}" ]] || fail "LENS_FACTORY missing in ${LENS_ENV_FILE}"
+[[ -n "${LENS_ROUTER:-}" ]] || fail "LENS_ROUTER missing in ${LENS_ENV_FILE}"
+[[ -n "${LENS_CHAIN_ID:-}" ]] || fail "LENS_CHAIN_ID missing in ${LENS_ENV_FILE}"
+
+require_addr "Lens" "${LENS_ADDRESS}"
+require_addr "Lens factory" "${LENS_FACTORY}"
+require_addr "Lens router" "${LENS_ROUTER}"
+[[ "${LENS_CHAIN_ID}" =~ ^[0-9]+$ ]] || fail "Invalid LENS_CHAIN_ID in ${LENS_ENV_FILE}: ${LENS_CHAIN_ID}"
+
+if [[ "$(lower "${LENS_FACTORY}")" != "$(lower "${FACTORY}")" ]]; then
+  fail "LENS_FACTORY mismatch: ${LENS_FACTORY} vs ${FACTORY}"
+fi
+
+if [[ "$(lower "${LENS_ROUTER}")" != "$(lower "${ROUTER}")" ]]; then
+  fail "LENS_ROUTER mismatch: ${LENS_ROUTER} vs ${ROUTER}"
+fi
+
+if [[ "${LENS_CHAIN_ID}" != "31337" ]]; then
+  fail "LENS_CHAIN_ID mismatch: ${LENS_CHAIN_ID} (expected 31337)"
+fi
+
+log "Verifying Lens read paths..."
+
+LENS_FACTORY_ONCHAIN=$(cast call "${LENS_ADDRESS}" "factory()(address)" --rpc-url "${RPC_URL}")
+if [[ "$(lower "${LENS_FACTORY_ONCHAIN}")" != "$(lower "${FACTORY}")" ]]; then
+  fail "Lens.factory() mismatch: ${LENS_FACTORY_ONCHAIN} vs ${FACTORY}"
+fi
+echo "  ✅ Lens.factory() matches Factory"
+
+LENS_ROUTER_ONCHAIN=$(cast call "${LENS_ADDRESS}" "router()(address)" --rpc-url "${RPC_URL}")
+if [[ "$(lower "${LENS_ROUTER_ONCHAIN}")" != "$(lower "${ROUTER}")" ]]; then
+  fail "Lens.router() mismatch: ${LENS_ROUTER_ONCHAIN} vs ${ROUTER}"
+fi
+echo "  ✅ Lens.router() matches Router"
+
+LENS_GET_PAIR=$(cast call "${LENS_ADDRESS}" "getPair(address,address)(address,bool)" "${USDT}" "${NAD}" --rpc-url "${RPC_URL}")
+assert_cast_contains "Lens.getPair(address,address) pair" "${LENS_GET_PAIR}" "${PAIR}"
+assert_cast_contains "Lens.getPair(address,address) valid flag" "${LENS_GET_PAIR}" "true"
+echo "  ✅ Lens.getPair() returns expected pair + valid=true"
+
+LENS_PAIRS_LEN=$(cast call "${LENS_ADDRESS}" "getPairsLength()(bool,uint256)" --rpc-url "${RPC_URL}")
+assert_cast_contains "Lens.getPairsLength() ok flag" "${LENS_PAIRS_LEN}" "true"
+assert_cast_contains "Lens.getPairsLength() value" "${LENS_PAIRS_LEN}" "1"
+echo "  ✅ Lens.getPairsLength() returns (true, 1)"
+
+LENS_PAIRS_PAGE=$(cast call "${LENS_ADDRESS}" "getPairsPage(uint256,uint256)(bool,address[])" 0 1 --rpc-url "${RPC_URL}")
+assert_cast_contains "Lens.getPairsPage() ok flag" "${LENS_PAIRS_PAGE}" "true"
+assert_cast_contains "Lens.getPairsPage() pair value" "${LENS_PAIRS_PAGE}" "${PAIR}"
+echo "  ✅ Lens.getPairsPage(0,1) returns expected pair"
+
+if ! cast call "${LENS_ADDRESS}" "getPairView(address,address)" "${PAIR}" "${DEPLOYER_ADDR}" --rpc-url "${RPC_URL}" >/dev/null; then
+  fail "Lens.getPairView(address,address) reverted"
+fi
+echo "  ✅ Lens.getPairView() call succeeded"
+
 # ── Save Addresses ───────────────────────────────────────
 mkdir -p "${DEPLOY_DIR}"
-cat > "${DEPLOY_DIR}/deployed.local.env" <<EOF
+cat > "${LOCAL_DEPLOY_FILE}" <<EOF
 # NadSwap Local Deployment — $(date +'%Y-%m-%d %H:%M:%S')
 # Chain: Anvil (localhost:8545, chainId=31337)
 
@@ -201,7 +304,14 @@ NAD=${NAD}
 FACTORY=${FACTORY}
 ROUTER=${ROUTER}
 PAIR_USDT_NAD=${PAIR}
+LENS_ADDRESS=${LENS_ADDRESS}
+LENS_FACTORY=${LENS_FACTORY}
+LENS_ROUTER=${LENS_ROUTER}
+LENS_CHAIN_ID=${LENS_CHAIN_ID}
 EOF
+
+# Keep integrated local output as the single source of truth for deploy_local.sh users.
+rm -f "${LENS_ENV_FILE}"
 
 # ── Summary ──────────────────────────────────────────────
 echo ""
@@ -214,8 +324,9 @@ echo "  NAD      = ${NAD}"
 echo "  FACTORY  = ${FACTORY}"
 echo "  ROUTER   = ${ROUTER}"
 echo "  PAIR     = ${PAIR}"
+echo "  LENS     = ${LENS_ADDRESS}"
 echo "═══════════════════════════════════════════════════"
-echo "  Addresses saved to: ${DEPLOY_DIR}/deployed.local.env"
+echo "  Addresses saved to: ${LOCAL_DEPLOY_FILE}"
 echo "  Anvil running on ${RPC_URL} (PID: ${ANVIL_PID})"
 echo ""
 echo "  Press Ctrl+C to stop Anvil."

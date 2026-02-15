@@ -13,6 +13,10 @@
 <td><a href="docs/NADSWAP_V2_IMPL_SPEC_EN.md">docs/NADSWAP_V2_IMPL_SPEC_EN.md</a></td>
 </tr>
 <tr>
+<td><strong>🔍 Lens 문서</strong></td>
+<td><a href="docs/lens/README.md">docs/lens/README.md</a></td>
+</tr>
+<tr>
 <td><strong>✅ 검증 리포트</strong></td>
 <td><a href="docs/reports/NADSWAP_V2_VERIFICATION_REPORT.md">docs/reports/NADSWAP_V2_VERIFICATION_REPORT.md</a></td>
 </tr>
@@ -467,9 +471,16 @@ nad-swap/
 │       ├── fork/         #   Monad 포크 검증
 │       ├── invariant/    #   Stateful 불변식 테스트
 │       └── helpers/      #   공용 테스트 유틸
+├── lens/                 # NadSwap Lens V1.1 (별도 Foundry workspace)
+│   ├── src/              #   Lens read-only contract
+│   ├── test/             #   Unit + fork smoke
+│   └── script/           #   Deployment script
 ├── scripts/
 │   ├── gates/            # 자동화 게이트 (traceability, math, docs...)
-│   ├── runners/          # 통합 실행기 (local gates, fork tests)
+│   ├── runners/          # 통합 실행기 (local gates, lens tests, fork tests)
+│   │   ├── run_local_gates.sh
+│   │   ├── run_lens_tests.sh
+│   │   └── run_fork_tests.sh
 │   └── reports/          # 메트릭 수집 / 리포트 렌더링
 ├── docs/                 # 명세, 리포트, 추적성 매트릭스
 ├── envs/                 # 환경 변수 템플릿 (.env.sh)
@@ -488,9 +499,9 @@ nad-swap/
 
 | 항목 | 결과 |
 |------|------|
-| Foundry tests (non-fork strict) | `107/107` ✅ |
+| Foundry tests (non-fork strict) | `112/112` ✅ |
 | Foundry tests (fork suites) | `47/47` ✅ |
-| Foundry tests (non-fork all) | `112/112` ✅ |
+| Foundry tests (non-fork all) | `117/117` ✅ |
 | Traceability requirements | `30/30` ✅ |
 | Spec named tests | `90/90` ✅ |
 | Spec named invariants | `5/5` ✅ |
@@ -537,23 +548,35 @@ nad-swap/
 ```bash
 ./run_all_tests.sh
 ```
-> Gates(빌드→Slither→스토리지→유닛→퍼즈→불변식→수학→추적성→마이그레이션→문서) + Fork 전체를 한 번에 실행합니다.
+> `gates + lens + fork` 순서로 전체 검증을 실행합니다.  
+> (`run_local_gates.sh --skip-fork` → `run_lens_tests.sh` → `run_fork_tests.sh`)
 
 ### 3) RPC 없는 환경 (포크 제외)
 ```bash
 ./run_all_tests.sh --skip-fork
 ```
-> 네트워크 접근 없이 로컬 게이트만 실행합니다. **신규 기여자 권장 시작점**.
+> 네트워크 접근 없이 로컬 게이트 + Lens unit을 실행합니다. **신규 기여자 권장 시작점**.
+> Lens suite까지 제외하려면 `./run_all_tests.sh --skip-fork --skip-lens`를 사용하세요.
 
-### 4) 포크 테스트만 실행
+### 4) Lens 테스트만 실행
+```bash
+./run_all_tests.sh --only lens --skip-fork
+./scripts/runners/run_lens_tests.sh --skip-fork
+```
+
+### 5) 포크 테스트만 실행
 ```bash
 ./run_all_tests.sh --only fork
 ```
 
-### 5) 로컬 배포/데모 (Anvil)
+### 6) 로컬 배포/데모 (Anvil)
 ```bash
 ./deploy_local.sh
 ```
+> Core(Factory/Router/Pair) 배포 후 Lens(`NadSwapLensV1_1`)까지 같은 Anvil 체인에 배포하고,  
+> 배포본 기준 Lens read-path 스모크 검증(`getPair`, `getPairsLength`, `getPairsPage`, `getPairView`)까지 자동 수행합니다.  
+> 결과는 `envs/deployed.local.env` 한 파일에 저장되며, core + lens 주소와  
+> `LENS_ADDRESS`, `LENS_FACTORY`, `LENS_ROUTER`, `LENS_CHAIN_ID`가 함께 기록됩니다.
 
 ### 포크 환경 설정
 
@@ -642,6 +665,14 @@ NadSwap은 코드만 테스트하지 않습니다. **코드-테스트-문서 정
 
 ### 테스트 가이드
 - [docs/testing/FORK_TESTING_MONAD.md](docs/testing/FORK_TESTING_MONAD.md) — Monad 포크 테스트 가이드
+- [docs/testing/VERIFICATION_GATES_KR.md](docs/testing/VERIFICATION_GATES_KR.md) — 검증 게이트 상세
 
 ### ABI 변경
 - [docs/abi/NADSWAP_V2_ABI_DIFF.md](docs/abi/NADSWAP_V2_ABI_DIFF.md) — ABI 변경 비교
+
+### Lens 문서
+- [docs/lens/README.md](docs/lens/README.md) — NadSwap Lens 문서 인덱스
+- [KR Guide Quickstart](docs/lens/NADSWAP_LENS_V1_1_GUIDE_KR.md#quickstart) — 로컬 배포 후 첫 호출 5~10분 가이드
+- [KR Guide API Reference](docs/lens/NADSWAP_LENS_V1_1_GUIDE_KR.md#api-reference) — 함수별 입력/출력/실패 계약
+- [EN Guide Quickstart](docs/lens/NADSWAP_LENS_V1_1_GUIDE_EN.md#quickstart) — First successful call in 5-10 minutes
+- [EN Guide API Reference](docs/lens/NADSWAP_LENS_V1_1_GUIDE_EN.md#api-reference) — Function-level response/error contracts

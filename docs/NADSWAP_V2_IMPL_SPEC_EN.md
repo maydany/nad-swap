@@ -86,6 +86,10 @@ rawBaseBalance  = reserveBase                          (+ dust)
 > [!WARNING]
 > **Factory ABI Incompatible**: `createPair` is `pairAdmin`-only with a changed signature. Router's `_addLiquidity` auto-creation path is also removed. Not compatible with existing V2 tooling.
 
+> [!NOTE]
+> The math/invariant/verification scope of this spec is `protocol/` (core + periphery).
+> `lens/` is a companion module documented separately: [./lens/README.md](./lens/README.md)
+
 ---
 
 ## 4. Pair State Variables & Permissions
@@ -942,6 +946,11 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 4. **`createPair(tokenA, tokenB, buyTax, sellTax, taxCollector)`** — creation and tax set simultaneously
 5. Monitor → change rates/taxCollector instantly via `setTaxConfig` as needed
 6. Periodically execute `claimQuoteTax`
+
+> [!NOTE]
+> The local integrated flow (`./deploy_local.sh`) additionally deploys `NadSwapLensV1_1` and runs Lens read-path smoke checks
+> (`getPair`, `getPairsLength`, `getPairsPage`, `getPairView`), then writes `LENS_*` keys into `envs/deployed.local.env`.
+> This does not change the core math/invariant conformance scope (§4~§16), which remains `protocol/`-based.
 
 ---
 
