@@ -48,7 +48,7 @@ NadSwap Lens는 GraphQL API가 아니라 EVM 컨트랙트 read API입니다.
 ### 1.2 로컬 코어 + Lens 배포
 ```bash
 cd /Users/sunghoon-air/Desktop/projects.nosync/nad-swap
-./deploy_local.sh
+./scripts/deploy_local.sh
 ```
 
 정상 완료 시 요약에 다음이 출력됩니다.

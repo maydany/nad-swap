@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CHECK_ONLY=0
 APT_UPDATED=0
+
+if [[ "${1-}" == "--" ]]; then
+  shift
+fi
 
 declare -a INSTALLED
 declare -a SKIPPED
@@ -11,7 +15,7 @@ declare -a FAILED
 
 usage() {
   cat <<'EOF'
-Usage: ./install_all_deps.sh [options]
+Usage: ./scripts/install_all_deps.sh [options]
 
 Installs all local prerequisites for NadSwap repo execution and tests.
 If already installed, each dependency is skipped.

@@ -6,7 +6,7 @@ SOURCE_ENV="${ROOT}/envs/deployed.local.env"
 TARGET_ENV="${ROOT}/apps/nadswap/.env.local"
 
 if [[ ! -f "${SOURCE_ENV}" ]]; then
-  echo "[FAIL] Missing ${SOURCE_ENV}. Run ./deploy_local.sh first." >&2
+  echo "[FAIL] Missing ${SOURCE_ENV}. Run ./scripts/deploy_local.sh first." >&2
   exit 1
 fi
 

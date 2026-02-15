@@ -98,7 +98,7 @@ export const parseAppEnv = (raw: Record<string, unknown>): ParseAppEnvResult => 
     return {
       ok: false,
       missingKeys,
-      message: `Missing required env keys: ${missingKeys.join(", ")}. Run pnpm env:sync:nadswap after ./deploy_local.sh.`
+      message: `Missing required env keys: ${missingKeys.join(", ")}. Run pnpm env:sync:nadswap after ./scripts/deploy_local.sh.`
     };
   }
 

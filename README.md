@@ -488,9 +488,9 @@ nad-swap/
 │   └── reports/          # 메트릭 수집 / 리포트 렌더링
 ├── docs/                 # 명세, 리포트, 추적성 매트릭스
 ├── envs/                 # 환경 변수 템플릿 (.env.sh)
-├── install_all_deps.sh   # 원커맨드 의존성 설치
-├── run_all_tests.sh      # 원커맨드 전체 검증
-└── deploy_local.sh       # Anvil 로컬 배포/데모
+├── scripts/install_all_deps.sh   # 원커맨드 의존성 설치
+├── scripts/run_all_tests.sh      # 원커맨드 전체 검증
+└── scripts/deploy_local.sh       # Anvil 로컬 배포/데모
 ```
 
 ---
@@ -541,79 +541,72 @@ nad-swap/
 
 ## 시작하기
 
-### 1) 의존성 설치
-```bash
-./install_all_deps.sh
-# or
-pnpm deps:all
-```
-> Foundry, Slither, Python3, ripgrep 등 전체 도구를 자동 감지/설치합니다.  
-> `pnpm deps:all`은 위 시스템 의존성 설치 후 workspace 프론트 의존성(`pnpm install`)까지 연속 실행합니다.
-> 설치 없이 확인만: `./install_all_deps.sh --check-only`
+### Quick Start (pnpm-first)
 
-### 2) 전체 검증 실행
+### 1) 설치 (system + workspace deps)
 ```bash
-./run_all_tests.sh
-# or
+pnpm setup
+```
+> `pnpm setup`은 system 도구 bootstrap(`scripts/install_all_deps.sh`)과 workspace 의존성 설치(`pnpm install`)를 순차 실행합니다.  
+> 설치 가능 여부만 확인하려면 `pnpm setup:check`를 사용하세요.
+
+### 2) 로컬 통합 실행 (배포 + 검증 + 프론트)
+```bash
+pnpm local:up
+```
+> `local:up`은 아래를 순서대로 실행합니다.
+> 1) `deploy:local` (core + lens 배포, Anvil detached)  
+> 2) `test:local` (gates + lens unit, no fork, no report writes)  
+> 3) `env:sync:nadswap`  
+> 4) `dev:nadswap`
+
+### 3) 검증 명령
+```bash
+# 로컬 개발용 (RPC 불필요, docs/reports 파일 갱신 없음)
+pnpm test:local
+
+# 전체 엄격 검증 (gates + lens + fork)
 pnpm test:all
-```
-> `gates + lens + fork` 순서로 전체 검증을 실행합니다.  
-> (`run_local_gates.sh --skip-fork` → `run_lens_tests.sh` → `run_fork_tests.sh`)
 
-### 3) RPC 없는 환경 (포크 제외)
-```bash
-./run_all_tests.sh --skip-fork
-```
-> 네트워크 접근 없이 로컬 게이트 + Lens unit을 실행합니다. **신규 기여자 권장 시작점**.
-> Lens suite까지 제외하려면 `./run_all_tests.sh --skip-fork --skip-lens`를 사용하세요.
-
-### 4) Lens 테스트만 실행
-```bash
-./run_all_tests.sh --only lens --skip-fork
-./scripts/runners/run_lens_tests.sh --skip-fork
+# 포크 스위트만
+pnpm test:fork
 ```
 
-### 5) 포크 테스트만 실행
+### 4) 개별 명령
 ```bash
-./run_all_tests.sh --only fork
-```
-
-### 6) 로컬 배포/데모 (Anvil)
-```bash
-./deploy_local.sh
-# or
+# 로컬 배포/데모
 pnpm deploy:local
-```
-> Core(Factory/Router/Pair) 배포 후 Lens(`NadSwapLensV1_1`)까지 같은 Anvil 체인에 배포하고,  
-> 배포본 기준 Lens read-path 스모크 검증(`getPair`, `getPairsLength`, `getPairsPage`, `getPairView`)까지 자동 수행합니다.  
-> 결과는 `envs/deployed.local.env` 한 파일에 저장되며, core + lens 주소와  
-> `LENS_ADDRESS`, `LENS_FACTORY`, `LENS_ROUTER`, `LENS_CHAIN_ID`가 함께 기록됩니다.
 
-### 7) 프론트엔드 실행 (`apps/nadswap`)
-```bash
-pnpm install
+# 프론트 env 동기화
 pnpm env:sync:nadswap
+
+# 프론트 dev
 pnpm dev:nadswap
 ```
-> `env:sync:nadswap`는 `envs/deployed.local.env`를 읽어  
-> `apps/nadswap/.env.local`을 자동 생성합니다.
 
-원커맨드(로컬 배포 + env 동기화 + 프론트 dev 실행):
-```bash
-pnpm dev:nadswap:local
-```
-> 실행 시 기존 `:8545` 프로세스를 정리 후 새 Anvil로 재배포하고, 종료(`Ctrl+C`)하면 Vite와 함께 해당 Anvil도 자동 종료됩니다.
-
-### 포크 환경 설정
-
-Monad testnet 포크 실행 시 환경 변수 템플릿을 사용합니다:
-
+### 5) 포크 환경
 ```bash
 source envs/monad.testnet.env.sh
-scripts/runners/run_fork_tests.sh -vv
+pnpm test:fork
+```
+> 상세 가이드: [docs/testing/FORK_TESTING_MONAD.md](docs/testing/FORK_TESTING_MONAD.md)
+
+### Advanced / Debug (직접 스크립트 호출)
+```bash
+./scripts/install_all_deps.sh
+./scripts/install_all_deps.sh --check-only
+./scripts/deploy_local.sh
+./scripts/run_all_tests.sh --skip-fork
+./scripts/runners/run_local_gates.sh --skip-fork --dev
+./scripts/runners/run_lens_tests.sh --skip-fork
+./scripts/runners/run_fork_tests.sh -vv
 ```
 
-> 상세 가이드: [docs/testing/FORK_TESTING_MONAD.md](docs/testing/FORK_TESTING_MONAD.md)
+호환성 alias:
+```bash
+pnpm dev:nadswap:local         # pnpm local:up alias
+pnpm dev:nadswap:local:quick   # 기존 빠른 동선 (배포 + env sync + 프론트 dev)
+```
 
 ---
 

@@ -1,15 +1,15 @@
 # NadSwap V2 — 검증 게이트 레퍼런스
 
-> `run_all_tests.sh`가 실행하는 모든 게이트에 대한 상세 가이드.
+> `scripts/run_all_tests.sh`가 실행하는 모든 게이트에 대한 상세 가이드.
 
 ---
 
 ## 개요
 
-`run_all_tests.sh`는 아래 오케스트레이션으로 실행됩니다:
+`scripts/run_all_tests.sh`는 아래 오케스트레이션으로 실행됩니다:
 
 ```
-run_all_tests.sh
+scripts/run_all_tests.sh
 ├── run_local_gates.sh --skip-fork
 │   ├── 1.  Build (컴파일)
 │   ├── 2.  Slither 정적 보안 분석
@@ -32,19 +32,34 @@ run_all_tests.sh
 ```
 
 `run_local_gates.sh`의 번호 1~16은 **local-gates 내부 게이트 개수**를 의미합니다.
-`run_all_tests.sh`는 local-gates 실행 시 `--skip-fork`를 전달하고, fork suite를 별도 단계에서 실행합니다.
+`scripts/run_all_tests.sh`는 local-gates 실행 시 `--skip-fork`를 전달하고, fork suite를 별도 단계에서 실행합니다.
 
 **하나라도** 실패하면 전체 결과가 `FAIL`로 보고됩니다.
 
+### Strict 모드 vs Dev 모드
+
+- `pnpm test:all` (strict): 리포트 생성 + docs consistency를 포함한 전체 엄격 검증.
+- `pnpm test:local` (dev): `run_local_gates.sh --skip-fork --dev` + `run_lens_tests.sh --skip-fork`.
+- Dev 모드는 로컬 반복 개발용이며 `docs/reports/*` 파일을 갱신하지 않습니다.
+
 ## CLI 옵션 요약
 
-### `run_all_tests.sh`
+### `scripts/run_all_tests.sh`
 
 | 옵션 | 의미 |
 |------|------|
 | `--only lens` | Lens suite만 실행 |
 | `--skip-lens` | Lens suite 실행 생략 |
 | `--skip-fork` | Protocol fork + Lens fork smoke 실행 생략 |
+
+### `scripts/runners/run_local_gates.sh`
+
+| 옵션 | 의미 |
+|------|------|
+| `--skip-slither` | Slither 정적 분석 게이트 생략 |
+| `--skip-upstream-sync` | pinned upstream sync 생략 |
+| `--skip-fork` | 이 runner에서 protocol fork suite 생략 |
+| `--dev` | 개발 모드: 메트릭/리포트 렌더 + docs consistency 생략 (리포트 파일 무변경) |
 
 ### `scripts/runners/run_lens_tests.sh`
 

@@ -4,19 +4,24 @@ Vite + React + Tailwind frontend for the NadSwap main dApp.
 
 ## Prerequisites
 
-1. Deploy local contracts and Lens:
-   ```bash
-   ./deploy_local.sh
-   ```
-2. Sync frontend env from deployment output:
-   ```bash
-   pnpm env:sync:nadswap
-   ```
+권장 루트 워크플로우:
+```bash
+pnpm setup
+pnpm local:up
+```
+
+`pnpm local:up`은 배포/검증/env sync 후 프론트를 실행합니다.
+
+수동 실행이 필요하면:
+```bash
+pnpm deploy:local
+pnpm env:sync:nadswap
+pnpm dev:nadswap
+```
 
 ## Run
 
 ```bash
-pnpm install
 pnpm dev:nadswap
 ```
 

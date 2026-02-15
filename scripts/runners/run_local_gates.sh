@@ -14,6 +14,11 @@ FOUNDRY_OFFLINE="${FOUNDRY_OFFLINE:-true}"
 SKIP_SLITHER=0
 SKIP_UPSTREAM_SYNC=0
 SKIP_FORK=0
+DEV_MODE=0
+
+if [[ "${1-}" == "--" ]]; then
+  shift
+fi
 
 usage() {
   cat <<'EOF'
@@ -27,10 +32,12 @@ Options:
   --skip-slither            Skip Slither static-analysis gate.
   --skip-upstream-sync      Skip cloning/syncing upstream pinned refs.
   --skip-fork               Skip fork test suite in this runner.
+  --dev                     Development mode (no report writes; skips docs consistency).
   -h, --help                Show this help.
 
 Examples:
   ./scripts/runners/run_local_gates.sh
+  ./scripts/runners/run_local_gates.sh --skip-fork --dev
   MONAD_FORK_BLOCK=12700000 ./scripts/runners/run_local_gates.sh
 EOF
 }
@@ -71,6 +78,9 @@ sync_repo_to_sha() {
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --)
+      shift
+      ;;
     --skip-slither)
       SKIP_SLITHER=1
       shift
@@ -81,6 +91,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --skip-fork)
       SKIP_FORK=1
+      shift
+      ;;
+    --dev)
+      DEV_MODE=1
       shift
       ;;
     -h|--help)
@@ -178,18 +192,26 @@ else
   log "Skipping fork suite by option."
 fi
 
-log "Collect Verification Metrics"
-python3 "${ROOT}/scripts/reports/collect_verification_metrics.py" \
-  --output "${ROOT}/docs/reports/NADSWAP_V2_VERIFICATION_METRICS.json"
+if [[ "${DEV_MODE}" -eq 0 ]]; then
+  log "Collect Verification Metrics"
+  python3 "${ROOT}/scripts/reports/collect_verification_metrics.py" \
+    --output "${ROOT}/docs/reports/NADSWAP_V2_VERIFICATION_METRICS.json"
 
-log "Render Verification Reports"
-python3 "${ROOT}/scripts/reports/render_verification_reports.py" \
-  --metrics "${ROOT}/docs/reports/NADSWAP_V2_VERIFICATION_METRICS.json"
+  log "Render Verification Reports"
+  python3 "${ROOT}/scripts/reports/render_verification_reports.py" \
+    --metrics "${ROOT}/docs/reports/NADSWAP_V2_VERIFICATION_METRICS.json"
+else
+  log "Skipping metrics/render in --dev mode."
+fi
 
 log "Docs Symbol Refs Gate"
 python3 "${ROOT}/scripts/gates/check_docs_symbol_refs.py"
 
-log "Docs Consistency Gate"
-python3 "${ROOT}/scripts/gates/check_docs_consistency.py"
+if [[ "${DEV_MODE}" -eq 0 ]]; then
+  log "Docs Consistency Gate"
+  python3 "${ROOT}/scripts/gates/check_docs_consistency.py"
+else
+  log "Skipping docs consistency in --dev mode."
+fi
 
 log "PASS: Local gate run completed."

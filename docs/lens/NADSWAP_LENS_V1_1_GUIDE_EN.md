@@ -46,7 +46,7 @@ NadSwap Lens is an EVM contract API, not GraphQL. Equivalent guidance is provide
 ### 1.2 Deploy local core + lens
 ```bash
 cd /Users/sunghoon-air/Desktop/projects.nosync/nad-swap
-./deploy_local.sh
+./scripts/deploy_local.sh
 ```
 
 Expected output summary includes:

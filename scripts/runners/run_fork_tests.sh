@@ -18,6 +18,10 @@ FORK_FUZZ_RUNS="${MONAD_FORK_FUZZ_RUNS:-}"
 VERBOSITY="-vv"
 RUN_ALL=0
 
+if [[ "${1-}" == "--" ]]; then
+  shift
+fi
+
 require_option_value() {
   local option="$1"
   local value="${2-}"
@@ -46,6 +50,9 @@ EOF
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --)
+      shift
+      ;;
     --all)
       RUN_ALL=1
       shift

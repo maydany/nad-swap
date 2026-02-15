@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RUNNERS="${ROOT}/scripts/runners"
 
 SKIP_SLITHER=0
@@ -9,6 +9,10 @@ SKIP_UPSTREAM=0
 SKIP_FORK=0
 SKIP_LENS=0
 ONLY=""
+
+if [[ "${1-}" == "--" ]]; then
+  shift
+fi
 
 require_option_value() {
   local option="$1"
@@ -22,7 +26,7 @@ require_option_value() {
 
 usage() {
   cat <<'EOF'
-Usage: ./run_all_tests.sh [options]
+Usage: ./scripts/run_all_tests.sh [options]
 
 NadSwap V2 — 모든 검증 게이트를 한 번에 실행합니다.
 
@@ -42,13 +46,13 @@ Options:
   -h, --help              Show this help.
 
 Examples:
-  ./run_all_tests.sh                          # Run everything
-  ./run_all_tests.sh --skip-slither           # Skip Slither
-  ./run_all_tests.sh --skip-lens              # Skip lens suite
-  ./run_all_tests.sh --skip-fork              # Skip fork tests (no RPC)
-  ./run_all_tests.sh --only gates             # Gates only
-  ./run_all_tests.sh --only lens              # Lens only
-  ./run_all_tests.sh --only fork              # Fork only
+  ./scripts/run_all_tests.sh                          # Run everything
+  ./scripts/run_all_tests.sh --skip-slither           # Skip Slither
+  ./scripts/run_all_tests.sh --skip-lens              # Skip lens suite
+  ./scripts/run_all_tests.sh --skip-fork              # Skip fork tests (no RPC)
+  ./scripts/run_all_tests.sh --only gates             # Gates only
+  ./scripts/run_all_tests.sh --only lens              # Lens only
+  ./scripts/run_all_tests.sh --only fork              # Fork only
 EOF
 }
 
@@ -109,7 +113,7 @@ done
 for tool in git python3 forge; do
   if ! command -v "${tool}" >/dev/null 2>&1; then
     log_fail "Missing required tool: ${tool}"
-    echo "Run ./install_all_deps.sh first."
+    echo "Run ./scripts/install_all_deps.sh first."
     exit 1
   fi
 done

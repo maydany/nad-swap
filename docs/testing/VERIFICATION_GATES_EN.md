@@ -1,15 +1,15 @@
 # NadSwap V2 — Verification Gates Reference
 
-> Detailed guide to every gate executed by `run_all_tests.sh`.
+> Detailed guide to every gate executed by `scripts/run_all_tests.sh`.
 
 ---
 
 ## Overview
 
-`run_all_tests.sh` executes the following orchestration:
+`scripts/run_all_tests.sh` executes the following orchestration:
 
 ```
-run_all_tests.sh
+scripts/run_all_tests.sh
 ├── run_local_gates.sh --skip-fork
 │   ├── 1.  Build
 │   ├── 2.  Slither Static Analysis
@@ -32,19 +32,34 @@ run_all_tests.sh
 ```
 
 The numbered 1~16 list is the **gate count inside `run_local_gates.sh`**.
-`run_all_tests.sh` invokes local gates with `--skip-fork`, then runs the fork suite as a separate step.
+`scripts/run_all_tests.sh` invokes local gates with `--skip-fork`, then runs the fork suite as a separate step.
 
 If **any** single stage fails, the entire run reports `FAIL`.
 
+### Strict vs Dev Modes
+
+- `pnpm test:all` (strict): full strict flow, including report generation and docs consistency.
+- `pnpm test:local` (dev): `run_local_gates.sh --skip-fork --dev` + `run_lens_tests.sh --skip-fork`.
+- Dev mode is designed for local iteration and avoids writing `docs/reports/*`.
+
 ## CLI Options Summary
 
-### `run_all_tests.sh`
+### `scripts/run_all_tests.sh`
 
 | Option | Meaning |
 |--------|---------|
 | `--only lens` | Run Lens suite only |
 | `--skip-lens` | Skip Lens suite |
 | `--skip-fork` | Skip protocol fork + Lens fork smoke |
+
+### `scripts/runners/run_local_gates.sh`
+
+| Option | Meaning |
+|--------|---------|
+| `--skip-slither` | Skip Slither static-analysis gate |
+| `--skip-upstream-sync` | Skip syncing pinned upstream refs |
+| `--skip-fork` | Skip protocol fork suite in this runner |
+| `--dev` | Development mode: skip metrics render and docs consistency (no report writes) |
 
 ### `scripts/runners/run_lens_tests.sh`
 

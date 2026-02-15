@@ -65,7 +65,7 @@ forge script script/DeployLens.s.sol:DeployLensScript \
 ## Local Integrated Deploy (Anvil)
 For local development, run the root deploy script to deploy both core and lens in one flow:
 ```bash
-./deploy_local.sh
+./scripts/deploy_local.sh
 ```
 
 What this integrated flow does:
@@ -80,7 +80,7 @@ What this integrated flow does:
   - `getPairView(pair,deployer)`
 - Writes integrated output to:
   - `envs/deployed.local.env` (core + lens merged output)
-  - `envs/deployed.lens.env` is temporary and removed at the end of `deploy_local.sh`
+  - `envs/deployed.lens.env` is temporary and removed at the end of `scripts/deploy_local.sh`
 
 ## Deployment Outputs by Mode
 
@@ -94,7 +94,7 @@ export LENS_ROUTER=0x...
 export LENS_CHAIN_ID=...
 ```
 
-### Integrated local deploy (`./deploy_local.sh`)
+### Integrated local deploy (`./scripts/deploy_local.sh`)
 - Output: `envs/deployed.local.env` (single source of truth)
 - Includes core + lens keys:
 ```bash

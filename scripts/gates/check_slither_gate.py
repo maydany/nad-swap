@@ -36,7 +36,7 @@ def main():
     if slither_bin is None:
         fail(
             "slither not found in PATH and local .venv-slither missing. "
-            "Run ./install_all_deps.sh first."
+            "Run ./scripts/install_all_deps.sh first."
         )
 
     fail_level = os.getenv("SLITHER_FAIL_LEVEL", DEFAULT_FAIL_LEVEL).strip().lower()

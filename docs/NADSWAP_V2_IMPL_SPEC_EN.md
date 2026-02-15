@@ -948,7 +948,7 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 6. Periodically execute `claimQuoteTax`
 
 > [!NOTE]
-> The local integrated flow (`./deploy_local.sh`) additionally deploys `NadSwapLensV1_1` and runs Lens read-path smoke checks
+> The local integrated flow (`./scripts/deploy_local.sh`) additionally deploys `NadSwapLensV1_1` and runs Lens read-path smoke checks
 > (`getPair`, `getPairsLength`, `getPairsPage`, `getPairView`), then writes `LENS_*` keys into `envs/deployed.local.env`.
 > This does not change the core math/invariant conformance scope (§4~§16), which remains `protocol/`-based.
 

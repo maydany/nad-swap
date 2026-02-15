@@ -949,7 +949,7 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 6. 주기적으로 `claimQuoteTax` 실행
 
 > [!NOTE]
-> 로컬 통합 배포(`./deploy_local.sh`)는 core 배포 후 `NadSwapLensV1_1` 배포와 Lens read-path smoke
+> 로컬 통합 배포(`./scripts/deploy_local.sh`)는 core 배포 후 `NadSwapLensV1_1` 배포와 Lens read-path smoke
 > (`getPair`, `getPairsLength`, `getPairsPage`, `getPairView`)를 추가로 수행하며,
 > 결과는 `envs/deployed.local.env`의 `LENS_*` 키에 기록됩니다.
 > 단, 본 명세의 core 수학/불변식 적합성 범위(§4~§16)는 `protocol/` 기준으로 유지됩니다.

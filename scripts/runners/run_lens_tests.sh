@@ -18,6 +18,10 @@ CHAIN_ID="${MONAD_CHAIN_ID:-}"
 FORK_BLOCK="${MONAD_FORK_BLOCK:-}"
 unset MONAD_FORK_ENABLED MONAD_RPC_URL MONAD_CHAIN_ID MONAD_FORK_BLOCK MONAD_FORK_FUZZ_RUNS || true
 
+if [[ "${1-}" == "--" ]]; then
+  shift
+fi
+
 require_option_value() {
   local option="$1"
   local value="${2-}"
@@ -62,6 +66,9 @@ USAGE
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --)
+      shift
+      ;;
     --skip-fork)
       SKIP_FORK=1
       shift

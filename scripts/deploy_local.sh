@@ -1,22 +1,25 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────
-#  deploy_local.sh — NadSwap one-click local deployment
-#  Usage: ./deploy_local.sh [--detach-anvil]
+#  scripts/deploy_local.sh — NadSwap one-click local deployment
+#  Usage: ./scripts/deploy_local.sh [--detach-anvil]
 # ─────────────────────────────────────────────────────────
 set -euo pipefail
 
 DETACH_ANVIL=0
+if [[ "${1-}" == "--" ]]; then
+  shift
+fi
 if [[ "${1-}" == "--detach-anvil" ]]; then
   DETACH_ANVIL=1
   shift
 fi
 if [[ $# -gt 0 ]]; then
   echo "[FAIL] Unknown argument: $1" >&2
-  echo "Usage: ./deploy_local.sh [--detach-anvil]" >&2
+  echo "Usage: ./scripts/deploy_local.sh [--detach-anvil]" >&2
   exit 1
 fi
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PROTOCOL_DIR="${ROOT}/protocol"
 LENS_DIR="${ROOT}/lens"
 DEPLOY_DIR="${ROOT}/envs"
@@ -399,7 +402,7 @@ LENS_ROUTER=${LENS_ROUTER}
 LENS_CHAIN_ID=${LENS_CHAIN_ID}
 EOF
 
-# Keep integrated local output as the single source of truth for deploy_local.sh users.
+# Keep integrated local output as the single source of truth for scripts/deploy_local.sh users.
 rm -f "${LENS_ENV_FILE}"
 
 # ── Summary ──────────────────────────────────────────────
