@@ -602,7 +602,7 @@ pnpm dev:nadswap
 ```bash
 pnpm dev:nadswap:local
 ```
-> 내부적으로 `./deploy_local.sh --detach-anvil`을 사용하므로 배포가 끝나면 Anvil은 백그라운드로 유지되고, 이어서 Vite dev 서버가 시작됩니다.
+> 실행 시 기존 `:8545` 프로세스를 정리 후 새 Anvil로 재배포하고, 종료(`Ctrl+C`)하면 Vite와 함께 해당 Anvil도 자동 종료됩니다.
 
 ### 포크 환경 설정
 

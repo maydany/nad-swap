@@ -7,7 +7,7 @@
     "deploy:local": "./deploy_local.sh",
     "test:all": "./run_all_tests.sh",
     "dev:nadswap": "pnpm --filter @nadswap/nadswap dev",
-    "dev:nadswap:local": "./deploy_local.sh --detach-anvil && pnpm env:sync:nadswap && pnpm dev:nadswap",
+    "dev:nadswap:local": "bash ./scripts/frontend/dev-local.sh",
     "build:nadswap": "pnpm --filter @nadswap/nadswap build",
     "lint:nadswap": "pnpm --filter @nadswap/nadswap lint",
     "test:nadswap": "pnpm --filter @nadswap/nadswap test",
