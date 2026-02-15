@@ -671,6 +671,7 @@ NadSwap은 코드만 테스트하지 않습니다. **코드-테스트-문서 정
 ### 구현 명세
 - 🇰🇷 [docs/NADSWAP_V2_IMPL_SPEC_KR.md](docs/NADSWAP_V2_IMPL_SPEC_KR.md)
 - 🇺🇸 [docs/NADSWAP_V2_IMPL_SPEC_EN.md](docs/NADSWAP_V2_IMPL_SPEC_EN.md)
+- 🧾 [docs/NADSWAP_V2_ONEPAGER_KR.md](docs/NADSWAP_V2_ONEPAGER_KR.md) — 비개발자/개발자 공용 프로젝트 소개 원페이저
 
 ### 검증 · 리포트
 - [docs/reports/NADSWAP_V2_VERIFICATION_REPORT.md](docs/reports/NADSWAP_V2_VERIFICATION_REPORT.md) — 검증 리포트
