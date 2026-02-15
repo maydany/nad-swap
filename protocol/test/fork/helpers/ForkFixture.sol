@@ -39,13 +39,19 @@ contract ForkFixture is TestBase {
             return;
         }
 
-        string memory rpcUrl = vm.envString("MONAD_RPC_URL");
-        require(bytes(rpcUrl).length > 0, "MONAD_RPC_URL_EMPTY");
-        uint256 forkBlock = vm.envOr("MONAD_FORK_BLOCK", uint256(0));
-        if (forkBlock == 0) {
-            vm.createSelectFork(rpcUrl);
-        } else {
-            vm.createSelectFork(rpcUrl, forkBlock);
+        // Optional real-RPC fork mode:
+        // - default (`MONAD_FORK_USE_RPC=0`): run fork suite against local in-memory chain
+        // - set `MONAD_FORK_USE_RPC=1` to require MONAD_RPC_URL and create an actual RPC fork
+        bool useRpcFork = vm.envOr("MONAD_FORK_USE_RPC", uint256(0)) == 1;
+        if (useRpcFork) {
+            string memory rpcUrl = vm.envString("MONAD_RPC_URL");
+            require(bytes(rpcUrl).length > 0, "MONAD_RPC_URL_EMPTY");
+            uint256 forkBlock = vm.envOr("MONAD_FORK_BLOCK", uint256(0));
+            if (forkBlock == 0) {
+                vm.createSelectFork(rpcUrl);
+            } else {
+                vm.createSelectFork(rpcUrl, forkBlock);
+            }
         }
 
         // Deploy mock tokens on the fork — no whale addresses needed

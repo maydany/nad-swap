@@ -170,14 +170,14 @@ contract RouterLibraryTest is TestBase {
 
         uint256 amountIn = 1000 ether;
         uint256 grossOut = (amountIn * 998 * reserveQuote) / (reserveBase * 1000 + amountIn * 998);
-        uint256 expectedSafe = grossOut > 0 ? ((grossOut - 1) * (BPS - pair.sellTaxBps())) / BPS : 0;
-        assertEq(amounts[1], expectedSafe, "safe margin not applied");
+        uint256 expectedSafe = (grossOut * (BPS - pair.sellTaxBps())) / BPS;
+        assertEq(amounts[1], expectedSafe, "sell exact-in quote mismatch");
 
         base.mint(address(this), amountIn);
         base.approve(address(router), uint256(-1));
         uint256 quoteBefore = quote.balanceOf(address(this));
         router.swapExactTokensForTokens(amountIn, expectedSafe, path, address(this), block.timestamp + 1);
         uint256 quoteReceived = quote.balanceOf(address(this)) - quoteBefore;
-        assertEq(quoteReceived, expectedSafe, "safe-margin quote not executable");
+        assertEq(quoteReceived, expectedSafe, "sell exact-in quote not executable");
     }
 }

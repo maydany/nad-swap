@@ -605,12 +605,11 @@ function pairFor(address factory, address tokenA, address tokenB) internal view 
 | Path | Direction | Rounding | Formula |
 |------|-----------|----------|---------|
 | exact-in, Quote→Base (buy) | Input pre-deduction | **floor** | `tax = rawIn × buyTax / BPS` (floor), `effIn = rawIn - tax` → `getAmountOut(effIn)` |
-| exact-in, Base→Quote (sell) | Output post-deduction (execution-safe) | **floor** | `grossOut = getAmountOut(baseIn)`, `netOutSafe = floor((grossOut-1) × (BPS-sellTax) / BPS)` when `grossOut > 0` |
+| exact-in, Base→Quote (sell) | Output post-deduction (execution-safe) | **floor** | `grossOut = getAmountOut(baseIn)`, `netOut = floor(grossOut × (BPS-sellTax) / BPS)` |
 | exact-out, Base→Quote (sell) | Reverse gross-up | **ceil** | `grossOut = ⌈netOut × BPS / (BPS-sellTax)⌉` → `getAmountIn(grossOut)` |
 | exact-out, Quote→Base (buy) | Reverse gross-up | **ceil** | `netIn = getAmountIn(baseOut)` → `rawIn = ⌈netIn × BPS / (BPS-buyTax)⌉` |
 
-> Sell exact-in note: Library `grossOut` (floor) can differ from Pair reconstructed `grossOut` (reverse ceil) by up to `1 wei` (`test_sell_exactIn_grossOut_diverge`).
-> Recommended router quoting uses a 1-wei sell safety margin (`grossOut-1`) to reduce liquidity-edge reverts.
+> Sell exact-in note: Library `grossOut` (floor) can differ from Pair reconstructed `grossOut` (reverse ceil) by up to `1 wei` (`test_sell_exactIn_grossOut_diverge`), and reconstructed gross never exceeds Library gross.
 
 > **Rounding principle**:
 > - **exact-in**: buy input-tax deduction uses **floor** (Pair-aligned), user output uses **floor**
@@ -641,11 +640,9 @@ function getAmountsOut(uint amountIn, address[] memory path) public view returns
         }
         uint grossOut = getAmountOut(effIn, rIn, rOut);   // floor (V2 original)
         amounts[i+1] = grossOut;
-        if (path[i+1] == qt) {  // sell: execution-safe quote with 1 wei margin
+        if (path[i+1] == qt) {  // sell: execution-safe quote (floor post-deduction)
             uint16 sellTax = IUniswapV2Pair(pair).sellTaxBps();
-            amounts[i+1] = grossOut > 0
-                ? (grossOut - 1) * (BPS - sellTax) / BPS  // floor
-                : 0;
+            amounts[i+1] = grossOut * (BPS - sellTax) / BPS;  // floor
         }
     }
 }
@@ -724,7 +721,7 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 | 30 | 🆕 Vault drift liveness guard | `require(rawQuote >= vault, 'VAULT_DRIFT')` before quote-side subtraction | Prevents silent underflow-style liveness loss across lifecycle paths |
 | 31 | 🆕 Swap target hardening | `require(to != token0 && to != token1, 'INVALID_TO')` | Restores V2-compatible safety behavior |
 | 32 | 🆕 Base allowlist removed | Factory/Router no longer enforce base allowlist | Base policy is operational (pairAdmin standard-ERC20 only); quote policy remains protocol-enforced |
-| 33 | 🆕 Sell exact-in safe quote margin | Router quote uses `grossOut-1` before sell-tax deduction | Reduces liquidity-edge execution reverts (max 1 wei user-side conservatism) |
+| 33 | 🆕 Sell exact-in quote parity | Router quote uses direct floor post-deduction (`grossOut*(1-tax)`) | Restores `tax=0` V2 quote parity; removes structural 1-wei underquote |
 | 34 | 🆕 claim dust behavior documented | claim keeps reserves unchanged; quote dust stays skimmable | Operational/accounting semantics are explicit to integrators |
 | 35 | 🆕 K multiply overflow treatment | Optional guard (`adj0 == 0 || adj1 <= max/adj0`) or token policy documentation | Classified as informational hardening, not core exploit path. Current implementation adopts the explicit guard |
 
@@ -755,7 +752,7 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 | Q8 | No freeze | pairAdmin can change rates/taxCollector at any time. Operational flexibility prioritized |
 | Q9 | Dual-output rejected | SINGLE_SIDE_ONLY enforced. Flash swap dual-output pattern not supported (behavioral incompatibility documented) |
 | Q10 | pairAdmin is immutable after deployment | No `setPairAdmin` function in this spec; admin role is fixed by deployment-time configuration |
-| Q11 | Router sell exact-in uses 1-wei safety margin | Improves executable-path success rate near gross liquidity edges; user quote can be up to 1 wei conservative |
+| Q11 | Router sell exact-in uses direct floor post-deduction | Aligns with `tax=0` V2 quote parity and keeps sell roundtrip bounded (`grossBack <= grossOut`, diff <= 1 wei) |
 | Q12 | claim does not absorb quote dust into reserves | Claim only withdraws tax vault; dust remains removable via `skim` until explicit reserve-update paths run |
 | Q13 | K multiply overflow treated as informational hardening | Optional explicit guard or token-supply policy documentation; not required for base design correctness. Current implementation uses the explicit guard |
 
@@ -879,7 +876,7 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 |------|-------------|
 | `test_routerQuote_liquidityEdge_expectRevert` | Router quote/execution mismatch guard: quote path may return a value, but execution reverts on Pair liquidity edge |
 | `test_router_noPairRevert` | addLiquidity on uncreated pair reverts |
-| `test_sellExactIn_safeMargin_avoidsLiquidityEdge` | 🆕 1-wei safe margin on sell exact-in avoids gross liquidity-edge reverts for executable router paths |
+| `test_sellExactIn_safeMargin_avoidsLiquidityEdge` | 🆕 sell exact-in quote uses direct floor post-deduction and remains executable on standard ERC20 paths |
 
 **Group C — Policy enforcement**
 
@@ -975,6 +972,6 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 | 8 | FOT-supporting router methods | Often used with FOT tokens | **Signatures preserved, always revert `FOT_NOT_SUPPORTED`** | ABI kept while enforcing unsupported-token policy |
 | 9 | Pair address derivation | SDKs may hardcode `INIT_CODE_HASH` | **Use `factory.getPair` for routing** | Avoid bytecode-hash drift after Pair upgrades |
 | 10 | Quote flash cost assumption | V2 assumes same-token flash cost mostly LP fee | **sellTax is included on quoteOut paths** | Re-model real costs for quote flash(out/in) strategies |
-| 11 | sell exact-in quote behavior | `netOut = floor(grossOut×(1-tax))` | **Router uses `grossOut-1` safety margin before tax deduction** | Expect up to 1 wei conservative quote on sell exact-in |
+| 11 | sell exact-in quote behavior | `netOut = floor(grossOut×(1-tax))` | **Router uses direct floor post-deduction from `grossOut`** | `tax=0` matches V2 quote exactly; roundtrip gross stays within 1 wei |
 | 12 | claim + quote dust semantics | Dust usually removable via `skim` | **claim keeps reserves unchanged; quote-side dust stays skimmable** | Update accounting/indexer assumptions around claim events |
 | 13 | Storage slot hardcoding (`eth_getStorageAt`) | Some indexers/bots parse V2 fixed slots directly (e.g., reserve slot assumptions) | **V2-original slot offsets must remain unchanged; NadSwap fields are append-only** | If violated, off-chain parsers/charts/MEV infra may break despite on-chain logic being sound |

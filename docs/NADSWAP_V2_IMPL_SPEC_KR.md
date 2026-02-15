@@ -605,12 +605,12 @@ function pairFor(address factory, address tokenA, address tokenB) internal view 
 | 경로 | 방향 | 반올림 | 공식 |
 |------|------|--------|------|
 | exact-in, Quote→Base (buy) | 입력 선공제 | **floor** | `tax = rawIn × buyTax / BPS` (floor), `effIn = rawIn - tax` → `getAmountOut(effIn)` |
-| exact-in, Base→Quote (sell) | 출력 후공제(실행 안전) | **floor** | `grossOut = getAmountOut(baseIn)`, `netOutSafe = floor((grossOut-1) × (BPS-sellTax) / BPS)` when `grossOut > 0` |
+| exact-in, Base→Quote (sell) | 출력 후공제(실행 안전) | **floor** | `grossOut = getAmountOut(baseIn)`, `netOut = floor(grossOut × (BPS-sellTax) / BPS)` |
 | exact-out, Base→Quote (sell) | 역산 gross-up | **ceil** | `grossOut = ⌈netOut × BPS / (BPS-sellTax)⌉` → `getAmountIn(grossOut)` |
 | exact-out, Quote→Base (buy) | 역산 gross-up | **ceil** | `netIn = getAmountIn(baseOut)` → `rawIn = ⌈netIn × BPS / (BPS-buyTax)⌉` |
 
 > Sell exact-in 참고: Library의 `grossOut`(floor)과 Pair 재구성 `grossOut`(reverse ceil)은 최대 `1 wei` 차이날 수 있습니다 (`test_sell_exactIn_grossOut_diverge`).
-> 권장 Router quote는 sell 안전 마진 1 wei(`grossOut-1`)를 사용해 유동성 경계 revert를 줄입니다.
+> sell exact-in에서 역산된 gross는 항상 Library `grossOut`을 넘지 않으며, roundtrip 오차는 최대 1 wei로 제한됩니다.
 
 > **반올림 원칙**:
 > - **exact-in**: buy 입력세 공제는 **floor**(Pair 정렬), 사용자 출력도 **floor**
@@ -641,11 +641,9 @@ function getAmountsOut(uint amountIn, address[] memory path) public view returns
         }
         uint grossOut = getAmountOut(effIn, rIn, rOut);   // floor (V2 original)
         amounts[i+1] = grossOut;
-        if (path[i+1] == qt) {  // sell: execution-safe quote with 1 wei margin
+        if (path[i+1] == qt) {  // sell: execution-safe quote (후공제 floor)
             uint16 sellTax = IUniswapV2Pair(pair).sellTaxBps();
-            amounts[i+1] = grossOut > 0
-                ? (grossOut - 1) * (BPS - sellTax) / BPS  // floor
-                : 0;
+            amounts[i+1] = grossOut * (BPS - sellTax) / BPS;  // floor
         }
     }
 }
@@ -724,7 +722,7 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 | 30 | 🆕 Vault drift 라이브니스 가드 | quote 측 차감 전 `require(rawQuote >= vault, 'VAULT_DRIFT')` | 전 생명주기 경로에서 무음 언더플로우성 라이브니스 손실 방지 |
 | 31 | 🆕 swap 대상 하드닝 | `require(to != token0 && to != token1, 'INVALID_TO')` | V2 호환 안전 동작 복원 |
 | 32 | 🆕 Base allowlist 제거 | Factory/Router가 base allowlist를 더 이상 강제하지 않음 | Base 정책은 운영 강제(pairAdmin 표준 ERC20 한정), Quote 정책은 프로토콜 강제 유지 |
-| 33 | 🆕 sell exact-in 안전 마진 quote | Router quote는 sell 세금 공제 전 `grossOut-1` 사용 | 유동성 경계 실행 revert 감소(최대 1 wei 보수적) |
+| 33 | 🆕 sell exact-in quote 정합성 | Router quote는 `grossOut*(1-tax)` 후공제 floor를 직접 사용 | `tax=0`에서 V2 quote parity 복구, 구조적 1 wei 언더쿼트 제거 |
 | 34 | 🆕 claim dust 동작 문서화 | claim은 reserve를 유지하고 quote dust는 skim 가능 상태로 남김 | 통합자 대상 운영/회계 의미 명확화 |
 | 35 | 🆕 K 곱셈 오버플로우 처리 | 선택적 가드(`adj0 == 0 || adj1 <= max/adj0`) 또는 토큰 정책 문서화 | 핵심 익스플로잇 경로는 아니며 정보성 하드닝. 현재 구현은 명시 가드를 채택 |
 
@@ -755,7 +753,7 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 | Q8 | 동결 없음 | pairAdmin이 세율/taxCollector를 언제든 변경 가능. 운영 유연성 우선 |
 | Q9 | 듀얼 출력 거부 | SINGLE_SIDE_ONLY 강제. 플래시 스왑 듀얼 출력 패턴 미지원(비호환성 문서화) |
 | Q10 | pairAdmin은 배포 후 불변 | 이 명세에는 `setPairAdmin` 없음. 관리자 역할은 배포 시 설정으로 고정 |
-| Q11 | Router sell exact-in은 1 wei 안전 마진 사용 | gross 유동성 경계 근처 실행 성공률 향상. 사용자 quote는 최대 1 wei 보수적일 수 있음 |
+| Q11 | Router sell exact-in은 후공제 floor 직접 사용 | `tax=0` V2 parity를 만족하고 sell roundtrip은 `grossBack <= grossOut`, diff <= 1 wei를 유지 |
 | Q12 | claim은 quote dust를 reserve에 흡수하지 않음 | claim은 tax vault 인출만 수행하며, dust는 명시적 reserve 업데이트 경로 전까지 `skim`으로 제거 가능 |
 | Q13 | K 곱셈 오버플로우는 정보성 하드닝으로 취급 | 명시 가드 또는 토큰 공급 정책 문서화 선택 가능. 기본 설계 정합성에는 필수 아님. 현재 구현은 명시 가드 사용 |
 
@@ -879,7 +877,7 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 |------|------|
 | `test_routerQuote_liquidityEdge_expectRevert` | Router quote/실행 불일치 가드: quote는 값 반환 가능하나 Pair 유동성 경계에서 실행 revert |
 | `test_router_noPairRevert` | 미생성 pair에 addLiquidity 호출 시 revert |
-| `test_sellExactIn_safeMargin_avoidsLiquidityEdge` | 🆕 sell exact-in 1 wei 안전 마진으로 실행 가능한 Router 경로의 gross 유동성 경계 revert 회피 |
+| `test_sellExactIn_safeMargin_avoidsLiquidityEdge` | 🆕 sell exact-in quote가 후공제 floor 공식을 사용해도 표준 ERC20 경로에서 실행 가능함을 검증 |
 
 **Group C — 정책 강제**
 
@@ -975,6 +973,6 @@ event QuoteTaxClaimed(address indexed to, uint256 amount);
 | 8 | FOT 지원 router 메서드 | FOT 토큰에 자주 사용 | **시그니처 유지, 항상 `FOT_NOT_SUPPORTED` revert** | ABI 유지 + 미지원 토큰 정책 강제 |
 | 9 | Pair 주소 파생 | SDK에서 `INIT_CODE_HASH` 하드코딩 가능 | **라우팅은 `factory.getPair` 사용** | Pair 업그레이드 후 바이트코드 해시 드리프트 방지 |
 | 10 | Quote flash 비용 가정 | V2는 동일 토큰 flash 비용을 주로 LP fee로 가정 | **quoteOut 경로에 sellTax 포함** | quote flash(out/in) 전략의 실비용 재모델링 필요 |
-| 11 | sell exact-in quote 동작 | `netOut = floor(grossOut×(1-tax))` | **Router가 세금 공제 전 `grossOut-1` 안전 마진 사용** | sell exact-in quote가 최대 1 wei 보수적일 수 있음 |
+| 11 | sell exact-in quote 동작 | `netOut = floor(grossOut×(1-tax))` | **Router가 `grossOut`에서 후공제 floor를 직접 사용** | `tax=0`에서 V2 quote와 정확히 일치, roundtrip gross 오차는 최대 1 wei |
 | 12 | claim + quote dust 의미 | dust는 보통 `skim`으로 제거 | **claim은 reserve를 유지하며 quote dust는 skimmable 상태 유지** | claim 이벤트 주변 회계/인덱서 가정 업데이트 필요 |
 | 13 | 스토리지 슬롯 하드코딩(`eth_getStorageAt`) | 일부 인덱서/봇이 V2 고정 슬롯을 직접 파싱 | **V2 원본 슬롯 오프셋은 유지, NadSwap 필드는 append-only** | 위반 시 온체인 로직이 정상이어도 오프체인 파서/차트/MEV 인프라가 깨질 수 있음 |

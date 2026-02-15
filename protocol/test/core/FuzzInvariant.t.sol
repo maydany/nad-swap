@@ -148,6 +148,10 @@ contract FuzzInvariantTest is TestBase {
         uint256 grossOut = _ceilDiv(netQuoteOut * BPS, BPS - sellTaxBps);
         vm.assume(grossOut < rq);
         uint256 baseIn = _getAmountIn(grossOut, rb, rq);
+        uint256 netFromGross = (grossOut * (BPS - sellTaxBps)) / BPS;
+        uint256 grossBack = _ceilDiv(netFromGross * BPS, BPS - sellTaxBps);
+        assertLe(grossBack, grossOut, "sell roundtrip overshoot");
+        assertLe(grossOut - grossBack, 1, "sell roundtrip divergence > 1 wei");
 
         uint256 beforeVault = pair.accumulatedQuoteTax();
         _sell(baseIn, netQuoteOut, TRADER);

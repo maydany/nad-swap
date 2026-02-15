@@ -65,7 +65,7 @@ Uniswap V2를 포크하여 **Pair `swap()` 수학 내부에 buy/sell 거래세�
 
 **Tax Vault:** 매 스왑에서 세금을 즉시 ERC20 전송하지 않고, `accumulatedQuoteTax` 상태 변수에 장부 적립합니다. 이로써 스왑당 ~21,000 gas를 절감합니다. 트레이드오프는 `taxCollector`가 별도로 `claimQuoteTax()`를 호출해야 세금을 수령할 수 있다는 점이며, claim은 reserve를 재동기화하지 않으므로 quote dust는 skimmable 상태로 유지됩니다.
 
-**역산 수학 (Reverse Math):** sell 방향에서 사용자가 수령할 Net 금액을 기준으로, Pair 내부에서 세금 포함 Gross 금액을 ceil 역산합니다. 이를 통해 Router의 quote와 실제 실행 결과가 정확히 일치합니다. 트레이드오프로 Library에서 floor로 계산한 `grossOut`과 Pair에서 ceil로 역산한 `grossOut` 사이에 최대 1 wei 차이가 발생할 수 있으며, Router는 이를 `grossOut - 1` 안전 마진으로 처리합니다.
+**역산 수학 (Reverse Math):** sell 방향에서 사용자가 수령할 Net 금액을 기준으로, Pair 내부에서 세금 포함 Gross 금액을 ceil 역산합니다. Library quote는 `net = floor(grossOut × (BPS-sellTax) / BPS)`를 직접 사용하며, 역산 라운드트립(`floor→ceil`) 오차는 최대 1 wei로 제한됩니다.
 
 **Effective Reserve 원칙:** Reserve에는 tax vault를 포함하지 않은 `effective = raw - taxVault`만 저장합니다. tax vault 적립금은 LP가 아닌 taxCollector의 자산이므로, TWAP·feeTo·LP 정산을 LP 실제 자산 기준으로 일관되게 유지합니다. 모든 경로(`swap`/`mint`/`burn`/`skim`/`sync`)가 이 원칙을 따릅니다.
 
@@ -390,11 +390,11 @@ V2에서는 순수 AMM 수학만 적용합니다. NadSwap에서는 **hop별로 b
 
 **공식 상세:**
 - **buy exact-in**: `tax = ⌊ rawIn × buyTax / BPS ⌋`, `effIn = rawIn - tax` → `getAmountOut(effIn)`
-- **sell exact-in**: `grossOut = getAmountOut(baseIn)` → `net = (grossOut-1) × (BPS-sellTax) / BPS` (1 wei 안전 마진)
+- **sell exact-in**: `grossOut = getAmountOut(baseIn)` → `net = grossOut × (BPS-sellTax) / BPS`
 - **sell exact-out**: `grossOut = ⌈ netOut × BPS / (BPS-sellTax) ⌉` → `getAmountIn(grossOut)`
 - **buy exact-out**: `netIn = getAmountIn(baseOut)` → `rawIn = ⌈ netIn × BPS / (BPS-buyTax) ⌉`
 
-> **주의**: sell exact-in에서 Library의 `grossOut`(floor)과 Pair의 역산 `grossOut`(ceil)은 최대 **1 wei** 차이가 날 수 있습니다. Router quote는 이를 고려해 `grossOut - 1`로 안전 마진을 적용합니다.
+> **주의**: sell exact-in에서 Library의 `grossOut`(floor)과 Pair의 역산 `grossOut`(ceil)은 최대 **1 wei** 차이가 날 수 있지만, 역산 gross는 항상 `grossOut`을 초과하지 않습니다.
 
 ---
 

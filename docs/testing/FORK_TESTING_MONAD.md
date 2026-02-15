@@ -19,12 +19,15 @@
 | 변수 | Mode A (Runner) | Mode B (Direct forge) |
 |---|---|---|
 | `MONAD_FORK_ENABLED` | Auto-exported by runner | Required (`1`) |
-| `MONAD_RPC_URL` | Required | Required |
+| `MONAD_FORK_USE_RPC` | Optional (`1` 권장) | Optional (`1` 권장) |
+| `MONAD_RPC_URL` | `MONAD_FORK_USE_RPC=1`일 때 Required | `MONAD_FORK_USE_RPC=1`일 때 Required |
 | `MONAD_CHAIN_ID` | Required (default `10143`) | Required (default `10143`) |
 | `MONAD_FORK_BLOCK` | Required (`0` = latest) | Required (`0` = latest) |
 | `MONAD_FORK_FUZZ_RUNS` | Required (default `64`) | Optional (used when running fuzz-lite) |
 
-참고: 현재 `protocol/test/fork`는 fork 위에 mock quote/base 토큰을 직접 배포하므로 token/whale/liquidity 관련 env는 필요하지 않다.
+참고:
+- 현재 `protocol/test/fork`는 fork 위에 mock quote/base 토큰을 직접 배포하므로 token/whale/liquidity 관련 env는 필요하지 않다.
+- `MONAD_FORK_USE_RPC=0`(기본값)이면 `createSelectFork`를 호출하지 않고 로컬 in-memory 체인에서 fork suite를 실행한다.
 
 ## Mode A 로컬 실행 (권장)
 ```bash
@@ -49,6 +52,7 @@ scripts/runners/run_fork_tests.sh \
 ## Mode B 로컬 실행 (직접 forge)
 ```bash
 export MONAD_FORK_ENABLED=1
+export MONAD_FORK_USE_RPC=1
 export MONAD_RPC_URL="https://testnet-rpc.monad.xyz"
 export MONAD_CHAIN_ID=10143
 export MONAD_FORK_BLOCK=12700000
@@ -89,3 +93,7 @@ forge test --match-contract ForkFuzzLiteTest --fork-url "$MONAD_RPC_URL" --fork-
 
 4. fork block 실패
 - `MONAD_FORK_BLOCK` 값이 latest block보다 크지 않은지 확인.
+
+5. macOS에서 forge panic (`Attempted to create a NULL object`)
+- 임시 우회: `FOUNDRY_OFFLINE=true`를 붙여 실행.
+- 실제 RPC 포크가 필요하면 Foundry 버전 업데이트 후 `MONAD_FORK_USE_RPC=1` + `MONAD_RPC_URL` 조합으로 재시도.

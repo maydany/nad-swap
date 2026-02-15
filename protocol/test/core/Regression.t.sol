@@ -65,14 +65,14 @@ contract RegressionTest is TestBase {
         return (amountInWithFee * reserveOut) / (reserveIn * 1000 + amountInWithFee);
     }
 
+    function _getAmountIn(uint256 amountOut, uint256 reserveIn, uint256 reserveOut) internal pure returns (uint256) {
+        return (reserveIn * amountOut * 1000) / ((reserveOut - amountOut) * 998) + 1;
+    }
+
     function _path(address a, address b) internal pure returns (address[] memory p) {
         p = new address[](2);
         p[0] = a;
         p[1] = b;
-    }
-
-    function _absDiff(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a >= b ? a - b : b - a;
     }
 
     function _min(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -103,6 +103,14 @@ contract RegressionTest is TestBase {
         uint256 quoteIn = 1_200 ether;
         address[] memory buyPath = _path(address(quote), address(base));
         uint256[] memory buyQuoted = router.getAmountsOut(quoteIn, buyPath);
+        (uint256 rqBeforeBuy, uint256 rbBeforeBuy) = _reservesQuoteBase();
+        uint256 expectedBuyOut = _getAmountOut(quoteIn, rqBeforeBuy, rbBeforeBuy);
+        assertEq(buyQuoted[1], expectedBuyOut, "tax=0 buy getAmountsOut != V2");
+
+        uint256 buyExactOut = 80 ether;
+        uint256[] memory buyAmountsIn = router.getAmountsIn(buyExactOut, buyPath);
+        uint256 expectedBuyIn = _getAmountIn(buyExactOut, rqBeforeBuy, rbBeforeBuy);
+        assertEq(buyAmountsIn[0], expectedBuyIn, "tax=0 buy getAmountsIn != V2");
 
         quote.mint(TRADER, quoteIn);
         vm.prank(TRADER);
@@ -116,6 +124,14 @@ contract RegressionTest is TestBase {
         uint256 baseIn = 1_500 ether;
         address[] memory sellPath = _path(address(base), address(quote));
         uint256[] memory sellQuoted = router.getAmountsOut(baseIn, sellPath);
+        (uint256 rqBeforeSell, uint256 rbBeforeSell) = _reservesQuoteBase();
+        uint256 expectedSellOut = _getAmountOut(baseIn, rbBeforeSell, rqBeforeSell);
+        assertEq(sellQuoted[1], expectedSellOut, "tax=0 sell getAmountsOut != V2");
+
+        uint256 sellExactOut = 120 ether;
+        uint256[] memory sellAmountsIn = router.getAmountsIn(sellExactOut, sellPath);
+        uint256 expectedSellIn = _getAmountIn(sellExactOut, rbBeforeSell, rqBeforeSell);
+        assertEq(sellAmountsIn[0], expectedSellIn, "tax=0 sell getAmountsIn != V2");
 
         base.mint(TRADER, baseIn);
         vm.prank(TRADER);
@@ -124,7 +140,7 @@ contract RegressionTest is TestBase {
         vm.prank(TRADER);
         router.swapExactTokensForTokens(baseIn, sellQuoted[1], sellPath, TRADER, block.timestamp + 1);
         uint256 sellExecuted = quote.balanceOf(TRADER) - quoteBefore;
-        assertLe(_absDiff(sellExecuted, sellQuoted[1]), 1, "tax=0 sell quote drift > 1 wei");
+        assertEq(sellExecuted, sellQuoted[1], "tax=0 sell quote mismatch");
     }
 
     function test_regression_taxZero_feeToOff_mintBurnParity() public {

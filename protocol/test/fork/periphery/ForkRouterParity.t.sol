@@ -107,8 +107,8 @@ contract ForkRouterParityTest is ForkFixture {
         uint256[] memory quoted = router.getAmountsOut(inAmount, p);
         (uint256 rq, uint256 rb) = _reservesQuoteBase();
         uint256 grossOut = _getAmountOut(inAmount, rb, rq);
-        uint256 expected = grossOut > 0 ? ((grossOut - 1) * (BPS - pair.sellTaxBps())) / BPS : 0;
-        assertEq(quoted[1], expected, "safe margin mismatch");
+        uint256 expected = (grossOut * (BPS - pair.sellTaxBps())) / BPS;
+        assertEq(quoted[1], expected, "sell exact-in quote mismatch");
     }
 
     function testFork_router_taxRace_slippage() public onlyFork {

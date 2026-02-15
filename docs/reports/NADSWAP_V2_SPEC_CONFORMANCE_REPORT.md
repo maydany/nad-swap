@@ -20,8 +20,8 @@ Scope: current repository tree
 ## Gate Results
 <!-- GENERATED:START -->
 - Metrics source: `docs/reports/NADSWAP_V2_VERIFICATION_METRICS.json`
-- Generated at: `2026-02-15T06:10:32.510189+00:00`
-- Git SHA: `a474fbf77b231c030456fa9bef41b54d6eda66bf`
+- Generated at: `2026-02-15T07:18:59.347390+00:00`
+- Git SHA: `fb62f0a20b501e3d774008459a8e05cde74e132a`
 - Baseline source: `docs/reports/NADSWAP_V2_VERIFICATION_BASELINE.json`
 - Foundry tests (non-fork strict): **PASS** (`107/107`)
 - Foundry tests (fork suites): **PASS** (`47/47`)

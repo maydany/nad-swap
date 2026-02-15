@@ -66,9 +66,9 @@ contract RouterQuoteParityTest is PairFixture {
         (uint256 reserveIn, uint256 reserveOut) = _reservesForPath(pairAddr, baseTokenAddr, quoteTokenAddr);
 
         uint256 grossOut = _getAmountOut(amountIn, reserveIn, reserveOut);
-        uint256 expectedNet = grossOut > 0 ? ((grossOut - 1) * (BPS - pair.sellTaxBps())) / BPS : 0;
+        uint256 expectedNet = (grossOut * (BPS - pair.sellTaxBps())) / BPS;
         uint256[] memory quoted = router.getAmountsOut(amountIn, p);
-        assertEq(quoted[1], expectedNet, "router safe-margin rounding mismatch");
+        assertEq(quoted[1], expectedNet, "router sell rounding mismatch");
 
         _mintToken(baseTokenAddr, TRADER, amountIn);
         _approveRouter(baseTokenAddr, TRADER, uint256(-1));
@@ -117,7 +117,7 @@ contract RouterQuoteParityTest is PairFixture {
 
         (uint256 rb1, uint256 rq1) = _reservesForPath(address(pair), baseTokenAddr, quoteTokenAddr);
         uint256 grossQuote1 = _getAmountOut(amountIn, rb1, rq1);
-        uint256 netQuote1 = grossQuote1 > 0 ? ((grossQuote1 - 1) * (BPS - pair.sellTaxBps())) / BPS : 0;
+        uint256 netQuote1 = (grossQuote1 * (BPS - pair.sellTaxBps())) / BPS;
 
         (uint256 rq2, uint256 rm2) = _reservesForPath(pair2Addr, quoteTokenAddr, address(mid));
         uint256 buyTax2 = uint256(pair2.buyTaxBps());
@@ -167,7 +167,8 @@ contract RouterQuoteParityTest is PairFixture {
         uint256[] memory quoted = router.getAmountsOut(amountIn, p);
         uint256 pairGrossFromRouter = _ceilDiv(quoted[1] * BPS, BPS - pair.sellTaxBps());
 
-        assertLe(_absDiff(grossOut, pairGrossFromRouter), 1, "grossOut divergence > 1 wei");
+        assertLe(pairGrossFromRouter, grossOut, "grossOut roundtrip overshoot");
+        assertLe(grossOut - pairGrossFromRouter, 1, "grossOut divergence > 1 wei");
     }
 
     function test_taxChange_raceCond_slippage() public {

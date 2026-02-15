@@ -435,17 +435,17 @@ def run_boundary_tests():
             print(f"  buyTax={buyTax:4d}bps  amount={amt:6d}  tax={tax:3d}  "
                   f"{'⚠️ ZERO TAX' if tax == 0 else '✅ taxed'}")
 
-    # Test 2: Sell tax roundtrip (floor→ceil) divergence
-    print(f"\n  {'grossOut':>10} {'sellTax':>8} {'netOut':>10} {'grossBack':>10} {'diff':>6}")
+    # Test 2: Sell tax roundtrip (floor→ceil) directional bound
+    print(f"\n  {'grossOut':>10} {'sellTax':>8} {'netOut':>10} {'grossBack':>10} {'delta':>6}")
     print("  " + "-"*50)
     for grossOut in range(990, 1010):
         for sellTax in [300, 500, 1000, 2000]:
             netOut = grossOut * (BPS - sellTax) // BPS
             grossBack = ceilDiv(netOut * BPS, BPS - sellTax)
-            diff = grossBack - grossOut
+            diff = grossOut - grossBack
             results.record(
                 "sell_roundtrip",
-                abs(diff) <= 1,
+                grossBack <= grossOut and diff <= 1,
                 diff,
                 f"gross={grossOut} tax={sellTax} net={netOut} back={grossBack}",
             )

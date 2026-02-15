@@ -64,7 +64,7 @@ requirements:
     statement: "pairFor resolves via factory.getPair and does not derive from INIT_CODE_HASH."
   - id: LIB-003
     section: "11. getAmountsOut"
-    statement: "sell exact-in quote uses grossOut-1 safe margin before sell tax deduction."
+    statement: "sell exact-in quote applies direct floor post-deduction from grossOut (`grossOut * (BPS-sellTax) / BPS`)."
   - id: ROUT-001
     section: "10. Router _addLiquidity patch"
     statement: "Router addLiquidity reverts when pair is not pre-created."

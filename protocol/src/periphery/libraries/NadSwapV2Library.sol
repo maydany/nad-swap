@@ -89,7 +89,7 @@ library UniswapV2Library {
 
             if (path[i + 1] == qt) {
                 uint16 sellTax = IUniswapV2Pair(pair).sellTaxBps();
-                amounts[i + 1] = grossOut > 0 ? ((grossOut - 1) * (BPS - sellTax)) / BPS : 0;
+                amounts[i + 1] = (grossOut * (BPS - sellTax)) / BPS;
             }
         }
     }

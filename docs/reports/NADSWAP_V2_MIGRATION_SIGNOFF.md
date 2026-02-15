@@ -12,6 +12,6 @@
 | 8 | FOT-supporting router entrypoints revert | Confirmed | Keep ABI compatibility, runtime unsupported policy. If a Base-FOT pair is created anyway, sell exact-in can revert and buy exact-in can under-deliver user receipt vs quoted output. |
 | 9 | Pair address resolution via `factory.getPair` | Confirmed | Remove INIT_CODE_HASH derivation dependence. |
 | 10 | Quote-out flash paths include sell tax | Confirmed | Strategy cost models must include quote output tax. |
-| 11 | Sell exact-in quote uses 1 wei safe margin | Confirmed | Router quotes intentionally conservative by <=1 wei. |
+| 11 | Sell exact-in quote uses direct floor post-deduction | Confirmed | Router quote now uses `grossOut * (BPS-sellTax) / BPS`; removes structural 1 wei underquote when `sellTax=0`. |
 | 12 | claimQuoteTax keeps reserves unchanged; quote dust remains skimmable | Confirmed | Accounting/reporting should treat claim as tax-vault withdrawal only. Quote dust is not forcibly LP-owned at claim timing and remains removable via `skim`. Pre-release hard break: legacy selectors (`feeCollector/accumulatedQuoteFees/claimQuoteFees`) are removed. |
 | 13 | Storage slot compatibility for V2 fields is mandatory | Confirmed | `check_storage_layout.py` gate active in CI. |
