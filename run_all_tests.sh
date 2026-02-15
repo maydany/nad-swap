@@ -111,6 +111,7 @@ START_TIME=$(date +%s)
 declare -a GATE_ARGS=()
 [[ "${SKIP_SLITHER}" -eq 1 ]]  && GATE_ARGS+=("--skip-slither")
 [[ "${SKIP_UPSTREAM}" -eq 1 ]] && GATE_ARGS+=("--skip-upstream-sync")
+GATE_ARGS+=("--skip-fork")
 
 run_gates() {
   log "STRICT GATE + NIGHTLY INVARIANT"

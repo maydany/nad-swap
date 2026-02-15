@@ -28,6 +28,9 @@
 | ROUT-002 | 10. FOT hard revert + quote-only guard | `protocol/src/periphery/NadSwapV2Router02.sol` | `test_router_supportingFOT_notSupported,test_router_supportingFOT_notSupported_exactETHForTokens,test_router_supportingFOT_notSupported_exactTokensForETH,test_router_supportingFOT_notSupported_removeLiquidityETH,test_router_supportingFOT_notSupported_removeLiquidityETHWithPermit` | `FOUNDRY_OFFLINE=true forge test --match-contract RouterLibraryTest` | Implemented |
 | REG-001 | 16. tax=0 regression | `protocol/test/core/Regression.t.sol` | `test_regression_taxZero_swapMatchesFeeOnlyMath` | `FOUNDRY_OFFLINE=true forge test --match-test test_regression_taxZero_swapMatchesFeeOnlyMath` | Implemented |
 | FUZ-001 | 16. fuzz | `protocol/test/core/FuzzInvariant.t.sol` | `testFuzz_buyTax_floor_matchesPair` | `FOUNDRY_OFFLINE=true forge test --match-test testFuzz_buyTax_floor_matchesPair` | Implemented |
+| FUZ-002 | P0-B large reserve/amount K fuzz | `protocol/test/core/PairKOverflowDomain.t.sol` | `testFuzz_largeDomain_buy_kInvariant_holds,testFuzz_largeDomain_sell_kInvariant_holds` | `FOUNDRY_OFFLINE=true forge test --match-path test/core/PairKOverflowDomain.t.sol` | Implemented |
+| FUZ-003 | P0-B large-amount overflow guard fuzz | `protocol/test/core/PairKOverflowDomain.t.sol` | `testFuzz_largeAmount_sell_revertsWithKMultiplyOverflow` | `FOUNDRY_OFFLINE=true forge test --match-test testFuzz_largeAmount_sell_revertsWithKMultiplyOverflow` | Implemented |
+| REG-002 | P0-A swap tax trigger truth-table regression | `protocol/test/core/PairSwapGuards.t.sol` | `test_trigger_buyTax_only_when_quoteIn_and_baseOut,test_trigger_sellTax_only_when_quoteOut` | `FOUNDRY_OFFLINE=true forge test --match-contract PairSwapGuardsTest` | Implemented |
 | INV-001 | 16. invariant | `protocol/test/core/FuzzInvariant.t.sol` | `testInvariant_rawQuote_equals_reservePlusVault_afterSync` | `FOUNDRY_OFFLINE=true forge test --match-test testInvariant_rawQuote_equals_reservePlusVault_afterSync` | Implemented |
 | INV-002 | 16. stateful invariant quote accounting | `protocol/test/invariant/StatefulPairInvariant.t.sol` | `invariant_raw_quote_eq_reserve_plus_vault_or_dust` | `FOUNDRY_OFFLINE=true forge test --match-path "test/invariant/**" --match-test invariant_raw_quote_eq_reserve_plus_vault_or_dust` | Implemented |
 | INV-003 | 16. stateful invariant vault monotonic | `protocol/test/invariant/StatefulPairInvariant.t.sol` | `invariant_vault_monotonic_except_claim` | `FOUNDRY_OFFLINE=true forge test --match-path "test/invariant/**" --match-test invariant_vault_monotonic_except_claim` | Implemented |
@@ -37,6 +40,8 @@
 | SEC-001 | 4. storage layout gate | `scripts/gates/check_storage_layout.py` | `N/A` | `python3 scripts/gates/check_storage_layout.py` | Implemented |
 | SEC-002 | 5/6/11 math parity gate | `scripts/gates/check_math_consistency.py` | `N/A` | `python3 scripts/gates/check_math_consistency.py` | Implemented |
 | SEC-003 | 16. static analysis gate | `scripts/gates/check_slither_gate.py` | `N/A` | `python3 scripts/gates/check_slither_gate.py` | Implemented |
+| SEC-004 | P0 smoke gate (PairSwapGuards + PairFlashQuote preflight) | `scripts/runners/run_local_gates.sh` | `N/A` | `scripts/runners/run_local_gates.sh` | Implemented |
+| SEC-005 | P0 nightly large-domain K/overflow fuzz gate | `scripts/runners/run_local_gates.sh` | `N/A` | `scripts/runners/run_local_gates.sh` | Implemented |
 ## Spec Section 16 Test Coverage
 
 - Coverage target: `90` spec `test_*` names + `5` spec `invariant_*` names

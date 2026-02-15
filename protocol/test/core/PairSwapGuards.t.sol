@@ -44,6 +44,43 @@ contract PairSwapGuardsTest is PairFixture {
         assertGe(kAfter, kBefore, "K invariant decreased");
     }
 
+    function test_trigger_buyTax_only_when_quoteIn_and_baseOut() public {
+        (uint256 rq, uint256 rb) = _reservesQuoteBase();
+        uint256 rawIn = 1_500 ether;
+        uint256 expectedBuyTax = rawIn * pair.buyTaxBps() / BPS;
+        uint256 effIn = rawIn - expectedBuyTax;
+        uint256 baseOut = _getAmountOut(effIn, rq, rb);
+
+        uint256 beforeVault = pair.accumulatedQuoteTax();
+        _buy(rawIn, baseOut, TRADER);
+        uint256 afterVault = pair.accumulatedQuoteTax();
+
+        assertEq(afterVault - beforeVault, expectedBuyTax, "buy tax trigger mismatch");
+    }
+
+    function test_trigger_sellTax_only_when_quoteOut() public {
+        uint256 netQuoteOut = 150 ether;
+        uint256 grossQuoteOut = _ceilDiv(netQuoteOut * BPS, BPS - pair.sellTaxBps());
+        uint256 expectedSellTax = grossQuoteOut - netQuoteOut;
+        uint256 quoteRepay = _ceilDiv(grossQuoteOut * 1000, 998) + 1;
+
+        _mintToken(quoteTokenAddr, TRADER, quoteRepay);
+        vm.prank(TRADER);
+        _safeTokenTransfer(quoteTokenAddr, address(pair), quoteRepay);
+
+        uint256 beforeVault = pair.accumulatedQuoteTax();
+        bool quote0 = _isQuote0();
+        vm.prank(TRADER);
+        if (quote0) {
+            pair.swap(netQuoteOut, 0, TRADER, new bytes(0));
+        } else {
+            pair.swap(0, netQuoteOut, TRADER, new bytes(0));
+        }
+        uint256 afterVault = pair.accumulatedQuoteTax();
+
+        assertEq(afterVault - beforeVault, expectedSellTax, "sell tax trigger mismatch");
+    }
+
     function test_vaultOverflow_revert() public {
         _mintToken(quoteTokenAddr, address(pair), uint256(uint96(-1)));
         _setVault(uint96(-1) - 1);

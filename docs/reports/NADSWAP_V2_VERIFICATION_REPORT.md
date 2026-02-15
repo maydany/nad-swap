@@ -22,12 +22,12 @@ Date: 2026-02-14
 ## Results
 <!-- GENERATED:START -->
 - Metrics source: `docs/reports/NADSWAP_V2_VERIFICATION_METRICS.json`
-- Generated at: `2026-02-15T07:18:59.347390+00:00`
-- Git SHA: `fb62f0a20b501e3d774008459a8e05cde74e132a`
+- Generated at: `2026-02-15T08:09:05.175822+00:00`
+- Git SHA: `e6d238dd625b42c758119b698c5fe067d6bee6c5`
 - Baseline source: `docs/reports/NADSWAP_V2_VERIFICATION_BASELINE.json`
-- Foundry tests (non-fork strict): **PASS** (`107/107`)
+- Foundry tests (non-fork strict): **PASS** (`112/112`)
 - Foundry tests (fork suites): **PASS** (`47/47`)
-- Foundry tests (non-fork all): **PASS** (`112/112`)
+- Foundry tests (non-fork all): **PASS** (`117/117`)
 - Traceability requirements: **PASS** (`30/30`)
 - Spec Section 16 named tests: **PASS** (`90/90`)
 - Spec Section 16 named invariants: **PASS** (`5/5`)

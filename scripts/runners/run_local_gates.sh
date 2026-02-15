@@ -13,18 +13,20 @@ EXPECTED_PERIPHERY_SHA="0335e8f7e1bd1e8d8329fd300aea2ef2f36dd19f"
 FOUNDRY_OFFLINE="${FOUNDRY_OFFLINE:-true}"
 SKIP_SLITHER=0
 SKIP_UPSTREAM_SYNC=0
+SKIP_FORK=0
 
 usage() {
   cat <<'EOF'
 Usage: ./scripts/runners/run_local_gates.sh [options]
 
 Runs NadSwap local verification gates in one command.
-Nightly high-depth invariant and fork suite are mandatory in this runner.
+Nightly high-depth invariant is mandatory; fork suite runs unless skipped.
 Docs metrics rendering and consistency gates are included.
 
 Options:
   --skip-slither            Skip Slither static-analysis gate.
   --skip-upstream-sync      Skip cloning/syncing upstream pinned refs.
+  --skip-fork               Skip fork test suite in this runner.
   -h, --help                Show this help.
 
 Examples:
@@ -77,6 +79,10 @@ while [[ $# -gt 0 ]]; do
       SKIP_UPSTREAM_SYNC=1
       shift
       ;;
+    --skip-fork)
+      SKIP_FORK=1
+      shift
+      ;;
     -h|--help)
       usage
       exit 0
@@ -117,6 +123,13 @@ fi
 log "Storage Layout Gate"
 python3 "${ROOT}/scripts/gates/check_storage_layout.py"
 
+log "P0 Smoke Gate (swap/tax guard paths)"
+(
+  cd "${PROTOCOL_DIR}"
+  FOUNDRY_OFFLINE="${FOUNDRY_OFFLINE}" forge test --match-path "test/core/PairSwapGuards.t.sol"
+  FOUNDRY_OFFLINE="${FOUNDRY_OFFLINE}" forge test --match-path "test/core/PairFlashQuote.t.sol"
+)
+
 log "Lightweight Invariant Gate"
 (
   cd "${PROTOCOL_DIR}"
@@ -138,6 +151,15 @@ NIGHTLY_LOG="${ROOT}/invariant-logs/local-nightly-invariant-$(date +%Y%m%d-%H%M%
     --match-path "test/invariant/**" \
     -vv | tee "${NIGHTLY_LOG}"
 )
+
+log "Nightly Large-Domain K/Overflow Fuzz Gate"
+(
+  cd "${PROTOCOL_DIR}"
+  FOUNDRY_OFFLINE="${FOUNDRY_OFFLINE}" FOUNDRY_PROFILE=invariant-nightly forge test \
+    --match-path "test/core/PairKOverflowDomain.t.sol" \
+    --fuzz-runs 1024 \
+    -vv | tee -a "${NIGHTLY_LOG}"
+)
 log "Nightly invariant log saved: ${NIGHTLY_LOG}"
 
 log "Math Consistency Gate"
@@ -149,8 +171,12 @@ python3 "${ROOT}/scripts/gates/check_traceability.py"
 log "Migration Checklist Gate"
 python3 "${ROOT}/scripts/gates/check_migration_signoff.py"
 
-log "Fork Test Suite"
-"${ROOT}/scripts/runners/run_fork_tests.sh"
+if [[ "${SKIP_FORK}" -eq 0 ]]; then
+  log "Fork Test Suite"
+  "${ROOT}/scripts/runners/run_fork_tests.sh"
+else
+  log "Skipping fork suite by option."
+fi
 
 log "Collect Verification Metrics"
 python3 "${ROOT}/scripts/reports/collect_verification_metrics.py" \
