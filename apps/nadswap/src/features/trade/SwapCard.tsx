@@ -207,6 +207,10 @@ export const SwapCard = ({
   const outSymbol = isQuoteToBase ? nadSymbol : usdtSymbol;
   const inDecimals = isQuoteToBase ? usdtDecimals : nadDecimals;
   const outDecimals = isQuoteToBase ? nadDecimals : usdtDecimals;
+  const quoteSymbol = usdtSymbol;
+  const baseSymbol = nadSymbol;
+  const quoteDecimals = usdtDecimals;
+  const baseDecimals = nadDecimals;
 
   const parsedAmountIn = useMemo(() => {
     const normalized = amountIn.trim();
@@ -257,6 +261,8 @@ export const SwapCard = ({
       enabled: isConnected
     }
   });
+  const quoteBalance = isQuoteToBase ? balanceIn : balanceOut;
+  const baseBalance = isQuoteToBase ? balanceOut : balanceIn;
 
   const quoteEnabled = Boolean(isConnected && parsedAmountIn && !wrongNetwork);
 
@@ -496,13 +502,13 @@ export const SwapCard = ({
         <section className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm">
           <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-600">Wallet Balance</h3>
           <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3 gap-y-2 text-sm">
-            <span className="text-slate-500">{inSymbol}(Quote)</span>
+            <span className="text-slate-500">{quoteSymbol} (Quote)</span>
             <span className="text-right font-semibold text-slate-900 tabular-nums">
-              {formatAmount(balanceIn, inDecimals)} {inSymbol}
+              {formatAmount(quoteBalance, quoteDecimals)} {quoteSymbol}
             </span>
-            <span className="text-slate-500">{outSymbol}</span>
+            <span className="text-slate-500">{baseSymbol} (Base)</span>
             <span className="text-right font-semibold text-slate-900 tabular-nums">
-              {formatAmount(balanceOut, outDecimals)} {outSymbol}
+              {formatAmount(baseBalance, baseDecimals)} {baseSymbol}
             </span>
           </div>
         </section>
